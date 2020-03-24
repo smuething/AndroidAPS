@@ -8,6 +8,7 @@ import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.data.Profile
 import info.nightscout.androidaps.data.ProfileStore
 import info.nightscout.androidaps.data.PumpEnactResult
+import info.nightscout.androidaps.database.DatabaseModule
 import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.db.ProfileSwitch
 import info.nightscout.androidaps.plugins.aps.loop.APSResult
@@ -46,7 +47,8 @@ import javax.inject.Singleton
         FragmentsModule::class,
         AppModule::class,
         ReceiversModule::class,
-        ServicesModule::class
+        ServicesModule::class,
+        DatabaseModule::class
     ]
 )
 interface AppComponent : AndroidInjector<MainApp> {

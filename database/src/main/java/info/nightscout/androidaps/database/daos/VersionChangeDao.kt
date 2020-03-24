@@ -10,4 +10,10 @@ import io.reactivex.Single
 @Dao
 interface VersionChangeDao {
 
+    @Insert
+    fun insert(versionChange: VersionChange)
+
+    @Query("SELECT * FROM $TABLE_VERSION_CHANGES ORDER BY id DESC LIMIT 1")
+    fun getMostRecentVersionChange(): VersionChange?
+
 }

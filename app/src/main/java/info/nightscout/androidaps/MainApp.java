@@ -31,6 +31,8 @@ import dagger.android.AndroidInjector;
 import dagger.android.DaggerApplication;
 import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.data.Profile;
+import info.nightscout.androidaps.database.AppRepository;
+import info.nightscout.androidaps.database.transactions.VersionChangeTransaction;
 import info.nightscout.androidaps.db.DatabaseHelper;
 import info.nightscout.androidaps.dependencyInjection.DaggerAppComponent;
 import info.nightscout.androidaps.logging.AAPSLogger;
@@ -121,6 +123,7 @@ public class MainApp extends DaggerApplication {
     private int ONGOING_NOTIFICATION_ID = 4711; // TODO: move to OngoingNotificationProvider (and dagger)
     private Notification notification; // TODO: move to OngoingNotificationProvider (and dagger)
 
+    @Inject AppRepository repository;
     @Inject PluginStore pluginStore;
     @Inject public HasAndroidInjector injector;
     @Inject AAPSLogger aapsLogger;
@@ -189,6 +192,14 @@ public class MainApp extends DaggerApplication {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        String gitRemote = BuildConfig.REMOTE;
+        String commitHash = BuildConfig.HEAD;
+        if (gitRemote.contains("NoGitSystemAvailable")) {
+            gitRemote = null;
+            commitHash = null;
+        }
+        repository.runTransaction(new VersionChangeTransaction(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, gitRemote, commitHash)).subscribe();
 
         aapsLogger.debug("onCreate");
         sInstance = this;

@@ -12,7 +12,7 @@ internal interface TraceableDao<T : TraceableDBEntry> : TraceableDaoWorkaround<T
 
     fun deleteAllEntries()
 
-    fun getAllStartingFrom(id: Long): Single<List<T>>
+    //fun getAllStartingFrom(id: Long): Single<List<T>>
 
     @Insert
     fun insert(entry: T): Long

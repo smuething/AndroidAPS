@@ -10,4 +10,7 @@ import io.reactivex.Single
 @Dao
 interface PreferenceChangeDao {
 
+    @Insert
+    fun insert(preferenceChange: PreferenceChange)
+
 }

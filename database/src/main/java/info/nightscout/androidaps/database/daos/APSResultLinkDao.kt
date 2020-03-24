@@ -16,7 +16,4 @@ internal interface APSResultLinkDao : TraceableDao<APSResultLink> {
 
     @Query("DELETE FROM $TABLE_APS_RESULTS")
     override fun deleteAllEntries()
-
-    @Query("SELECT * FROM $TABLE_APS_RESULT_LINKS WHERE id >= :id")
-    override fun getAllStartingFrom(id: Long): Single<List<APSResultLink>>
 }
