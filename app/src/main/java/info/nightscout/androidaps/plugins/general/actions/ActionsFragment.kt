@@ -32,6 +32,7 @@ import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import info.nightscout.androidaps.utils.toVisibility
+import info.nightscout.androidaps.utils.protection.ProtectionCheck
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.actions_fragment.*
@@ -51,6 +52,7 @@ class ActionsFragment : DaggerFragment() {
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var commandQueue: CommandQueueProvider
     @Inject lateinit var buildHelper: BuildHelper
+    @Inject lateinit var protectionCheck: ProtectionCheck
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -72,11 +74,13 @@ class ActionsFragment : DaggerFragment() {
             fragmentManager?.let { TempTargetDialog().show(it, "Actions") }
         }
         actions_extendedbolus.setOnClickListener {
-            context?.let { context ->
-                OKDialog.showConfirmation(context, resourceHelper.gs(R.string.extended_bolus), resourceHelper.gs(R.string.ebstopsloop),
-                    Runnable {
-                        fragmentManager?.let { ExtendedBolusDialog().show(it, "Actions") }
-                    }, null)
+            activity?.let { activity ->
+                protectionCheck.queryProtection(activity, ProtectionCheck.Protection.BOLUS, Runnable {
+                    OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.extended_bolus), resourceHelper.gs(R.string.ebstopsloop),
+                        Runnable {
+                            fragmentManager?.let { ExtendedBolusDialog().show(it, "Actions") }
+                        }, null)
+                })
             }
         }
         actions_extendedbolus_cancel.setOnClickListener {
@@ -116,7 +120,11 @@ class ActionsFragment : DaggerFragment() {
                 })
             }
         }
-        actions_fill.setOnClickListener { fragmentManager?.let { FillDialog().show(it, "FillDialog") } }
+        actions_fill.setOnClickListener {
+            activity?.let { activity ->
+                protectionCheck.queryProtection(activity, ProtectionCheck.Protection.BOLUS, Runnable { fragmentManager?.let { FillDialog().show(it, "FillDialog") } })
+            }
+        }
         actions_historybrowser.setOnClickListener { startActivity(Intent(context, HistoryBrowseActivity::class.java)) }
         actions_tddstats.setOnClickListener { startActivity(Intent(context, TDDStatsActivity::class.java)) }
         actions_bgcheck.setOnClickListener {

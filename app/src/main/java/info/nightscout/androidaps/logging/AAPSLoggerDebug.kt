@@ -20,12 +20,20 @@ class AAPSLoggerDebug : AAPSLogger {
         Log.d(tag.tag, message)
     }
 
+    override fun debug(tag: LTag, format: String, vararg arguments: Any?) {
+        Log.d(tag.tag, String.format(format, arguments))
+    }
+
     override fun warn(tag: LTag, message: String) {
         Log.w(tag.tag, message)
     }
 
     override fun info(tag: LTag, message: String) {
         Log.i(tag.tag, message)
+    }
+
+    override fun info(tag: LTag, format: String, vararg arguments: Any?) {
+        Log.i(tag.tag, String.format(format, arguments))
     }
 
     override fun error(tag: LTag, message: String) {
@@ -41,8 +49,16 @@ class AAPSLoggerDebug : AAPSLogger {
         Log.e(LTag.CORE.tag, message, throwable)
     }
 
+    override fun error(format: String, vararg arguments: Any?) {
+        Log.e(LTag.CORE.tag, String.format(format, arguments))
+    }
+
     override fun error(tag: LTag, message: String, throwable: Throwable) {
         Log.e(tag.tag, message, throwable)
 
+    }
+
+    override fun error(tag: LTag, format: String, vararg arguments: Any?) {
+        Log.e(tag.tag, String.format(format, arguments))
     }
 }
