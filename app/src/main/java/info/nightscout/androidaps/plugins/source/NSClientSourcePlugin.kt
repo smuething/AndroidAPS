@@ -4,6 +4,9 @@ import android.content.Intent
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.GlucoseValue
+import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
 import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
@@ -14,8 +17,12 @@ import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSSgv
 import info.nightscout.androidaps.utils.JsonHelper.safeGetLong
 import info.nightscout.androidaps.utils.JsonHelper.safeGetString
+import info.nightscout.androidaps.utils.determineSourceSensor
+import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
+import info.nightscout.androidaps.utils.toTrendArrow
+import io.reactivex.disposables.CompositeDisposable
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
@@ -26,7 +33,8 @@ class NSClientSourcePlugin @Inject constructor(
     injector: HasAndroidInjector,
     resourceHelper: ResourceHelper,
     aapsLogger: AAPSLogger,
-    private val sp: SP
+    private val sp: SP,
+    private val repository: AppRepository
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.BGSOURCE)
     .fragmentClass(BGSourceFragment::class.java.name)
@@ -34,6 +42,13 @@ class NSClientSourcePlugin @Inject constructor(
     .description(R.string.description_source_ns_client),
     aapsLogger, resourceHelper, injector
 ), BgSourceInterface {
+
+    private val disposable = CompositeDisposable()
+
+    override fun onStop() {
+        disposable.clear()
+        super.onStop()
+    }
 
     private var lastBGTimeStamp: Long = 0
     private var isAdvancedFilteringEnabled = false
@@ -46,21 +61,21 @@ class NSClientSourcePlugin @Inject constructor(
         if (!isEnabled(PluginType.BGSOURCE) && !sp.getBoolean(R.string.key_ns_autobackfill, true)) return
         val bundles = intent.extras ?: return
         try {
+            val glucoseValues = mutableListOf<CgmSourceTransaction.GlucoseValue>()
             if (bundles.containsKey("sgv")) {
-                val sgvString = bundles.getString("sgv")
-                aapsLogger.debug(LTag.BGSOURCE, "Received NS Data: $sgvString")
-                val sgvJson = JSONObject(sgvString)
-                storeSgv(sgvJson)
+                glucoseValues += JSONObject(bundles.getString("sgv")).toGlucoseValue()
             }
             if (bundles.containsKey("sgvs")) {
                 val sgvString = bundles.getString("sgvs")
                 aapsLogger.debug(LTag.BGSOURCE, "Received NS Data: $sgvString")
                 val jsonArray = JSONArray(sgvString)
                 for (i in 0 until jsonArray.length()) {
-                    val sgvJson = jsonArray.getJSONObject(i)
-                    storeSgv(sgvJson)
+                    glucoseValues += jsonArray.getJSONObject(i).toGlucoseValue()
                 }
             }
+            disposable += repository.runTransaction(CgmSourceTransaction(glucoseValues, emptyList(), null)).subscribe({}, {
+                aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Nightscout App", it)
+            })
         } catch (e: Exception) {
             aapsLogger.error("Unhandled exception", e)
         }
@@ -68,16 +83,23 @@ class NSClientSourcePlugin @Inject constructor(
         sp.putBoolean(R.string.key_ObjectivesbgIsAvailableInNS, true)
     }
 
-    private fun storeSgv(sgvJson: JSONObject) {
-        val nsSgv = NSSgv(sgvJson)
-        val bgReading = BgReading(nsSgv)
-        MainApp.getDbHelper().createIfNotExists(bgReading, "NS")
-        detectSource(safeGetString(sgvJson, "device", "none"), safeGetLong(sgvJson, "mills"))
+    private fun JSONObject.toGlucoseValue() = NSSgv(this).run {
+        val source = getString("device")
+        detectSource(source, mills)
+        CgmSourceTransaction.GlucoseValue(
+            timestamp = mills,
+            value = mgdl.toDouble(),
+            raw = unfiltered.toDouble(),
+            noise = noise.toDouble(),
+            trendArrow = direction.toTrendArrow(),
+            nightscoutId = id,
+            sourceSensor = source.determineSourceSensor()
+        )
     }
 
     private fun detectSource(source: String, timeStamp: Long) {
         if (timeStamp > lastBGTimeStamp) {
-            isAdvancedFilteringEnabled = source.contains("G5 Native") || source.contains("G6 Native") || source.contains("AndroidAPS-DexcomG5") || source.contains("AndroidAPS-DexcomG6")
+            isAdvancedFilteringEnabled = source.contains("G5 Native") || source.contains("G6 Native") || source.contains("AndroidAPS-Dexcom")
             lastBGTimeStamp = timeStamp
         }
     }

@@ -69,6 +69,7 @@ data class GlucoseValue(
         POCTECH_NATIVE,
         MM_600_SERIES,
         EVERSENSE,
-        MEDTRUM_A6
+        MEDTRUM_A6,
+        RANDOM
     }
 }

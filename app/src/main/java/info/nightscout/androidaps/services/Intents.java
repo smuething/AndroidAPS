@@ -30,7 +30,6 @@ public interface Intents {
     String GLIMP_BG = "it.ct.glicemia.ACTION_GLUCOSE_MEASURED";
 
     String DEXCOM_BG = "com.dexcom.cgm.EXTERNAL_BROADCAST";
-    String EVERSENSE_BG = "com.senseonics.AndroidAPSEventSubscriber.BROADCAST";
 
     String POCTECH_BG = "com.china.poctech.data";
     String TOMATO_BG = "com.fanqies.tomatofn.BgEstimate";

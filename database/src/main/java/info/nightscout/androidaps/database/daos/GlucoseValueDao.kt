@@ -16,4 +16,16 @@ internal interface GlucoseValueDao : TraceableDao<GlucoseValue> {
 
     @Query("DELETE FROM $TABLE_GLUCOSE_VALUES")
     override fun deleteAllEntries()
+
+    @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE timestamp = :timestamp AND sourceSensor = :sourceSensor AND referenceId IS NULL")
+    fun findByTimestampAndSensor(timestamp: Long, sourceSensor: GlucoseValue.SourceSensor): GlucoseValue?
+
+    @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE timestamp >= :timestamp AND isValid = 1 AND referenceId IS NULL AND value >= 39 ORDER BY timestamp ASC")
+    fun compatGetBgreadingsDataFromTime(timestamp: Long): Single<List<GlucoseValue>>
+
+    @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE timestamp BETWEEN :start AND :end AND isValid = 1 AND referenceId IS NULL AND value >= 39 ORDER BY timestamp ASC")
+    fun compatGetBgreadingsDataFromTime(start: Long, end: Long): Single<List<GlucoseValue>>
+
+    @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE timestamp >= :timestamp AND isValid = 1 AND referenceId IS NULL ORDER BY timestamp ASC")
+    fun compatGetAllBgreadingsDataFromTime(timestamp: Long): Single<List<GlucoseValue>>
 }

@@ -154,6 +154,7 @@ public class OverviewFragment extends DaggerFragment implements View.OnClickList
     @Inject BuildHelper buildHelper;
     @Inject CommandQueue commandQueue;
     @Inject ProtectionCheck protectionCheck;
+    @Inject DexcomPlugin.DexcomMediator dexcomMediator;
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -869,7 +870,7 @@ public class OverviewFragment extends DaggerFragment implements View.OnClickList
                     calibrationDialog.show(manager, "CalibrationDialog");
                 } else if (dexcom) {
                     try {
-                        String packageName = dexcomPlugin.findDexcomPackageName();
+                        String packageName = dexcomMediator.findDexcomPackageName();
                         if (packageName != null) {
                             Intent i = new Intent("com.dexcom.cgm.activities.MeterEntryActivity");
                             i.setPackage(packageName);
@@ -886,7 +887,7 @@ public class OverviewFragment extends DaggerFragment implements View.OnClickList
                 if (xdrip)
                     openCgmApp("com.eveningoutpost.dexdrip");
                 else if (dexcom) {
-                    String packageName = dexcomPlugin.findDexcomPackageName();
+                    String packageName = dexcomMediator.findDexcomPackageName();
                     if (packageName != null) {
                         openCgmApp(packageName);
                     } else {

@@ -25,7 +25,6 @@ import info.nightscout.androidaps.plugins.general.overview.notifications.Notific
 import info.nightscout.androidaps.plugins.general.smsCommunicator.SmsCommunicatorPlugin;
 import info.nightscout.androidaps.plugins.profile.ns.NSProfilePlugin;
 import info.nightscout.androidaps.plugins.source.DexcomPlugin;
-import info.nightscout.androidaps.plugins.source.EversensePlugin;
 import info.nightscout.androidaps.plugins.source.GlimpPlugin;
 import info.nightscout.androidaps.plugins.source.MM640gPlugin;
 import info.nightscout.androidaps.plugins.source.NSClientSourcePlugin;
@@ -43,7 +42,6 @@ public class DataService extends DaggerIntentService {
     @Inject RxBusWrapper rxBus;
     @Inject SmsCommunicatorPlugin smsCommunicatorPlugin;
     @Inject DexcomPlugin dexcomPlugin;
-    @Inject EversensePlugin eversensePlugin;
     @Inject GlimpPlugin glimpPlugin;
     @Inject MM640gPlugin mm640GPlugin;
     @Inject NSClientSourcePlugin nsClientSourcePlugin;
@@ -79,8 +77,6 @@ public class DataService extends DaggerIntentService {
             poctechPlugin.handleNewData(intent);
         } else if (Intents.TOMATO_BG.equals(action)) {
             tomatoPlugin.handleNewData(intent);
-        } else if (Intents.EVERSENSE_BG.equals(action)) {
-            eversensePlugin.handleNewData(intent);
         } else if (Intents.ACTION_NEW_SGV.equals(action)) {
             nsClientSourcePlugin.handleNewData(intent);
         } else if (Intents.ACTION_NEW_PROFILE.equals(action)) {

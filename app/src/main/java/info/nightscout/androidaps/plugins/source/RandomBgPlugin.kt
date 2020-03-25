@@ -5,6 +5,9 @@ import android.os.Handler
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.GlucoseValue
+import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
 import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
@@ -17,7 +20,9 @@ import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.buildHelper.BuildHelper
 import info.nightscout.androidaps.utils.extensions.isRunningTest
+import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import io.reactivex.disposables.CompositeDisposable
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,7 +35,8 @@ class RandomBgPlugin @Inject constructor(
     resourceHelper: ResourceHelper,
     aapsLogger: AAPSLogger,
     private val virtualPumpPlugin: VirtualPumpPlugin,
-    private val buildHelper: BuildHelper
+    private val buildHelper: BuildHelper,
+    private val repository: AppRepository
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.BGSOURCE)
     .fragmentClass(BGSourceFragment::class.java.name)
@@ -40,6 +46,7 @@ class RandomBgPlugin @Inject constructor(
     aapsLogger, resourceHelper, injector
 ), BgSourceInterface {
 
+    private val disposable = CompositeDisposable()
     private val loopHandler = Handler()
     private lateinit var refreshLoop: Runnable
 
@@ -65,6 +72,7 @@ class RandomBgPlugin @Inject constructor(
 
     override fun onStop() {
         super.onStop()
+        disposable.clear()
         loopHandler.removeCallbacks(refreshLoop)
     }
 
@@ -81,11 +89,16 @@ class RandomBgPlugin @Inject constructor(
         val currentMinute = cal.get(Calendar.MINUTE) + (cal.get(Calendar.HOUR_OF_DAY) % 2) * 60
         val bgMgdl = min + (max - min) + (max - min) * sin(currentMinute / 120.0 * 2 * PI)
 
-        val bgReading = BgReading()
-        bgReading.value = bgMgdl
-        bgReading.date = DateUtil.now()
-        bgReading.raw = bgMgdl
-        MainApp.getDbHelper().createIfNotExists(bgReading, "RandomBG")
-        aapsLogger.debug(LTag.BGSOURCE, "Generated BG: $bgReading")
+        val glucoseValue = CgmSourceTransaction.GlucoseValue(
+            timestamp = DateUtil.now(),
+            value = bgMgdl,
+            raw = bgMgdl,
+            noise = 0.0,
+            trendArrow = GlucoseValue.TrendArrow.NONE,
+            sourceSensor = GlucoseValue.SourceSensor.RANDOM
+        )
+        disposable += repository.runTransaction(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({}, {
+            aapsLogger.error(LTag.BGSOURCE, "Error while saving random values", it)
+        })
     }
 }

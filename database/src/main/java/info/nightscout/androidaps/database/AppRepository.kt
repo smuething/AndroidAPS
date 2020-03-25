@@ -53,4 +53,19 @@ class AppRepository @Inject internal constructor(
             changeSubject.onNext(changes)
         }
     }
+
+    fun compatGetBgreadingsDataFromTime(timestamp: Long, ascending: Boolean) =
+        database.glucoseValueDao.compatGetBgreadingsDataFromTime(timestamp)
+            .map { if (!ascending) it.reversed() else it }
+            .subscribeOn(Schedulers.io())
+
+    fun compatGetBgreadingsDataFromTime(start: Long, end: Long, ascending: Boolean) =
+        database.glucoseValueDao.compatGetBgreadingsDataFromTime(start, end)
+            .map { if (!ascending) it.reversed() else it }
+            .subscribeOn(Schedulers.io())
+
+    fun compatGetAllBgreadingsDataFromTime(timestamp: Long, ascending: Boolean) =
+        database.glucoseValueDao.compatGetAllBgreadingsDataFromTime(timestamp)
+            .map { if (!ascending) it.reversed() else it }
+            .subscribeOn(Schedulers.io())
 }

@@ -10,15 +10,15 @@ import javax.inject.Singleton
 @Module
 open class DatabaseModule {
 
-    @DbFileNameQualifier
+    @DbFileName
     @Provides
     fun dbFileName() = "androidaps.db"
 
     @Provides
     @Singleton
-    internal fun provideAppDatabase(context: Context, @DbFileNameQualifier fileName: String) =
+    internal fun provideAppDatabase(context: Context, @DbFileName fileName: String) =
         Room.databaseBuilder(context, AppDatabase::class.java, fileName).build()
 
     @Qualifier
-    annotation class DbFileNameQualifier
+    annotation class DbFileName
 }

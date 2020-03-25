@@ -15,6 +15,7 @@ import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
+import info.nightscout.androidaps.database.entities.GlucoseValue;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction;
@@ -33,6 +34,8 @@ public class BgReading implements DataPointWithLabelInterface {
     @Inject public DefaultValueHelper defaultValueHelper;
     @Inject public ProfileFunction profileFunction;
     @Inject public ResourceHelper resourceHelper;
+
+    public GlucoseValue backing;
 
     @DatabaseField(id = true)
     public long date;

@@ -26,6 +26,7 @@ import info.nightscout.androidaps.data.DetailedBolusInfo;
 import info.nightscout.androidaps.data.IobTotal;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
+import info.nightscout.androidaps.database.entities.GlucoseValue;
 import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.CareportalEvent;
 import info.nightscout.androidaps.db.DbRequest;
@@ -45,6 +46,7 @@ import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin;
 import info.nightscout.androidaps.utils.BatteryLevel;
 import info.nightscout.androidaps.utils.DateUtil;
+import info.nightscout.androidaps.utils.GlucoseValueUtilsKt;
 import info.nightscout.androidaps.utils.JsonHelper;
 import info.nightscout.androidaps.utils.SP;
 
@@ -368,6 +370,22 @@ public class NSUpload {
         UploadQueue.add(new DbRequest("dbAdd", "treatments", data));
     }
 
+    public static void uploadGlucoseValue(GlucoseValue glucoseValue, String source) {
+        JSONObject data = new JSONObject();
+        try {
+            data.put("device", source);
+            data.put("date", glucoseValue.getTimestamp());
+            data.put("dateString", DateUtil.toISOString(glucoseValue.getTimestamp()));
+            data.put("sgv", glucoseValue.getValue());
+            data.put("direction", GlucoseValueUtilsKt.toText(glucoseValue.getTrendArrow()));
+            data.put("type", "sgv");
+        } catch (JSONException e) {
+            log.error("Unhandled exception", e);
+        }
+        UploadQueue.add(new DbRequest("dbAdd", "entries", data));
+    }
+
+    @Deprecated
     public static void uploadBg(BgReading reading, String source) {
         JSONObject data = new JSONObject();
         try {
@@ -427,6 +445,7 @@ public class NSUpload {
 
     }
 
+    @Deprecated
     public static void sendToXdrip(BgReading bgReading) {
         final String XDRIP_PLUS_NS_EMULATOR = "com.eveningoutpost.dexdrip.NS_EMULATOR";
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);

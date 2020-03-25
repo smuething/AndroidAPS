@@ -5,6 +5,7 @@ import androidx.preference.PreferenceManager
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
+import dagger.Reusable
 import dagger.android.ContributesAndroidInjector
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.MainApp
@@ -17,6 +18,7 @@ import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.interfaces.CommandQueueProvider
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.AAPSLoggerProduction
+import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.aps.loop.APSResult
 import info.nightscout.androidaps.plugins.aps.openAPSAMA.DetermineBasalResultAMA
 import info.nightscout.androidaps.plugins.aps.openAPSMA.DetermineBasalResultMA
@@ -53,6 +55,7 @@ import info.nightscout.androidaps.utils.sharedPreferences.SP
 import info.nightscout.androidaps.utils.sharedPreferences.SPImplementation
 import info.nightscout.androidaps.utils.wizard.BolusWizard
 import info.nightscout.androidaps.utils.wizard.QuickWizardEntry
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module(includes = [AppModule.AppBindings::class])

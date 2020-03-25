@@ -1,27 +1,30 @@
 package info.nightscout.androidaps.plugins.source
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.Constants
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.activities.RequestDexcomPermissionActivity
-import info.nightscout.androidaps.db.BgReading
-import info.nightscout.androidaps.db.CareportalEvent
-import info.nightscout.androidaps.db.Source
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.GlucoseValue.SourceSensor.DEXCOM_G5_NATIVE
+import info.nightscout.androidaps.database.entities.GlucoseValue.SourceSensor.DEXCOM_G6_NATIVE
+import info.nightscout.androidaps.database.entities.GlucoseValue.SourceSensor.DEXCOM_NATIVE_UNKNOWN
+import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
-import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
-import info.nightscout.androidaps.utils.DateUtil
-import info.nightscout.androidaps.utils.T
+import info.nightscout.androidaps.logging.LTag
+import info.nightscout.androidaps.utils.GlucoseValueUploader
+import info.nightscout.androidaps.utils.XDripBroadcast
+import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import org.json.JSONObject
+import info.nightscout.androidaps.utils.toTrendArrow
+import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,9 +32,12 @@ import javax.inject.Singleton
 class DexcomPlugin @Inject constructor(
     injector: HasAndroidInjector,
     private val sp: SP,
-    private val mainApp: MainApp,
     resourceHelper: ResourceHelper,
-    aapsLogger: AAPSLogger
+    aapsLogger: AAPSLogger,
+    private val repository: AppRepository,
+    private val dexcomMediator: DexcomMediator,
+    private val broadcastToXDrip: XDripBroadcast,
+    private val uploadtoNS: GlucoseValueUploader
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.BGSOURCE)
     .fragmentClass(BGSourceFragment::class.java.name)
@@ -43,97 +49,70 @@ class DexcomPlugin @Inject constructor(
     aapsLogger, resourceHelper, injector
 ), BgSourceInterface {
 
+    private val disposable = CompositeDisposable()
+
     override fun advancedFilteringSupported(): Boolean {
         return true
     }
 
     override fun onStart() {
         super.onStart()
-        if (ContextCompat.checkSelfPermission(mainApp, PERMISSION) != PackageManager.PERMISSION_GRANTED) {
-            val intent = Intent(mainApp, RequestDexcomPermissionActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            mainApp.startActivity(intent)
-        }
+        dexcomMediator.requestPermissionIfNeeded()
     }
 
-    fun findDexcomPackageName(): String? {
-        val packageManager = mainApp.packageManager
-        for (packageInfo in packageManager.getInstalledPackages(0)) {
-            if (PACKAGE_NAMES.contains(packageInfo.packageName)) return packageInfo.packageName
-        }
-        return null
+    override fun onStop() {
+        disposable.clear()
+        super.onStop()
     }
 
     override fun handleNewData(intent: Intent) {
         if (!isEnabled(PluginType.BGSOURCE)) return
         try {
             val sensorType = intent.getStringExtra("sensorType") ?: ""
-            val glucoseValues = intent.getBundleExtra("glucoseValues")
-            for (i in 0 until glucoseValues.size()) {
-                glucoseValues.getBundle(i.toString())?.let { glucoseValue ->
-                    val bgReading = BgReading()
-                    bgReading.value = glucoseValue.getInt("glucoseValue").toDouble()
-                    bgReading.direction = glucoseValue.getString("trendArrow")
-                    bgReading.date = glucoseValue.getLong("timestamp") * 1000
-                    bgReading.raw = 0.0
-                    if (MainApp.getDbHelper().createIfNotExists(bgReading, "Dexcom$sensorType")) {
-                        if (sp.getBoolean(R.string.key_dexcomg5_nsupload, false)) {
-                            NSUpload.uploadBg(bgReading, "AndroidAPS-Dexcom$sensorType")
-                        }
-                        if (sp.getBoolean(R.string.key_dexcomg5_xdripupload, false)) {
-                            NSUpload.sendToXdrip(bgReading)
-                        }
-                    }
-                }
+            val sourceSensor = when (sensorType) {
+                "G6" -> DEXCOM_G6_NATIVE
+                "G5" -> DEXCOM_G5_NATIVE
+                else -> DEXCOM_NATIVE_UNKNOWN
+            }
+            val glucoseValuesBundle = intent.getBundleExtra("glucoseValues")!!
+            val glucoseValues = mutableListOf<CgmSourceTransaction.GlucoseValue>()
+            for (i in 0 until glucoseValuesBundle.size()) {
+                val glucoseValueBundle = glucoseValuesBundle.getBundle(i.toString())!!
+                glucoseValues += CgmSourceTransaction.GlucoseValue(
+                    timestamp = glucoseValueBundle.getLong("timestamp") * 1000,
+                    value = glucoseValueBundle.getInt("glucoseValue").toDouble(),
+                    noise = null,
+                    raw = null,
+                    trendArrow = glucoseValueBundle.getString("trendArrow")!!.toTrendArrow(),
+                    sourceSensor = sourceSensor
+                )
             }
             val meters = intent.getBundleExtra("meters")
+            val calibrations = mutableListOf<CgmSourceTransaction.Calibration>()
             for (i in 0 until meters.size()) {
-                val meter = meters.getBundle(i.toString())
-                meter?.let {
-                    val timestamp = it.getLong("timestamp") * 1000
-                    val now = DateUtil.now()
-                    if (timestamp > now - T.months(1).msecs() && timestamp < now)
-                        if (MainApp.getDbHelper().getCareportalEventFromTimestamp(timestamp) == null) {
-                            val jsonObject = JSONObject()
-                            jsonObject.put("enteredBy", "AndroidAPS-Dexcom$sensorType")
-                            jsonObject.put("created_at", DateUtil.toISOString(timestamp))
-                            jsonObject.put("eventType", CareportalEvent.BGCHECK)
-                            jsonObject.put("glucoseType", "Finger")
-                            jsonObject.put("glucose", meter.getInt("meterValue"))
-                            jsonObject.put("units", Constants.MGDL)
-
-                            val careportalEvent = CareportalEvent()
-                            careportalEvent.date = timestamp
-                            careportalEvent.source = Source.USER
-                            careportalEvent.eventType = CareportalEvent.BGCHECK
-                            careportalEvent.json = jsonObject.toString()
-                            MainApp.getDbHelper().createOrUpdate(careportalEvent)
-                            NSUpload.uploadCareportalEntryToNS(jsonObject)
-                        }
-                }
+                val meter = meters.getBundle(i.toString())!!
+                calibrations.add(CgmSourceTransaction.Calibration(meter.getLong("timestamp") * 1000,
+                    meter.getInt("meterValue").toDouble()))
             }
-            if (sp.getBoolean(R.string.key_dexcom_lognssensorchange, false) && intent.hasExtra("sensorInsertionTime")) {
-                intent.extras?.let {
-                    val sensorInsertionTime = it.getLong("sensorInsertionTime") * 1000
-                    val now = DateUtil.now()
-                    if (sensorInsertionTime > now - T.months(1).msecs() && sensorInsertionTime < now)
-                        if (MainApp.getDbHelper().getCareportalEventFromTimestamp(sensorInsertionTime) == null) {
-                            val jsonObject = JSONObject()
-                            jsonObject.put("enteredBy", "AndroidAPS-Dexcom$sensorType")
-                            jsonObject.put("created_at", DateUtil.toISOString(sensorInsertionTime))
-                            jsonObject.put("eventType", CareportalEvent.SENSORCHANGE)
-                            val careportalEvent = CareportalEvent()
-                            careportalEvent.date = sensorInsertionTime
-                            careportalEvent.source = Source.USER
-                            careportalEvent.eventType = CareportalEvent.SENSORCHANGE
-                            careportalEvent.json = jsonObject.toString()
-                            MainApp.getDbHelper().createOrUpdate(careportalEvent)
-                            NSUpload.uploadCareportalEntryToNS(jsonObject)
-                        }
+            val sensorStartTime = if (sp.getBoolean(R.string.key_dexcom_lognssensorchange, false)) {
+                if (intent.hasExtra("sensorInsertionTime")) {
+                    intent.getLongExtra("sensorInsertionTime", 0) * 1000
+                } else {
+                    null
                 }
+            } else {
+                null
             }
-        } catch (e: Exception) {
-            aapsLogger.error("Error while processing intent from Dexcom App", e)
+            disposable += repository.runTransactionForResult(CgmSourceTransaction(glucoseValues, calibrations, sensorStartTime)).subscribe({ savedValues ->
+                savedValues.forEach {
+                    uploadtoNS(it, "AndroidAPS-$sensorType")
+                    broadcastToXDrip(it)
+                }
+            }, {
+                aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Dexcom App", it)
+            })
+        } catch (e: Throwable) {
+            aapsLogger.error(LTag.BGSOURCE, "Error while processing intent from Dexcom App", e)
         }
     }
 
@@ -143,5 +122,23 @@ class DexcomPlugin @Inject constructor(
             "com.dexcom.g6.region1.mmol", "com.dexcom.g6.region2.mgdl",
             "com.dexcom.g6.region3.mgdl", "com.dexcom.g6.region3.mmol")
         const val PERMISSION = "com.dexcom.cgm.EXTERNAL_PERMISSION"
+    }
+
+    class DexcomMediator @Inject constructor(val context: Context) {
+        fun requestPermissionIfNeeded() {
+            if (ContextCompat.checkSelfPermission(context, PERMISSION) != PackageManager.PERMISSION_GRANTED) {
+                val intent = Intent(context, RequestDexcomPermissionActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+        }
+
+        fun findDexcomPackageName(): String? {
+            val packageManager = context.packageManager
+            for (packageInfo in packageManager.getInstalledPackages(0)) {
+                if (PACKAGE_NAMES.contains(packageInfo.packageName)) return packageInfo.packageName
+            }
+            return null
+        }
     }
 }

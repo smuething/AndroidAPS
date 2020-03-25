@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -57,6 +58,7 @@ import info.nightscout.androidaps.plugins.pump.insight.database.InsightBolusID;
 import info.nightscout.androidaps.plugins.pump.insight.database.InsightHistoryOffset;
 import info.nightscout.androidaps.plugins.pump.insight.database.InsightPumpID;
 import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin;
+import info.nightscout.androidaps.utils.GlucoseValueUtilsKt;
 import info.nightscout.androidaps.utils.JsonHelper;
 import info.nightscout.androidaps.utils.PercentageSplitter;
 import info.nightscout.androidaps.utils.ToastUtils;
@@ -398,7 +400,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         }
     }
 
-    private static void scheduleBgChange(@Nullable final BgReading bgReading) {
+    public static void scheduleBgChange(@Nullable final BgReading bgReading) {
         class PostRunnable implements Runnable {
             public void run() {
                 if (L.isEnabled(L.DATABASE))
@@ -418,54 +420,21 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     }
 
     public List<BgReading> getBgreadingsDataFromTime(long mills, boolean ascending) {
-        try {
-            Dao<BgReading, Long> daoBgreadings = getDaoBgReadings();
-            List<BgReading> bgReadings;
-            QueryBuilder<BgReading, Long> queryBuilder = daoBgreadings.queryBuilder();
-            queryBuilder.orderBy("date", ascending);
-            Where where = queryBuilder.where();
-            where.ge("date", mills).and().ge("value", 39).and().eq("isValid", true);
-            PreparedQuery<BgReading> preparedQuery = queryBuilder.prepare();
-            bgReadings = daoBgreadings.query(preparedQuery);
-            return bgReadings;
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        return new ArrayList<>();
+        return MainApp.instance().repository.compatGetBgreadingsDataFromTime(mills, ascending)
+                .map(GlucoseValueUtilsKt::convertToBGReadings)
+                .blockingGet();
     }
 
     public List<BgReading> getBgreadingsDataFromTime(long start, long end, boolean ascending) {
-        try {
-            Dao<BgReading, Long> daoBgreadings = getDaoBgReadings();
-            List<BgReading> bgReadings;
-            QueryBuilder<BgReading, Long> queryBuilder = daoBgreadings.queryBuilder();
-            queryBuilder.orderBy("date", ascending);
-            Where where = queryBuilder.where();
-            where.between("date", start, end).and().ge("value", 39).and().eq("isValid", true);
-            PreparedQuery<BgReading> preparedQuery = queryBuilder.prepare();
-            bgReadings = daoBgreadings.query(preparedQuery);
-            return bgReadings;
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        return new ArrayList<>();
+        return MainApp.instance().repository.compatGetBgreadingsDataFromTime(start, end, ascending)
+                .map(GlucoseValueUtilsKt::convertToBGReadings)
+                .blockingGet();
     }
 
     public List<BgReading> getAllBgreadingsDataFromTime(long mills, boolean ascending) {
-        try {
-            Dao<BgReading, Long> daoBgreadings = getDaoBgReadings();
-            List<BgReading> bgReadings;
-            QueryBuilder<BgReading, Long> queryBuilder = daoBgreadings.queryBuilder();
-            queryBuilder.orderBy("date", ascending);
-            Where where = queryBuilder.where();
-            where.ge("date", mills);
-            PreparedQuery<BgReading> preparedQuery = queryBuilder.prepare();
-            bgReadings = daoBgreadings.query(preparedQuery);
-            return bgReadings;
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        return new ArrayList<BgReading>();
+        return MainApp.instance().repository.compatGetAllBgreadingsDataFromTime(mills, ascending)
+                .map(GlucoseValueUtilsKt::convertToBGReadings)
+                .blockingGet();
     }
 
     // -------------------  TDD handling -----------------------

@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.android.support.DaggerFragment
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.transactions.InvalidateGlucoseValueTransaction
 import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
@@ -21,6 +23,7 @@ import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.OKDialog
 import info.nightscout.androidaps.utils.T
+import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -32,6 +35,7 @@ class BGSourceFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var profileFunction: ProfileFunction
+    @Inject lateinit var repository: AppRepository
 
     private val disposable = CompositeDisposable()
     private val MILLS_TO_THE_PAST = T.hours(12).msecs()
@@ -105,9 +109,7 @@ class BGSourceFragment : DaggerFragment() {
                     activity?.let { activity ->
                         val text = DateUtil.dateAndTimeString(bgReading.date) + "\n" + bgReading.valueToUnitsToString(profileFunction.getUnits())
                         OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.removerecord), text, Runnable {
-                            bgReading.isValid = false
-                            MainApp.getDbHelper().update(bgReading)
-                            updateGUI()
+                            disposable += repository.runTransaction(InvalidateGlucoseValueTransaction(bgReading.backing.id)).subscribe()
                         })
                     }
                 }

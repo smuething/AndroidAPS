@@ -32,7 +32,10 @@ import dagger.android.DaggerApplication;
 import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.database.AppRepository;
+import info.nightscout.androidaps.database.entities.GlucoseValue;
+import info.nightscout.androidaps.database.interfaces.DBEntry;
 import info.nightscout.androidaps.database.transactions.VersionChangeTransaction;
+import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.DatabaseHelper;
 import info.nightscout.androidaps.dependencyInjection.DaggerAppComponent;
 import info.nightscout.androidaps.logging.AAPSLogger;
@@ -85,7 +88,6 @@ import info.nightscout.androidaps.plugins.sensitivity.SensitivityOref0Plugin;
 import info.nightscout.androidaps.plugins.sensitivity.SensitivityOref1Plugin;
 import info.nightscout.androidaps.plugins.sensitivity.SensitivityWeightedAveragePlugin;
 import info.nightscout.androidaps.plugins.source.DexcomPlugin;
-import info.nightscout.androidaps.plugins.source.EversensePlugin;
 import info.nightscout.androidaps.plugins.source.GlimpPlugin;
 import info.nightscout.androidaps.plugins.source.MM640gPlugin;
 import info.nightscout.androidaps.plugins.source.NSClientSourcePlugin;
@@ -102,10 +104,13 @@ import info.nightscout.androidaps.receivers.TimeDateOrTZChangeReceiver;
 import info.nightscout.androidaps.services.Intents;
 import info.nightscout.androidaps.utils.ActivityMonitor;
 import info.nightscout.androidaps.utils.FabricPrivacy;
+import info.nightscout.androidaps.utils.GlucoseValueUtilsKt;
 import info.nightscout.androidaps.utils.LocaleHelper;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
 import io.fabric.sdk.android.Fabric;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 
 public class MainApp extends DaggerApplication {
 
@@ -122,8 +127,9 @@ public class MainApp extends DaggerApplication {
     private String CHANNEL_ID = "AndroidAPS-Ongoing"; // TODO: move to OngoingNotificationProvider (and dagger)
     private int ONGOING_NOTIFICATION_ID = 4711; // TODO: move to OngoingNotificationProvider (and dagger)
     private Notification notification; // TODO: move to OngoingNotificationProvider (and dagger)
+    private CompositeDisposable disposable = new CompositeDisposable();
 
-    @Inject AppRepository repository;
+    @Inject public AppRepository repository;
     @Inject PluginStore pluginStore;
     @Inject public HasAndroidInjector injector;
     @Inject AAPSLogger aapsLogger;
@@ -172,7 +178,6 @@ public class MainApp extends DaggerApplication {
     @Inject SignatureVerifierPlugin signatureVerifierPlugin;
     @Inject StorageConstraintPlugin storageConstraintPlugin;
     @Inject DexcomPlugin dexcomPlugin;
-    @Inject EversensePlugin eversensePlugin;
     @Inject GlimpPlugin glimpPlugin;
     @Inject MaintenancePlugin maintenancePlugin;
     @Inject MM640gPlugin mM640GPlugin;
@@ -199,7 +204,7 @@ public class MainApp extends DaggerApplication {
             gitRemote = null;
             commitHash = null;
         }
-        repository.runTransaction(new VersionChangeTransaction(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, gitRemote, commitHash)).subscribe();
+        disposable.add(repository.runTransaction(new VersionChangeTransaction(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, gitRemote, commitHash)).subscribe());
 
         aapsLogger.debug("onCreate");
         sInstance = this;
@@ -207,6 +212,14 @@ public class MainApp extends DaggerApplication {
         LocaleHelper.INSTANCE.update(this);
         generateEmptyNotification();
         sDatabaseHelper = OpenHelperManager.getHelper(sInstance, DatabaseHelper.class);
+
+        disposable.add(repository.getChangeObservable().observeOn(AndroidSchedulers.mainThread()).subscribe((entries) -> {
+            GlucoseValue changedGlucoseValue = null;
+            for (DBEntry entry : entries) {
+                if (entry instanceof GlucoseValue) changedGlucoseValue = (GlucoseValue) entry;
+            }
+            if (changedGlucoseValue != null) getDbHelper().scheduleBgChange(GlucoseValueUtilsKt.convertToBGReading(changedGlucoseValue));
+        }));
 
 /* TODO: put back
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
@@ -282,7 +295,6 @@ public class MainApp extends DaggerApplication {
         pluginStore.add(dexcomPlugin);
         pluginStore.add(poctechPlugin);
         pluginStore.add(tomatoPlugin);
-        pluginStore.add(eversensePlugin);
         pluginStore.add(randomBgPlugin);
         if (!Config.NSCLIENT) pluginStore.add(smsCommunicatorPlugin);
         pluginStore.add(foodPlugin);
