@@ -3,11 +3,13 @@ package info.nightscout.androidaps.dependencyInjection
 import android.content.Context
 import androidx.preference.PreferenceManager
 import dagger.Binds
+import dagger.Lazy
 import dagger.Module
 import dagger.Provides
 import dagger.Reusable
 import dagger.android.ContributesAndroidInjector
 import dagger.android.HasAndroidInjector
+import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.data.Profile
 import info.nightscout.androidaps.data.ProfileStore
@@ -16,6 +18,7 @@ import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.db.ProfileSwitch
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.interfaces.CommandQueueProvider
+import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.AAPSLoggerProduction
 import info.nightscout.androidaps.logging.LTag
@@ -58,7 +61,7 @@ import info.nightscout.androidaps.utils.wizard.QuickWizardEntry
 import javax.inject.Named
 import javax.inject.Singleton
 
-@Module(includes = [AppModule.AppBindings::class])
+@Module(includes = [AppModule.AppBindings::class, PluginsModule::class])
 open class AppModule {
 
     @Provides
@@ -89,6 +92,18 @@ open class AppModule {
             AAPSLoggerProduction()
         }
  */
+    }
+
+    @Provides
+    fun providesPlugins(@PluginsModule.AllConfigs allConfigs: Map<@JvmSuppressWildcards Int, @JvmSuppressWildcards PluginBase>,
+                        @PluginsModule.PumpDriver pumpDrivers: Lazy<Map<@JvmSuppressWildcards Int, @JvmSuppressWildcards PluginBase>>,
+                        @PluginsModule.NotNSClient notNsClient: Lazy<Map<@JvmSuppressWildcards Int, @JvmSuppressWildcards PluginBase>>,
+                        @PluginsModule.APS aps: Lazy<Map<@JvmSuppressWildcards Int, @JvmSuppressWildcards PluginBase>>): List<@JvmSuppressWildcards PluginBase> {
+        val plugins = allConfigs.toMutableMap()
+        if (Config.PUMPDRIVERS) plugins += pumpDrivers.get()
+        if (Config.APS) plugins += aps.get()
+        if (!Config.NSCLIENT) plugins += notNsClient.get()
+        return plugins.toList().sortedBy { it.first }.map { it.second }
     }
 
     @Module

@@ -25,6 +25,8 @@ import net.danlew.android.joda.JodaTimeAndroid;
 
 import org.json.JSONException;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import dagger.android.AndroidInjector;
@@ -38,6 +40,7 @@ import info.nightscout.androidaps.database.transactions.VersionChangeTransaction
 import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.DatabaseHelper;
 import info.nightscout.androidaps.dependencyInjection.DaggerAppComponent;
+import info.nightscout.androidaps.interfaces.PluginBase;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin;
@@ -140,59 +143,9 @@ public class MainApp extends DaggerApplication {
     @Inject SP sp;
     @Inject ProfileFunction profileFunction;
 
-    @Inject ActionsPlugin actionsPlugin;
-    @Inject AutomationPlugin automationPlugin;
-    @Inject ComboPlugin comboPlugin;
-    @Inject CareportalPlugin careportalPlugin;
     @Inject ConfigBuilderPlugin configBuilderPlugin;
-    @Inject DanaRPlugin danaRPlugin;
-    @Inject DanaRSPlugin danaRSPlugin;
-    @Inject DanaRv2Plugin danaRv2Plugin;
-    @Inject DanaRKoreanPlugin danaRKoreanPlugin;
-    @Inject DataBroadcastPlugin dataBroadcastPlugin;
-    @Inject DstHelperPlugin dstHelperPlugin;
-    @Inject FoodPlugin foodPlugin;
-    @Inject InsulinOrefFreePeakPlugin insulinOrefFreePeakPlugin;
-    @Inject InsulinOrefRapidActingPlugin insulinOrefRapidActingPlugin;
-    @Inject InsulinOrefUltraRapidActingPlugin insulinOrefUltraRapidActingPlugin;
-    @Inject IobCobCalculatorPlugin iobCobCalculatorPlugin;
-    @Inject LocalInsightPlugin localInsightPlugin;
-    @Inject LocalProfilePlugin localProfilePlugin;
-    @Inject LoopPlugin loopPlugin;
-    @Inject MedtronicPumpPlugin medtronicPumpPlugin;
-    @Inject MDIPlugin mdiPlugin;
-    @Inject NSProfilePlugin nsProfilePlugin;
-    @Inject ObjectivesPlugin objectivesPlugin;
-    @Inject SafetyPlugin safetyPlugin;
-    @Inject SmsCommunicatorPlugin smsCommunicatorPlugin;
-    @Inject OpenAPSMAPlugin openAPSMAPlugin;
-    @Inject OpenAPSAMAPlugin openAPSAMAPlugin;
-    @Inject OpenAPSSMBPlugin openAPSSMBPlugin;
-    @Inject OverviewPlugin overviewPlugin;
-    @Inject PersistentNotificationPlugin persistentNotificationPlugin;
-    @Inject RandomBgPlugin randomBgPlugin;
-    @Inject SensitivityOref1Plugin sensitivityOref1Plugin;
-    @Inject SensitivityAAPSPlugin sensitivityAAPSPlugin;
-    @Inject SensitivityOref0Plugin sensitivityOref0Plugin;
-    @Inject SensitivityWeightedAveragePlugin sensitivityWeightedAveragePlugin;
-    @Inject SignatureVerifierPlugin signatureVerifierPlugin;
-    @Inject StorageConstraintPlugin storageConstraintPlugin;
-    @Inject DexcomPlugin dexcomPlugin;
-    @Inject GlimpPlugin glimpPlugin;
-    @Inject MaintenancePlugin maintenancePlugin;
-    @Inject MM640gPlugin mM640GPlugin;
-    @Inject NSClientPlugin nsClientPlugin;
-    @Inject NSClientSourcePlugin nSClientSourcePlugin;
-    @Inject PoctechPlugin poctechPlugin;
-    @Inject TomatoPlugin tomatoPlugin;
-    @Inject XdripPlugin xdripPlugin;
-    @Inject StatusLinePlugin statusLinePlugin;
-    @Inject TidepoolPlugin tidepoolPlugin;
-    @Inject TreatmentsPlugin treatmentsPlugin;
-    @Inject VirtualPumpPlugin virtualPumpPlugin;
-    @Inject VersionCheckerPlugin versionCheckerPlugin;
-    @Inject WearPlugin wearPlugin;
     @Inject KeepAliveReceiver.KeepAliveManager keepAliveManager;
+    @Inject List<PluginBase> plugins;
 
     @Override
     public void onCreate() {
@@ -256,61 +209,7 @@ public class MainApp extends DaggerApplication {
         versionCheckersUtils.triggerCheckVersion();
 
         // Register all tabs in app here
-        pluginStore.add(overviewPlugin);
-        pluginStore.add(iobCobCalculatorPlugin);
-        if (!Config.NSCLIENT) pluginStore.add(actionsPlugin);
-        pluginStore.add(insulinOrefRapidActingPlugin);
-        pluginStore.add(insulinOrefUltraRapidActingPlugin);
-        pluginStore.add(insulinOrefFreePeakPlugin);
-        pluginStore.add(sensitivityOref0Plugin);
-        pluginStore.add(sensitivityAAPSPlugin);
-        pluginStore.add(sensitivityWeightedAveragePlugin);
-        pluginStore.add(sensitivityOref1Plugin);
-        if (Config.PUMPDRIVERS) pluginStore.add(danaRPlugin);
-        if (Config.PUMPDRIVERS) pluginStore.add(danaRKoreanPlugin);
-        if (Config.PUMPDRIVERS) pluginStore.add(danaRv2Plugin);
-        if (Config.PUMPDRIVERS) pluginStore.add(danaRSPlugin);
-        if (Config.PUMPDRIVERS) pluginStore.add(localInsightPlugin);
-        if (Config.PUMPDRIVERS) pluginStore.add(comboPlugin);
-        if (Config.PUMPDRIVERS) pluginStore.add(medtronicPumpPlugin);
-        if (!Config.NSCLIENT) pluginStore.add(mdiPlugin);
-        if (!Config.NSCLIENT) pluginStore.add(virtualPumpPlugin);
-        if (Config.NSCLIENT) pluginStore.add(careportalPlugin);
-        if (Config.APS) pluginStore.add(loopPlugin);
-        if (Config.APS) pluginStore.add(openAPSMAPlugin);
-        if (Config.APS) pluginStore.add(openAPSAMAPlugin);
-        if (Config.APS) pluginStore.add(openAPSSMBPlugin);
-        pluginStore.add(nsProfilePlugin);
-        if (!Config.NSCLIENT) pluginStore.add(localProfilePlugin);
-        pluginStore.add(treatmentsPlugin);
-        if (!Config.NSCLIENT) pluginStore.add(safetyPlugin);
-        if (!Config.NSCLIENT) pluginStore.add(versionCheckerPlugin);
-        if (Config.APS) pluginStore.add(storageConstraintPlugin);
-        if (Config.APS) pluginStore.add(signatureVerifierPlugin);
-        if (Config.APS) pluginStore.add(objectivesPlugin);
-        pluginStore.add(xdripPlugin);
-        pluginStore.add(nSClientSourcePlugin);
-        pluginStore.add(mM640GPlugin);
-        pluginStore.add(glimpPlugin);
-        pluginStore.add(dexcomPlugin);
-        pluginStore.add(poctechPlugin);
-        pluginStore.add(tomatoPlugin);
-        pluginStore.add(randomBgPlugin);
-        if (!Config.NSCLIENT) pluginStore.add(smsCommunicatorPlugin);
-        pluginStore.add(foodPlugin);
-
-        pluginStore.add(wearPlugin);
-        pluginStore.add(statusLinePlugin);
-        pluginStore.add(persistentNotificationPlugin);
-        pluginStore.add(nsClientPlugin);
-//            if (engineeringMode) pluginsList.add(tidepoolPlugin);
-        pluginStore.add(maintenancePlugin);
-        pluginStore.add(automationPlugin);
-        pluginStore.add(dstHelperPlugin);
-        pluginStore.add(dataBroadcastPlugin);
-
-        pluginStore.add(configBuilderPlugin);
-
+        pluginStore.setPlugins(plugins);
         configBuilderPlugin.initialize();
 
         NSUpload.uploadAppStart();
