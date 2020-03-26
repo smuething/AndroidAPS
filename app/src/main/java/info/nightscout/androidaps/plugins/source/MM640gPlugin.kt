@@ -51,44 +51,41 @@ class MM640gPlugin @Inject constructor(
 
     override fun handleNewData(intent: Intent) {
         if (!isEnabled(PluginType.BGSOURCE)) return
-        try {
-            val bundle = intent.extras ?: return
-            val collection = bundle.getString("collection") ?: return
-            if (collection == "entries") {
-                val data = bundle.getString("data")
-                aapsLogger.debug(LTag.BGSOURCE, "Received MM640g Data: $data")
-                if (data != null && data.isNotEmpty()) {
-                    val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
-                    val jsonArray = JSONArray(data)
-                    for (i in 0 until jsonArray.length()) {
-                        val jsonObject = jsonArray.getJSONObject(i)
-                        when (val type = jsonObject.getString("type")) {
-                            "sgv" -> {
-                                glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
-                                    timestamp = jsonObject.getLong("date"),
-                                    value = jsonObject.getDouble("sgv"),
-                                    raw = jsonObject.getDouble("sgv"),
-                                    noise = null,
-                                    trendArrow = jsonObject.getString("direction").toTrendArrow(),
-                                    sourceSensor = GlucoseValue.SourceSensor.MM_600_SERIES
-                                )
-                            }
-                            else  -> aapsLogger.debug(LTag.BGSOURCE, "Unknown entries type: $type")
+        val bundle = intent.extras ?: return
+        val collection = bundle.getString("collection") ?: return
+        if (collection == "entries") {
+            val data = bundle.getString("data")
+            aapsLogger.debug(LTag.BGSOURCE, "Received MM640g Data: $data")
+            if (data != null && data.isNotEmpty()) {
+                val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
+                val jsonArray = JSONArray(data)
+                for (i in 0 until jsonArray.length()) {
+                    val jsonObject = jsonArray.getJSONObject(i)
+                    when (val type = jsonObject.getString("type")) {
+                        "sgv" -> {
+                            glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
+                                timestamp = jsonObject.getLong("date"),
+                                value = jsonObject.getDouble("sgv"),
+                                raw = jsonObject.getDouble("sgv"),
+                                noise = null,
+                                trendArrow = jsonObject.getString("direction").toTrendArrow(),
+                                sourceSensor = GlucoseValue.SourceSensor.MM_600_SERIES
+                            )
                         }
-                    }
 
-                    disposable += repository.runTransactionForResult(CgmSourceTransaction(glucoseValues, emptyList(), null)).subscribe({
-                        it.forEach {
-                            broadcastToXDrip(it)
-                            uploadToNS(it, "AndroidAPS-Poctech")
-                        }
-                    }, {
-                        aapsLogger.error(LTag.BGSOURCE, "Error while saving values from MM640G (alike) App", it)
-                    })
+                        else  -> aapsLogger.debug(LTag.BGSOURCE, "Unknown entries type: $type")
+                    }
                 }
+
+                disposable += repository.runTransactionForResult(CgmSourceTransaction(glucoseValues, emptyList(), null)).subscribe({
+                    it.forEach {
+                        broadcastToXDrip(it)
+                        uploadToNS(it, "AndroidAPS-Poctech")
+                    }
+                }, {
+                    aapsLogger.error(LTag.BGSOURCE, "Error while saving values from MM640G (alike) App", it)
+                })
             }
-        } catch (e: Throwable) {
-            aapsLogger.error(LTag.BGSOURCE, "Error while processing intent from MM640G (alike) App", e)
         }
     }
 }

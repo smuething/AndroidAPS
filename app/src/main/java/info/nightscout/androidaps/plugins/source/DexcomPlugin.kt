@@ -69,54 +69,50 @@ class DexcomPlugin @Inject constructor(
 
     override fun handleNewData(intent: Intent) {
         if (!isEnabled(PluginType.BGSOURCE)) return
-        try {
-            val sensorType = intent.getStringExtra("sensorType") ?: ""
-            val sourceSensor = when (sensorType) {
-                "G6" -> DEXCOM_G6_NATIVE
-                "G5" -> DEXCOM_G5_NATIVE
-                else -> DEXCOM_NATIVE_UNKNOWN
-            }
-            val glucoseValuesBundle = intent.getBundleExtra("glucoseValues")!!
-            val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
-            for (i in 0 until glucoseValuesBundle.size()) {
-                val glucoseValueBundle = glucoseValuesBundle.getBundle(i.toString())!!
-                glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
-                    timestamp = glucoseValueBundle.getLong("timestamp") * 1000,
-                    value = glucoseValueBundle.getInt("glucoseValue").toDouble(),
-                    noise = null,
-                    raw = null,
-                    trendArrow = glucoseValueBundle.getString("trendArrow")!!.toTrendArrow(),
-                    sourceSensor = sourceSensor
-                )
-            }
-            val meters = intent.getBundleExtra("meters")
-            val calibrations = mutableListOf<CgmSourceTransaction.Calibration>()
-            for (i in 0 until meters.size()) {
-                meters.getBundle(i.toString())?.let {
-                    val timestamp = it.getLong("timestamp") * 1000
-                    val now = DateUtil.now()
-                    if (timestamp > now - T.months(1).msecs() && timestamp < now) {
-                        calibrations.add(CgmSourceTransaction.Calibration(it.getLong("timestamp") * 1000,
-                            it.getInt("meterValue").toDouble()))
-                    }
-                }
-            }
-            val sensorStartTime = if (sp.getBoolean(R.string.key_dexcom_lognssensorchange, false) && intent.hasExtra("sensorInsertionTime")) {
-                intent.getLongExtra("sensorInsertionTime", 0) * 1000
-            } else {
-                null
-            }
-            disposable += repository.runTransactionForResult(CgmSourceTransaction(glucoseValues, calibrations, sensorStartTime)).subscribe({ savedValues ->
-                savedValues.forEach {
-                    uploadtoNS(it, "AndroidAPS-$sensorType")
-                    broadcastToXDrip(it)
-                }
-            }, {
-                aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Dexcom App", it)
-            })
-        } catch (e: Throwable) {
-            aapsLogger.error(LTag.BGSOURCE, "Error while processing intent from Dexcom App", e)
+        val sensorType = intent.getStringExtra("sensorType") ?: ""
+        val sourceSensor = when (sensorType) {
+            "G6" -> DEXCOM_G6_NATIVE
+            "G5" -> DEXCOM_G5_NATIVE
+            else -> DEXCOM_NATIVE_UNKNOWN
         }
+        val glucoseValuesBundle = intent.getBundleExtra("glucoseValues")!!
+        val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
+        for (i in 0 until glucoseValuesBundle.size()) {
+            val glucoseValueBundle = glucoseValuesBundle.getBundle(i.toString())!!
+            glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
+                timestamp = glucoseValueBundle.getLong("timestamp") * 1000,
+                value = glucoseValueBundle.getInt("glucoseValue").toDouble(),
+                noise = null,
+                raw = null,
+                trendArrow = glucoseValueBundle.getString("trendArrow")!!.toTrendArrow(),
+                sourceSensor = sourceSensor
+            )
+        }
+        val meters = intent.getBundleExtra("meters")
+        val calibrations = mutableListOf<CgmSourceTransaction.Calibration>()
+        for (i in 0 until meters.size()) {
+            meters.getBundle(i.toString())?.let {
+                val timestamp = it.getLong("timestamp") * 1000
+                val now = DateUtil.now()
+                if (timestamp > now - T.months(1).msecs() && timestamp < now) {
+                    calibrations.add(CgmSourceTransaction.Calibration(it.getLong("timestamp") * 1000,
+                        it.getInt("meterValue").toDouble()))
+                }
+            }
+        }
+        val sensorStartTime = if (sp.getBoolean(R.string.key_dexcom_lognssensorchange, false) && intent.hasExtra("sensorInsertionTime")) {
+            intent.getLongExtra("sensorInsertionTime", 0) * 1000
+        } else {
+            null
+        }
+        disposable += repository.runTransactionForResult(CgmSourceTransaction(glucoseValues, calibrations, sensorStartTime)).subscribe({ savedValues ->
+            savedValues.forEach {
+                uploadtoNS(it, "AndroidAPS-$sensorType")
+                broadcastToXDrip(it)
+            }
+        }, {
+            aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Dexcom App", it)
+        })
     }
 
     companion object {

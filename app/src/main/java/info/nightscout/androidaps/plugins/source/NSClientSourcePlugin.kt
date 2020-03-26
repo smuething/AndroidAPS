@@ -56,25 +56,21 @@ class NSClientSourcePlugin @Inject constructor(
     override fun handleNewData(intent: Intent) {
         if (!isEnabled(PluginType.BGSOURCE) && !sp.getBoolean(R.string.key_ns_autobackfill, true)) return
         val bundles = intent.extras ?: return
-        try {
-            val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue?>()
-            if (bundles.containsKey("sgv")) {
-                glucoseValues += JSONObject(bundles.getString("sgv")).toGlucoseValue()
-            }
-            if (bundles.containsKey("sgvs")) {
-                val sgvString = bundles.getString("sgvs")
-                aapsLogger.debug(LTag.BGSOURCE, "Received NS Data: $sgvString")
-                val jsonArray = JSONArray(sgvString)
-                for (i in 0 until jsonArray.length()) {
-                    glucoseValues += jsonArray.getJSONObject(i).toGlucoseValue()
-                }
-            }
-            disposable += repository.runTransaction(CgmSourceTransaction(glucoseValues.filterNotNull(), emptyList(), null)).subscribe({}, {
-                aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Nightscout App", it)
-            })
-        } catch (e: Exception) {
-            aapsLogger.error("Unhandled exception", e)
+        val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue?>()
+        if (bundles.containsKey("sgv")) {
+            glucoseValues += JSONObject(bundles.getString("sgv")).toGlucoseValue()
         }
+        if (bundles.containsKey("sgvs")) {
+            val sgvString = bundles.getString("sgvs")
+            aapsLogger.debug(LTag.BGSOURCE, "Received NS Data: $sgvString")
+            val jsonArray = JSONArray(sgvString)
+            for (i in 0 until jsonArray.length()) {
+                glucoseValues += jsonArray.getJSONObject(i).toGlucoseValue()
+            }
+        }
+        disposable += repository.runTransaction(CgmSourceTransaction(glucoseValues.filterNotNull(), emptyList(), null)).subscribe({}, {
+            aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Nightscout App", it)
+        })
         // Objectives 0
         sp.putBoolean(R.string.key_ObjectivesbgIsAvailableInNS, true)
     }

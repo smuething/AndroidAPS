@@ -49,25 +49,21 @@ class XdripPlugin @Inject constructor(
 
     override fun handleNewData(intent: Intent) {
         if (!isEnabled(PluginType.BGSOURCE)) return
-        try {
-            val bundle = intent.extras ?: return
-            aapsLogger.debug(LTag.BGSOURCE, "Received xDrip data: " + BundleLogger.log(intent.extras))
-            val source = bundle.getString(Intents.XDRIP_DATA_SOURCE_DESCRIPTION, "no Source specified")
-            setSource(source)
-            val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
-                timestamp = bundle.getLong(Intents.EXTRA_TIMESTAMP),
-                value = bundle.getDouble(Intents.EXTRA_BG_ESTIMATE),
-                raw = bundle.getDouble(Intents.EXTRA_RAW),
-                noise = null,
-                trendArrow = bundle.getString(Intents.EXTRA_BG_SLOPE_NAME)!!.toTrendArrow(),
-                sourceSensor = source.determineSourceSensor()
-            )
-            disposable += repository.runTransaction(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({}, {
-                aapsLogger.error(LTag.BGSOURCE, "Error while saving values from xDrip", it)
-            })
-        } catch (e: Throwable) {
-            aapsLogger.error(LTag.BGSOURCE, "Error while processing intent from xDrip App", e)
-        }
+        val bundle = intent.extras ?: return
+        aapsLogger.debug(LTag.BGSOURCE, "Received xDrip data: " + BundleLogger.log(intent.extras))
+        val source = bundle.getString(Intents.XDRIP_DATA_SOURCE_DESCRIPTION, "no Source specified")
+        setSource(source)
+        val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
+            timestamp = bundle.getLong(Intents.EXTRA_TIMESTAMP),
+            value = bundle.getDouble(Intents.EXTRA_BG_ESTIMATE),
+            raw = bundle.getDouble(Intents.EXTRA_RAW),
+            noise = null,
+            trendArrow = bundle.getString(Intents.EXTRA_BG_SLOPE_NAME)!!.toTrendArrow(),
+            sourceSensor = source.determineSourceSensor()
+        )
+        disposable += repository.runTransaction(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({}, {
+            aapsLogger.error(LTag.BGSOURCE, "Error while saving values from xDrip", it)
+        })
     }
 
     private fun setSource(source: String) {

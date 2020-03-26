@@ -53,34 +53,30 @@ class PoctechPlugin @Inject constructor(
 
     override fun handleNewData(intent: Intent) {
         if (!isEnabled(PluginType.BGSOURCE)) return
-        try {
-            val bundle = intent.extras ?: return
-            val data = bundle.getString("data")
-            aapsLogger.debug(LTag.BGSOURCE, "Received Poctech Data $data")
-            val jsonArray = JSONArray(data)
-            aapsLogger.debug(LTag.BGSOURCE, "Received Poctech Data size:" + jsonArray.length())
-            val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
-            for (i in 0 until jsonArray.length()) {
-                val json = jsonArray.getJSONObject(i)
-                glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
-                    timestamp = json.getLong("date"),
-                    value = json.getDouble("current") * (if (json.getString("units") == "mmol/L") Constants.MMOLL_TO_MGDL else 1.0),
-                    raw = json.getDouble("raw"),
-                    noise = null,
-                    trendArrow = json.getString("direction").toTrendArrow(),
-                    sourceSensor = GlucoseValue.SourceSensor.POCTECH_NATIVE
-                )
-            }
-            disposable += repository.runTransactionForResult(CgmSourceTransaction(glucoseValues, emptyList(), null)).subscribe({
-                it.forEach {
-                    broadcastToXDrip(it)
-                    uploadToNS(it, "AndroidAPS-Poctech")
-                }
-            }, {
-                aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Tomato App", it)
-            })
-        } catch (e: Throwable) {
-            aapsLogger.error(LTag.BGSOURCE, "Error while processing intent from Poctech App", e)
+        val bundle = intent.extras ?: return
+        val data = bundle.getString("data")
+        aapsLogger.debug(LTag.BGSOURCE, "Received Poctech Data $data")
+        val jsonArray = JSONArray(data)
+        aapsLogger.debug(LTag.BGSOURCE, "Received Poctech Data size:" + jsonArray.length())
+        val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
+        for (i in 0 until jsonArray.length()) {
+            val json = jsonArray.getJSONObject(i)
+            glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
+                timestamp = json.getLong("date"),
+                value = json.getDouble("current") * (if (json.getString("units") == "mmol/L") Constants.MMOLL_TO_MGDL else 1.0),
+                raw = json.getDouble("raw"),
+                noise = null,
+                trendArrow = json.getString("direction").toTrendArrow(),
+                sourceSensor = GlucoseValue.SourceSensor.POCTECH_NATIVE
+            )
         }
+        disposable += repository.runTransactionForResult(CgmSourceTransaction(glucoseValues, emptyList(), null)).subscribe({
+            it.forEach {
+                broadcastToXDrip(it)
+                uploadToNS(it, "AndroidAPS-Poctech")
+            }
+        }, {
+            aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Tomato App", it)
+        })
     }
 }

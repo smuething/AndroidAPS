@@ -54,33 +54,29 @@ class GlimpPlugin @Inject constructor(
 
     override fun handleNewData(intent: Intent) {
         if (!isEnabled(PluginType.BGSOURCE)) return
-        try {
-            val bundle = intent.extras ?: return
-            aapsLogger.debug(LTag.BGSOURCE, "Received Glimp Data: ${BundleLogger.log(bundle)}")
-            val bgReading = BgReading()
-            bgReading.value = bundle.getDouble("mySGV")
-            bgReading.direction = bundle.getString("myTrend")
-            bgReading.date = bundle.getLong("myTimestamp")
-            bgReading.raw = 0.0
-            MainApp.getDbHelper().createIfNotExists(bgReading, "GLIMP")
-            val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
-                timestamp = bundle.getLong("myTimestamp"),
-                value = bundle.getDouble("mySGV"),
-                raw = null,
-                noise = null,
-                trendArrow = bundle.getString("myTrend")!!.toTrendArrow(),
-                sourceSensor = GlucoseValue.SourceSensor.GLIMP
-            )
-            disposable += repository.runTransactionForResult(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({
-                it.forEach {
-                    broadcastToXDrip(it)
-                    uploadToNS(it, "AndroidAPS-Glimp")
-                }
-            }, {
-                aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Tomato App", it)
-            })
-        } catch (e: Throwable) {
-            aapsLogger.error(LTag.BGSOURCE, "Error while processing intent from Glimp App", e)
-        }
+        val bundle = intent.extras ?: return
+        aapsLogger.debug(LTag.BGSOURCE, "Received Glimp Data: ${BundleLogger.log(bundle)}")
+        val bgReading = BgReading()
+        bgReading.value = bundle.getDouble("mySGV")
+        bgReading.direction = bundle.getString("myTrend")
+        bgReading.date = bundle.getLong("myTimestamp")
+        bgReading.raw = 0.0
+        MainApp.getDbHelper().createIfNotExists(bgReading, "GLIMP")
+        val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
+            timestamp = bundle.getLong("myTimestamp"),
+            value = bundle.getDouble("mySGV"),
+            raw = null,
+            noise = null,
+            trendArrow = bundle.getString("myTrend")!!.toTrendArrow(),
+            sourceSensor = GlucoseValue.SourceSensor.GLIMP
+        )
+        disposable += repository.runTransactionForResult(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({
+            it.forEach {
+                broadcastToXDrip(it)
+                uploadToNS(it, "AndroidAPS-Glimp")
+            }
+        }, {
+            aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Tomato App", it)
+        })
     }
 }

@@ -51,26 +51,22 @@ class TomatoPlugin @Inject constructor(
 
     override fun handleNewData(intent: Intent) {
         if (!isEnabled(PluginType.BGSOURCE)) return
-        try {
-            val bundle = intent.extras ?: return
-            val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
-                timestamp = bundle.getLong("com.fanqies.tomatofn.Extras.Time"),
-                value = bundle.getDouble("com.fanqies.tomatofn.Extras.BgEstimate"),
-                raw = null,
-                noise = null,
-                trendArrow = GlucoseValue.TrendArrow.NONE,
-                sourceSensor = GlucoseValue.SourceSensor.TOMATO
-            )
-            disposable += repository.runTransactionForResult(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({
-                it.forEach {
-                    broadcastToXDrip(it)
-                    uploadtoNS(it, "AndroidAPS-Tomato")
-                }
-            }, {
-                aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Tomato App", it)
-            })
-        } catch (e: Throwable) {
-            aapsLogger.error(LTag.BGSOURCE, "Error while processing intent from Tomato App", e)
-        }
+        val bundle = intent.extras ?: return
+        val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
+            timestamp = bundle.getLong("com.fanqies.tomatofn.Extras.Time"),
+            value = bundle.getDouble("com.fanqies.tomatofn.Extras.BgEstimate"),
+            raw = null,
+            noise = null,
+            trendArrow = GlucoseValue.TrendArrow.NONE,
+            sourceSensor = GlucoseValue.SourceSensor.TOMATO
+        )
+        disposable += repository.runTransactionForResult(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({
+            it.forEach {
+                broadcastToXDrip(it)
+                uploadtoNS(it, "AndroidAPS-Tomato")
+            }
+        }, {
+            aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Tomato App", it)
+        })
     }
 }
