@@ -18,7 +18,9 @@ import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
+import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.GlucoseValueUploader
+import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.XDripBroadcast
 import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
@@ -90,16 +92,17 @@ class DexcomPlugin @Inject constructor(
             val meters = intent.getBundleExtra("meters")
             val calibrations = mutableListOf<CgmSourceTransaction.Calibration>()
             for (i in 0 until meters.size()) {
-                val meter = meters.getBundle(i.toString())!!
-                calibrations.add(CgmSourceTransaction.Calibration(meter.getLong("timestamp") * 1000,
-                    meter.getInt("meterValue").toDouble()))
-            }
-            val sensorStartTime = if (sp.getBoolean(R.string.key_dexcom_lognssensorchange, false)) {
-                if (intent.hasExtra("sensorInsertionTime")) {
-                    intent.getLongExtra("sensorInsertionTime", 0) * 1000
-                } else {
-                    null
+                meters.getBundle(i.toString())?.let {
+                    val timestamp = it.getLong("timestamp") * 1000
+                    val now = DateUtil.now()
+                    if (timestamp > now - T.months(1).msecs() && timestamp < now) {
+                        calibrations.add(CgmSourceTransaction.Calibration(it.getLong("timestamp") * 1000,
+                            it.getInt("meterValue").toDouble()))
+                    }
                 }
+            }
+            val sensorStartTime = if (sp.getBoolean(R.string.key_dexcom_lognssensorchange, false) && intent.hasExtra("sensorInsertionTime")) {
+                intent.getLongExtra("sensorInsertionTime", 0) * 1000
             } else {
                 null
             }
