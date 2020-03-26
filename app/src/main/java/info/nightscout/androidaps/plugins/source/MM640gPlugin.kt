@@ -2,12 +2,10 @@ package info.nightscout.androidaps.plugins.source
 
 import android.content.Intent
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
-import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
@@ -60,13 +58,13 @@ class MM640gPlugin @Inject constructor(
                 val data = bundle.getString("data")
                 aapsLogger.debug(LTag.BGSOURCE, "Received MM640g Data: $data")
                 if (data != null && data.isNotEmpty()) {
-                    val glucoseValues = mutableListOf<CgmSourceTransaction.GlucoseValue>()
+                    val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
                     val jsonArray = JSONArray(data)
                     for (i in 0 until jsonArray.length()) {
                         val jsonObject = jsonArray.getJSONObject(i)
                         when (val type = jsonObject.getString("type")) {
                             "sgv" -> {
-                                glucoseValues += CgmSourceTransaction.GlucoseValue(
+                                glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
                                     timestamp = jsonObject.getLong("date"),
                                     value = jsonObject.getDouble("sgv"),
                                     raw = jsonObject.getDouble("sgv"),

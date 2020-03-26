@@ -2,11 +2,9 @@ package info.nightscout.androidaps.plugins.source
 
 import android.content.Intent
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
-import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
@@ -56,7 +54,7 @@ class XdripPlugin @Inject constructor(
             aapsLogger.debug(LTag.BGSOURCE, "Received xDrip data: " + BundleLogger.log(intent.extras))
             val source = bundle.getString(Intents.XDRIP_DATA_SOURCE_DESCRIPTION, "no Source specified")
             setSource(source)
-            val glucoseValue = CgmSourceTransaction.GlucoseValue(
+            val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
                 timestamp = bundle.getLong(Intents.EXTRA_TIMESTAMP),
                 value = bundle.getDouble(Intents.EXTRA_BG_ESTIMATE),
                 raw = bundle.getDouble(Intents.EXTRA_RAW),

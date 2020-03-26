@@ -2,12 +2,10 @@ package info.nightscout.androidaps.plugins.source
 
 import android.content.Intent
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
-import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
@@ -15,8 +13,6 @@ import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSSgv
-import info.nightscout.androidaps.utils.JsonHelper.safeGetLong
-import info.nightscout.androidaps.utils.JsonHelper.safeGetString
 import info.nightscout.androidaps.utils.determineSourceSensor
 import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
@@ -61,7 +57,7 @@ class NSClientSourcePlugin @Inject constructor(
         if (!isEnabled(PluginType.BGSOURCE) && !sp.getBoolean(R.string.key_ns_autobackfill, true)) return
         val bundles = intent.extras ?: return
         try {
-            val glucoseValues = mutableListOf<CgmSourceTransaction.GlucoseValue?>()
+            val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue?>()
             if (bundles.containsKey("sgv")) {
                 glucoseValues += JSONObject(bundles.getString("sgv")).toGlucoseValue()
             }
@@ -94,7 +90,7 @@ class NSClientSourcePlugin @Inject constructor(
         val sourceSensor = source?.determineSourceSensor() ?: GlucoseValue.SourceSensor.UNKNOWN
         detectSource(source, mills)
         if (timestamp != null && value != null) {
-            CgmSourceTransaction.GlucoseValue(
+            CgmSourceTransaction.TransactionGlucoseValue(
                 timestamp = timestamp,
                 value = value,
                 raw = raw,

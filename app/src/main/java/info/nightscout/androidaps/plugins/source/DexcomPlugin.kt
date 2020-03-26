@@ -77,10 +77,10 @@ class DexcomPlugin @Inject constructor(
                 else -> DEXCOM_NATIVE_UNKNOWN
             }
             val glucoseValuesBundle = intent.getBundleExtra("glucoseValues")!!
-            val glucoseValues = mutableListOf<CgmSourceTransaction.GlucoseValue>()
+            val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
             for (i in 0 until glucoseValuesBundle.size()) {
                 val glucoseValueBundle = glucoseValuesBundle.getBundle(i.toString())!!
-                glucoseValues += CgmSourceTransaction.GlucoseValue(
+                glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
                     timestamp = glucoseValueBundle.getLong("timestamp") * 1000,
                     value = glucoseValueBundle.getInt("glucoseValue").toDouble(),
                     noise = null,

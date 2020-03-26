@@ -3,12 +3,10 @@ package info.nightscout.androidaps.plugins.source
 import android.content.Intent
 import android.os.Handler
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
-import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
@@ -89,7 +87,7 @@ class RandomBgPlugin @Inject constructor(
         val currentMinute = cal.get(Calendar.MINUTE) + (cal.get(Calendar.HOUR_OF_DAY) % 2) * 60
         val bgMgdl = min + (max - min) + (max - min) * sin(currentMinute / 120.0 * 2 * PI)
 
-        val glucoseValue = CgmSourceTransaction.GlucoseValue(
+        val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
             timestamp = DateUtil.now(),
             value = bgMgdl,
             raw = bgMgdl,

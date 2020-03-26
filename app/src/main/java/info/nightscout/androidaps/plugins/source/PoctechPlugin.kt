@@ -3,7 +3,6 @@ package info.nightscout.androidaps.plugins.source
 import android.content.Intent
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.Constants
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
@@ -14,13 +13,10 @@ import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
-import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
 import info.nightscout.androidaps.utils.GlucoseValueUploader
-import info.nightscout.androidaps.utils.JsonHelper.safeGetString
 import info.nightscout.androidaps.utils.XDripBroadcast
 import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.sharedPreferences.SP
 import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable
 import org.json.JSONArray
@@ -63,10 +59,10 @@ class PoctechPlugin @Inject constructor(
             aapsLogger.debug(LTag.BGSOURCE, "Received Poctech Data $data")
             val jsonArray = JSONArray(data)
             aapsLogger.debug(LTag.BGSOURCE, "Received Poctech Data size:" + jsonArray.length())
-            val glucoseValues = mutableListOf<CgmSourceTransaction.GlucoseValue>()
+            val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue>()
             for (i in 0 until jsonArray.length()) {
                 val json = jsonArray.getJSONObject(i)
-                glucoseValues += CgmSourceTransaction.GlucoseValue(
+                glucoseValues += CgmSourceTransaction.TransactionGlucoseValue(
                     timestamp = json.getLong("date"),
                     value = json.getDouble("current") * (if (json.getString("units") == "mmol/L") Constants.MMOLL_TO_MGDL else 1.0),
                     raw = json.getDouble("raw"),

@@ -2,26 +2,21 @@ package info.nightscout.androidaps.plugins.source
 
 import android.content.Intent
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
-import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
-import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
 import info.nightscout.androidaps.utils.GlucoseValueUploader
 import info.nightscout.androidaps.utils.XDripBroadcast
 import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.disposables.CompositeDisposable
-import java.lang.Exception
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,7 +53,7 @@ class TomatoPlugin @Inject constructor(
         if (!isEnabled(PluginType.BGSOURCE)) return
         try {
             val bundle = intent.extras ?: return
-            val glucoseValue = CgmSourceTransaction.GlucoseValue(
+            val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
                 timestamp = bundle.getLong("com.fanqies.tomatofn.Extras.Time"),
                 value = bundle.getDouble("com.fanqies.tomatofn.Extras.BgEstimate"),
                 raw = null,

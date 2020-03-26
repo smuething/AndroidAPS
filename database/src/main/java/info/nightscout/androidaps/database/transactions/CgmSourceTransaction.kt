@@ -8,13 +8,13 @@ import java.util.*
  * Inserts data from a CGM source into the database
  */
 class CgmSourceTransaction(
-        private val glucoseValues: List<GlucoseValue>,
-        private val calibrations: List<Calibration>,
-        private val sensorInsertionTime: Long?
+    private val glucoseValues: List<TransactionGlucoseValue>,
+    private val calibrations: List<Calibration>,
+    private val sensorInsertionTime: Long?
 ) : Transaction<List<GlucoseValue>>() {
 
-    override fun run(): List<info.nightscout.androidaps.database.entities.GlucoseValue> {
-        val insertedGlucoseValues = mutableListOf<info.nightscout.androidaps.database.entities.GlucoseValue>()
+    override fun run(): List<GlucoseValue> {
+        val insertedGlucoseValues = mutableListOf<GlucoseValue>()
         glucoseValues.forEach {
             val current = database.glucoseValueDao.findByTimestampAndSensor(it.timestamp, it.sourceSensor)
             val glucoseValue = GlucoseValue(
@@ -60,7 +60,7 @@ class CgmSourceTransaction(
         return insertedGlucoseValues
     }
 
-    data class GlucoseValue(
+    data class TransactionGlucoseValue(
             val timestamp: Long,
             val value: Double,
             val raw: Double?,
