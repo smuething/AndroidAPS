@@ -61,7 +61,7 @@ class NSClientSourcePlugin @Inject constructor(
         if (!isEnabled(PluginType.BGSOURCE) && !sp.getBoolean(R.string.key_ns_autobackfill, true)) return
         val bundles = intent.extras ?: return
         try {
-            val glucoseValues = mutableListOf<CgmSourceTransaction.GlucoseValue>()
+            val glucoseValues = mutableListOf<CgmSourceTransaction.GlucoseValue?>()
             if (bundles.containsKey("sgv")) {
                 glucoseValues += JSONObject(bundles.getString("sgv")).toGlucoseValue()
             }
@@ -73,7 +73,7 @@ class NSClientSourcePlugin @Inject constructor(
                     glucoseValues += jsonArray.getJSONObject(i).toGlucoseValue()
                 }
             }
-            disposable += repository.runTransaction(CgmSourceTransaction(glucoseValues, emptyList(), null)).subscribe({}, {
+            disposable += repository.runTransaction(CgmSourceTransaction(glucoseValues.filterNotNull(), emptyList(), null)).subscribe({}, {
                 aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Nightscout App", it)
             })
         } catch (e: Exception) {
@@ -85,16 +85,25 @@ class NSClientSourcePlugin @Inject constructor(
 
     private fun JSONObject.toGlucoseValue() = NSSgv(this).run {
         val source = getString("device")
+        val timestamp = mills
+        val value = mgdl?.toDouble()
+        val raw = unfiltered?.toDouble()
+        val noise = noise?.toDouble()
+        val trendArrow = direction?.toTrendArrow() ?: GlucoseValue.TrendArrow.NONE
+        val nightScout = id
+        val sourceSensor = source?.determineSourceSensor() ?: GlucoseValue.SourceSensor.UNKNOWN
         detectSource(source, mills)
-        CgmSourceTransaction.GlucoseValue(
-            timestamp = mills,
-            value = mgdl.toDouble(),
-            raw = unfiltered.toDouble(),
-            noise = noise.toDouble(),
-            trendArrow = direction.toTrendArrow(),
-            nightscoutId = id,
-            sourceSensor = source.determineSourceSensor()
-        )
+        if (timestamp != null && value != null) {
+            CgmSourceTransaction.GlucoseValue(
+                timestamp = timestamp,
+                value = value,
+                raw = raw,
+                noise = noise,
+                trendArrow = trendArrow,
+                nightscoutId = nightScout,
+                sourceSensor = sourceSensor
+            )
+        } else null
     }
 
     private fun detectSource(source: String, timeStamp: Long) {
