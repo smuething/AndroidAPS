@@ -43,66 +43,16 @@ import info.nightscout.androidaps.dependencyInjection.DaggerAppComponent;
 import info.nightscout.androidaps.interfaces.PluginBase;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.LTag;
-import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin;
-import info.nightscout.androidaps.plugins.aps.openAPSAMA.OpenAPSAMAPlugin;
-import info.nightscout.androidaps.plugins.aps.openAPSMA.OpenAPSMAPlugin;
-import info.nightscout.androidaps.plugins.aps.openAPSSMB.OpenAPSSMBPlugin;
 import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin;
 import info.nightscout.androidaps.plugins.configBuilder.PluginStore;
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction;
-import info.nightscout.androidaps.plugins.constraints.dstHelper.DstHelperPlugin;
-import info.nightscout.androidaps.plugins.constraints.objectives.ObjectivesPlugin;
-import info.nightscout.androidaps.plugins.constraints.safety.SafetyPlugin;
-import info.nightscout.androidaps.plugins.constraints.signatureVerifier.SignatureVerifierPlugin;
-import info.nightscout.androidaps.plugins.constraints.storage.StorageConstraintPlugin;
-import info.nightscout.androidaps.plugins.constraints.versionChecker.VersionCheckerPlugin;
 import info.nightscout.androidaps.plugins.constraints.versionChecker.VersionCheckerUtils;
-import info.nightscout.androidaps.plugins.general.actions.ActionsPlugin;
-import info.nightscout.androidaps.plugins.general.automation.AutomationPlugin;
-import info.nightscout.androidaps.plugins.general.careportal.CareportalPlugin;
-import info.nightscout.androidaps.plugins.general.dataBroadcaster.DataBroadcastPlugin;
-import info.nightscout.androidaps.plugins.general.food.FoodPlugin;
-import info.nightscout.androidaps.plugins.general.maintenance.MaintenancePlugin;
-import info.nightscout.androidaps.plugins.general.nsclient.NSClientPlugin;
 import info.nightscout.androidaps.plugins.general.nsclient.NSUpload;
-import info.nightscout.androidaps.plugins.general.overview.OverviewPlugin;
-import info.nightscout.androidaps.plugins.general.persistentNotification.PersistentNotificationPlugin;
-import info.nightscout.androidaps.plugins.general.smsCommunicator.SmsCommunicatorPlugin;
-import info.nightscout.androidaps.plugins.general.tidepool.TidepoolPlugin;
-import info.nightscout.androidaps.plugins.general.wear.WearPlugin;
-import info.nightscout.androidaps.plugins.general.xdripStatusline.StatusLinePlugin;
-import info.nightscout.androidaps.plugins.insulin.InsulinOrefFreePeakPlugin;
-import info.nightscout.androidaps.plugins.insulin.InsulinOrefRapidActingPlugin;
-import info.nightscout.androidaps.plugins.insulin.InsulinOrefUltraRapidActingPlugin;
-import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin;
-import info.nightscout.androidaps.plugins.profile.local.LocalProfilePlugin;
-import info.nightscout.androidaps.plugins.profile.ns.NSProfilePlugin;
-import info.nightscout.androidaps.plugins.pump.combo.ComboPlugin;
-import info.nightscout.androidaps.plugins.pump.danaR.DanaRPlugin;
-import info.nightscout.androidaps.plugins.pump.danaRKorean.DanaRKoreanPlugin;
-import info.nightscout.androidaps.plugins.pump.danaRS.DanaRSPlugin;
-import info.nightscout.androidaps.plugins.pump.danaRv2.DanaRv2Plugin;
-import info.nightscout.androidaps.plugins.pump.insight.LocalInsightPlugin;
-import info.nightscout.androidaps.plugins.pump.mdi.MDIPlugin;
-import info.nightscout.androidaps.plugins.pump.medtronic.MedtronicPumpPlugin;
-import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin;
-import info.nightscout.androidaps.plugins.sensitivity.SensitivityAAPSPlugin;
-import info.nightscout.androidaps.plugins.sensitivity.SensitivityOref0Plugin;
-import info.nightscout.androidaps.plugins.sensitivity.SensitivityOref1Plugin;
-import info.nightscout.androidaps.plugins.sensitivity.SensitivityWeightedAveragePlugin;
-import info.nightscout.androidaps.plugins.source.DexcomPlugin;
-import info.nightscout.androidaps.plugins.source.GlimpPlugin;
-import info.nightscout.androidaps.plugins.source.MM640gPlugin;
-import info.nightscout.androidaps.plugins.source.NSClientSourcePlugin;
-import info.nightscout.androidaps.plugins.source.PoctechPlugin;
-import info.nightscout.androidaps.plugins.source.RandomBgPlugin;
-import info.nightscout.androidaps.plugins.source.TomatoPlugin;
-import info.nightscout.androidaps.plugins.source.XdripPlugin;
-import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin;
 import info.nightscout.androidaps.receivers.ChargingStateReceiver;
 import info.nightscout.androidaps.receivers.DataReceiver;
 import info.nightscout.androidaps.receivers.KeepAliveReceiver;
 import info.nightscout.androidaps.receivers.NetworkChangeReceiver;
+import info.nightscout.androidaps.receivers.ReceiverStatusStore;
 import info.nightscout.androidaps.receivers.TimeDateOrTZChangeReceiver;
 import info.nightscout.androidaps.services.Intents;
 import info.nightscout.androidaps.utils.ActivityMonitor;
@@ -124,9 +74,6 @@ public class MainApp extends DaggerApplication {
 
     static DatabaseHelper sDatabaseHelper = null;
 
-    DataReceiver dataReceiver = new DataReceiver();
-    TimeDateOrTZChangeReceiver timeDateOrTZChangeReceiver;
-
     private String CHANNEL_ID = "AndroidAPS-Ongoing"; // TODO: move to OngoingNotificationProvider (and dagger)
     private int ONGOING_NOTIFICATION_ID = 4711; // TODO: move to OngoingNotificationProvider (and dagger)
     private Notification notification; // TODO: move to OngoingNotificationProvider (and dagger)
@@ -136,6 +83,7 @@ public class MainApp extends DaggerApplication {
     @Inject PluginStore pluginStore;
     @Inject public HasAndroidInjector injector;
     @Inject AAPSLogger aapsLogger;
+    @Inject ReceiverStatusStore receiverStatusStore;
     @Inject ActivityMonitor activityMonitor;
     @Inject FabricPrivacy fabricPrivacy;
     @Inject ResourceHelper resourceHelper;
@@ -252,24 +200,33 @@ public class MainApp extends DaggerApplication {
     }
 
     private void registerLocalBroadcastReceiver() {
-        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
-        lbm.registerReceiver(dataReceiver, new IntentFilter(Intents.ACTION_NEW_TREATMENT));
-        lbm.registerReceiver(dataReceiver, new IntentFilter(Intents.ACTION_CHANGED_TREATMENT));
-        lbm.registerReceiver(dataReceiver, new IntentFilter(Intents.ACTION_REMOVED_TREATMENT));
-        lbm.registerReceiver(dataReceiver, new IntentFilter(Intents.ACTION_NEW_SGV));
-        lbm.registerReceiver(dataReceiver, new IntentFilter(Intents.ACTION_NEW_PROFILE));
-        lbm.registerReceiver(dataReceiver, new IntentFilter(Intents.ACTION_NEW_MBG));
-        lbm.registerReceiver(dataReceiver, new IntentFilter(Intents.ACTION_NEW_CAL));
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intents.ACTION_NEW_TREATMENT);
+        filter.addAction(Intents.ACTION_CHANGED_TREATMENT);
+        filter.addAction(Intents.ACTION_REMOVED_TREATMENT);
+        filter.addAction(Intents.ACTION_NEW_SGV);
+        filter.addAction(Intents.ACTION_NEW_PROFILE);
+        filter.addAction(Intents.ACTION_NEW_MBG);
+        filter.addAction(Intents.ACTION_NEW_CAL);
+        LocalBroadcastManager.getInstance(this).registerReceiver(new DataReceiver(), filter);
 
-        this.timeDateOrTZChangeReceiver = new TimeDateOrTZChangeReceiver();
-        this.timeDateOrTZChangeReceiver.registerBroadcasts(this);
+        filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_TIME_CHANGED);
+        filter.addAction(Intent.ACTION_DATE_CHANGED);
+        filter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
+        registerReceiver(new TimeDateOrTZChangeReceiver(), filter);
 
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-        registerReceiver(new NetworkChangeReceiver(), intentFilter);
-        registerReceiver(new ChargingStateReceiver(), new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        filter = new IntentFilter();
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        registerReceiver(new NetworkChangeReceiver(), filter);
+
+        filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_POWER_CONNECTED);
+        filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+        filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        registerReceiver(new ChargingStateReceiver(), filter);
     }
 
     @Deprecated
@@ -343,11 +300,7 @@ public class MainApp extends DaggerApplication {
 
     @Override
     public void onTerminate() {
-
         aapsLogger.debug(LTag.CORE, "onTerminate");
-
-        if (timeDateOrTZChangeReceiver != null)
-            unregisterReceiver(timeDateOrTZChangeReceiver);
         unregisterActivityLifecycleCallbacks(activityMonitor);
         keepAliveManager.cancelAlarm(this);
         super.onTerminate();
