@@ -59,6 +59,7 @@ class SWDefinition @Inject constructor(
     private val nsClientPlugin: NSClientPlugin,
     private val nsProfilePlugin: NSProfilePlugin,
     private val protectionCheck: ProtectionCheck,
+    private val importExportPrefs: ImportExportPrefs,
     private val androidPermission: AndroidPermission
 ) {
 
@@ -160,8 +161,8 @@ class SWDefinition @Inject constructor(
         .add(SWBreak(injector))
         .add(SWButton(injector)
             .text(R.string.nav_import)
-            .action(Runnable { ImportExportPrefs.importSharedPreferences(activity) }))
-        .visibility(SWValidator { ImportExportPrefs.file.exists() && !androidPermission.permissionNotGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) })
+            .action(Runnable { importExportPrefs.importSharedPreferences(activity) }))
+        .visibility(SWValidator { importExportPrefs.prefsFileExists() && !androidPermission.permissionNotGranted(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) })
     private val screenNsClient = SWScreen(injector, R.string.nsclientinternal_title)
         .skippable(true)
         .add(SWInfotext(injector)
@@ -197,6 +198,14 @@ class SWDefinition @Inject constructor(
         .add(SWBreak(injector))
         .validator(SWValidator { nsClientPlugin.nsClientService != null && NSClientService.isConnected && NSClientService.hasWriteAuth })
         .visibility(SWValidator { !(nsClientPlugin.nsClientService != null && NSClientService.isConnected && NSClientService.hasWriteAuth) })
+    private val screenPatientName = SWScreen(injector, R.string.patient_name)
+        .skippable(true)
+        .add(SWInfotext(injector)
+            .label(R.string.patient_name_summary))
+        .add(SWEditString(injector)
+            .validator(SWTextValidator { text: String -> text.length > 0 })
+            .preferenceId(R.string.key_patient_name)
+            .updateDelay(5))
     private val screenAge = SWScreen(injector, R.string.patientage)
         .skippable(false)
         .add(SWBreak(injector))
@@ -388,6 +397,7 @@ class SWDefinition @Inject constructor(
             .add(screenUnits)
             .add(displaySettings)
             .add(screenNsClient)
+            .add(screenPatientName)
             .add(screenAge)
             .add(screenInsulin)
             .add(screenBgSource)
@@ -414,6 +424,7 @@ class SWDefinition @Inject constructor(
             .add(screenUnits)
             .add(displaySettings)
             .add(screenNsClient)
+            .add(screenPatientName)
             .add(screenAge)
             .add(screenInsulin)
             .add(screenBgSource)
@@ -436,6 +447,7 @@ class SWDefinition @Inject constructor(
             .add(displaySettings)
             .add(screenNsClient)
             .add(screenBgSource)
+            .add(screenPatientName)
             .add(screenAge)
             .add(screenInsulin)
             .add(screenSensitivity)

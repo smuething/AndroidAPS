@@ -19,7 +19,6 @@ import info.nightscout.androidaps.events.EventRebuildTabs
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.aps.openAPSAMA.OpenAPSAMAPlugin
-import info.nightscout.androidaps.plugins.aps.openAPSMA.OpenAPSMAPlugin
 import info.nightscout.androidaps.plugins.aps.openAPSSMB.OpenAPSSMBPlugin
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.PluginStore
@@ -79,7 +78,6 @@ class MyPreferenceFragment : PreferenceFragmentCompat(), OnSharedPreferenceChang
     @Inject lateinit var medtronicPumpPlugin: MedtronicPumpPlugin
     @Inject lateinit var nsClientPlugin: NSClientPlugin
     @Inject lateinit var openAPSAMAPlugin: OpenAPSAMAPlugin
-    @Inject lateinit var openAPSMAPlugin: OpenAPSMAPlugin
     @Inject lateinit var openAPSSMBPlugin: OpenAPSSMBPlugin
     @Inject lateinit var safetyPlugin: SafetyPlugin
     @Inject lateinit var sensitivityAAPSPlugin: SensitivityAAPSPlugin
@@ -159,7 +157,6 @@ class MyPreferenceFragment : PreferenceFragmentCompat(), OnSharedPreferenceChang
             addPreferencesFromResourceIfEnabled(glimpPlugin, rootKey)
             addPreferencesFromResourceIfEnabled(careportalPlugin, rootKey)
             addPreferencesFromResourceIfEnabled(loopPlugin, rootKey, Config.APS)
-            addPreferencesFromResourceIfEnabled(openAPSMAPlugin, rootKey, Config.APS)
             addPreferencesFromResourceIfEnabled(openAPSAMAPlugin, rootKey, Config.APS)
             addPreferencesFromResourceIfEnabled(openAPSSMBPlugin, rootKey, Config.APS)
             addPreferencesFromResourceIfEnabled(sensitivityAAPSPlugin, rootKey)
@@ -282,8 +279,15 @@ class MyPreferenceFragment : PreferenceFragmentCompat(), OnSharedPreferenceChang
             }
         }
 
+        val hmacPasswords = arrayOf(
+            resourceHelper.gs(R.string.key_bolus_password),
+            resourceHelper.gs(R.string.key_master_password),
+            resourceHelper.gs(R.string.key_application_password),
+            resourceHelper.gs(R.string.key_settings_password)
+        )
+
         if (pref is Preference) {
-            if ((pref.key != null) && (pref.key.contains("_password"))) {
+            if ((pref.key != null) && (hmacPasswords.contains(pref.key))) {
                 if (sp.getString(pref.key, "").startsWith("hmac:")) {
                     pref.summary = "******"
                 } else {

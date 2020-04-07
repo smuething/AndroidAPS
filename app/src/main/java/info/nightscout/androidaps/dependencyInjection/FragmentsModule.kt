@@ -6,7 +6,6 @@ import info.nightscout.androidaps.activities.MyPreferenceFragment
 import info.nightscout.androidaps.dialogs.*
 import info.nightscout.androidaps.plugins.aps.loop.LoopFragment
 import info.nightscout.androidaps.plugins.aps.openAPSAMA.OpenAPSAMAFragment
-import info.nightscout.androidaps.plugins.aps.openAPSMA.OpenAPSMAFragment
 import info.nightscout.androidaps.plugins.aps.openAPSSMB.OpenAPSSMBFragment
 import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderFragment
 import info.nightscout.androidaps.plugins.constraints.objectives.ObjectivesFragment
@@ -40,6 +39,7 @@ import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpFragment
 import info.nightscout.androidaps.plugins.source.BGSourceFragment
 import info.nightscout.androidaps.plugins.treatments.TreatmentsFragment
 import info.nightscout.androidaps.plugins.treatments.fragments.*
+import info.nightscout.androidaps.utils.protection.PasswordCheck
 
 @Module
 @Suppress("unused")
@@ -62,7 +62,6 @@ abstract class FragmentsModule {
     @ContributesAndroidInjector abstract fun contributesLocalProfileFragment(): LocalProfileFragment
     @ContributesAndroidInjector abstract fun contributesObjectivesFragment(): ObjectivesFragment
     @ContributesAndroidInjector abstract fun contributesOpenAPSAMAFragment(): OpenAPSAMAFragment
-    @ContributesAndroidInjector abstract fun contributesOpenAPSMAFragment(): OpenAPSMAFragment
     @ContributesAndroidInjector abstract fun contributesOpenAPSSMBFragment(): OpenAPSSMBFragment
     @ContributesAndroidInjector abstract fun contributesOverviewFragment(): OverviewFragment
     @ContributesAndroidInjector abstract fun contributesLocalInsightFragment(): LocalInsightFragment
@@ -112,4 +111,6 @@ abstract class FragmentsModule {
     @ContributesAndroidInjector abstract fun contributesTreatmentDialog(): TreatmentDialog
     @ContributesAndroidInjector abstract fun contributesWizardDialog(): WizardDialog
     @ContributesAndroidInjector abstract fun contributesWizardInfoDialog(): WizardInfoDialog
+
+    @ContributesAndroidInjector abstract fun contributesPasswordCheck(): PasswordCheck
 }

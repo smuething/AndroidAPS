@@ -13,8 +13,7 @@ import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.db.ProfileSwitch
 import info.nightscout.androidaps.plugins.aps.loop.APSResult
 import info.nightscout.androidaps.plugins.aps.openAPSAMA.DetermineBasalResultAMA
-import info.nightscout.androidaps.plugins.aps.openAPSMA.DetermineBasalResultMA
-import info.nightscout.androidaps.plugins.aps.openAPSMA.LoggerCallback
+import info.nightscout.androidaps.plugins.aps.logger.LoggerCallback
 import info.nightscout.androidaps.plugins.aps.openAPSSMB.DetermineBasalAdapterSMBJS
 import info.nightscout.androidaps.plugins.aps.openAPSSMB.DetermineBasalResultSMB
 import info.nightscout.androidaps.plugins.constraints.objectives.objectives.*
@@ -57,7 +56,6 @@ interface AppComponent : AndroidInjector<MainApp> {
     fun injectPumpEnactResult(pumpEnactResult: PumpEnactResult)
     fun injectAPSResult(apsResult: APSResult)
     fun injectDetermineBasalResultSMB(determineBasalResultSMB: DetermineBasalResultSMB)
-    fun injectDetermineBasalResultMA(determineBasalResultMA: DetermineBasalResultMA)
     fun injectDetermineBasalResultAMA(determineBasalResultAMA: DetermineBasalResultAMA)
     fun injectDetermineBasalAdapterSMBJS(determineBasalAdapterSMBJS: DetermineBasalAdapterSMBJS)
 
@@ -97,6 +95,7 @@ interface AppComponent : AndroidInjector<MainApp> {
     fun injectTrigger(triggerAutosensValue: TriggerAutosensValue)
     fun injectTrigger(triggerBg: TriggerBg)
     fun injectTrigger(triggerBolusAgo: TriggerBolusAgo)
+    fun injectTrigger(triggerBTDevice: TriggerBTDevice)
     fun injectTrigger(triggerCOB: TriggerCOB)
     fun injectTrigger(triggerConnector: TriggerConnector)
     fun injectTrigger(triggerDelta: TriggerDelta)
@@ -129,8 +128,10 @@ interface AppComponent : AndroidInjector<MainApp> {
     fun injectElement(inputButton: InputButton)
     fun injectElement(comparator: Comparator)
     fun injectElement(comparatorExists: ComparatorExists)
+    fun injectElement(comparatorConnect: ComparatorConnect)
     fun injectElement(inputDateTime: InputDateTime)
     fun injectElement(inputDelta: InputDelta)
+    fun injectElement(inputDropdownMenu: InputDropdownMenu)
     fun injectElement(inputDouble: InputDouble)
     fun injectElement(inputDuration: InputDuration)
     fun injectElement(inputInsulin: InputInsulin)
