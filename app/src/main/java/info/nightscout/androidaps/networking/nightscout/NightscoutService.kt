@@ -2,11 +2,12 @@ package info.nightscout.androidaps.networking.nightscout
 
 import info.nightscout.androidaps.dependencyInjection.networking.NSRetrofitFactory
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
-import info.nightscout.androidaps.networking.nightscout.responses.StatusResponse
-import info.nightscout.androidaps.networking.nightscout.responses.full
-import info.nightscout.androidaps.networking.nightscout.responses.read
-import info.nightscout.androidaps.networking.nightscout.responses.readCreate
+import info.nightscout.androidaps.networking.nightscout.requests.EntryRequestBody
+import info.nightscout.androidaps.networking.nightscout.responses.*
+import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
 import io.reactivex.Single
+import okhttp3.Headers
+import retrofit2.Response
 import java.net.HttpURLConnection
 import java.net.UnknownHostException
 
@@ -67,6 +68,32 @@ class NightscoutService(private val nsRetrofitFactory: NSRetrofitFactory) {
     fun status() = nsRetrofitFactory.getNSService().statusSimple()
 
     fun lastModified() = nsRetrofitFactory.getNSService().lastModified()
+
+    fun postGlucoseStatus(glucoseStatus: GlucoseStatus) = postEntry(
+        EntryRequestBody(
+            identifier = "todo",
+            date = glucoseStatus.date,
+            utcOffset = 0
+        )
+    )
+
+    private fun postEntry(entryRequestBody: EntryRequestBody): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
+        .postEntry(entryRequestBody)
+        .map { it.toResponseType() }
+
+    private fun Response<DummyResponse>.toResponseType(): PostEntryResponseType {
+        val headers: Headers = this.headers()
+        return when (this.code()) {
+            // Todo: do we want to distinguish between "created new document" (201) and "Successfully finished operation"?
+            201, 204 -> PostEntryResponseType.Success(headers["Last-Modified"], headers["Location"])  // here we should according to standard also get the datum back that we created?
+            400      -> PostEntryResponseType.Failure(FailureReason.MALFORMATTED_REQUEST)
+            401      -> PostEntryResponseType.Failure(FailureReason.UNAUTHORIZED)
+            403      -> PostEntryResponseType.Failure(FailureReason.FORBIDDEN)
+            404      -> PostEntryResponseType.Failure(FailureReason.NOT_FOUND)
+            422      -> PostEntryResponseType.Failure(FailureReason.UNPROCESSABLE_ENTITY)
+            else     -> PostEntryResponseType.Failure(FailureReason.UNKNOWN)
+        }
+    }
 
     companion object {
         const val BAD_ACCESS_TOKEN_MESSAGE = "Missing or bad access token or JWT"
