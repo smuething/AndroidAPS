@@ -3,9 +3,9 @@ package info.nightscout.androidaps.utils.stats
 import android.text.Spanned
 import android.util.LongSparseArray
 import info.nightscout.androidaps.Constants
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.Profile
+import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.HtmlHelper
@@ -18,18 +18,21 @@ import javax.inject.Singleton
 @Singleton
 class TirCalculator @Inject constructor(
     private val resourceHelper: ResourceHelper,
-    private val profileFunction: ProfileFunction
-){
+    private val profileFunction: ProfileFunction,
+    private val repository: AppRepository
+) {
+
     fun calculate(days: Long, lowMgdl: Double, highMgdl: Double): LongSparseArray<TIR> {
         if (lowMgdl < 39) throw RuntimeException("Low below 39")
         if (lowMgdl > highMgdl) throw RuntimeException("Low > High")
         val startTime = MidnightTime.calc(DateUtil.now() - T.days(days).msecs())
         val endTime = MidnightTime.calc(DateUtil.now())
 
-        val bgReadings = MainApp.getDbHelper().getBgreadingsDataFromTime(startTime, endTime, true)
+        val bgReadings = repository.compatGetBgreadingsDataFromTime(startTime, endTime, true).blockingGet()
+
         val result = LongSparseArray<TIR>()
         for (bg in bgReadings) {
-            val midnight = MidnightTime.calc(bg.date)
+            val midnight = MidnightTime.calc(bg.timestamp)
             var tir = result[midnight]
             if (tir == null) {
                 tir = TIR(midnight, lowMgdl, highMgdl)
@@ -43,7 +46,7 @@ class TirCalculator @Inject constructor(
         return result
     }
 
-    fun averageTIR(tirs: LongSparseArray<TIR>): TIR {
+    private fun averageTIR(tirs: LongSparseArray<TIR>): TIR {
         val totalTir = if (tirs.size() > 0) {
             TIR(tirs.valueAt(0).date, tirs.valueAt(0).lowThreshold, tirs.valueAt(0).highThreshold)
         } else {

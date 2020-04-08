@@ -27,6 +27,7 @@ import info.nightscout.androidaps.plugins.iob.iobCobCalculator.AutosensResult
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.utils.DecimalFormatter
 import info.nightscout.androidaps.utils.Round
+import info.nightscout.androidaps.utils.convertToBGReadings
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import java.util.*
 import javax.inject.Inject
@@ -41,6 +42,7 @@ class GraphData(injector: HasAndroidInjector, private val graph: GraphView, priv
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var activePlugin: ActivePluginProvider
+    @Inject lateinit var injector: HasAndroidInjector
 
     private val treatmentsPlugin: TreatmentsInterface
 
@@ -59,7 +61,7 @@ class GraphData(injector: HasAndroidInjector, private val graph: GraphView, priv
     @Suppress("UNUSED_PARAMETER")
     fun addBgReadings(fromTime: Long, toTime: Long, lowLine: Double, highLine: Double, predictions: MutableList<BgReading>?) {
         var maxBgValue = Double.MIN_VALUE
-        bgReadingsArray = iobCobCalculatorPlugin.bgReadings
+        bgReadingsArray = iobCobCalculatorPlugin.bgReadings.convertToBGReadings(injector)
         if (bgReadingsArray?.isEmpty() != false) {
             aapsLogger.debug("No BG data.")
             maxY = 10.0
@@ -68,13 +70,13 @@ class GraphData(injector: HasAndroidInjector, private val graph: GraphView, priv
         }
         val bgListArray: MutableList<DataPointWithLabelInterface> = ArrayList()
         for (bg in bgReadingsArray!!) {
-            if (bg.date < fromTime || bg.date > toTime) continue
-            if (bg.value > maxBgValue) maxBgValue = bg.value
+            if (bg.data.timestamp < fromTime || bg.data.timestamp > toTime) continue
+            if (bg.data.value > maxBgValue) maxBgValue = bg.data.value
             bgListArray.add(bg)
         }
         if (predictions != null) {
             predictions.sortWith(Comparator { o1: BgReading, o2: BgReading -> o1.x.compareTo(o2.x) })
-            for (prediction in predictions) if (prediction.value >= 40) bgListArray.add(prediction)
+            for (prediction in predictions) if (prediction.data.value >= 40) bgListArray.add(prediction)
         }
         maxBgValue = Profile.fromMgdlToUnits(maxBgValue, units)
         maxBgValue = if (units == Constants.MGDL) Round.roundTo(maxBgValue, 40.0) + 80 else Round.roundTo(maxBgValue, 2.0) + 4
@@ -274,10 +276,10 @@ class GraphData(injector: HasAndroidInjector, private val graph: GraphView, priv
         bgReadingsArray?.let { bgReadingsArray ->
             for (r in bgReadingsArray.indices) {
                 val reading = bgReadingsArray[r]
-                if (reading.date > date) continue
-                return Profile.fromMgdlToUnits(reading.value, units)
+                if (reading.data.timestamp > date) continue
+                return Profile.fromMgdlToUnits(reading.data.value, units)
             }
-            return if (bgReadingsArray.isNotEmpty()) Profile.fromMgdlToUnits(bgReadingsArray[0].value, units) else Profile.fromMgdlToUnits(100.0, units)
+            return if (bgReadingsArray.isNotEmpty()) Profile.fromMgdlToUnits(bgReadingsArray[0].data.value, units) else Profile.fromMgdlToUnits(100.0, units)
         } ?: return Profile.fromMgdlToUnits(100.0, units)
     }
 

@@ -385,22 +385,6 @@ public class NSUpload {
         UploadQueue.add(new DbRequest("dbAdd", "entries", data));
     }
 
-    @Deprecated
-    public static void uploadBg(BgReading reading, String source) {
-        JSONObject data = new JSONObject();
-        try {
-            data.put("device", source);
-            data.put("date", reading.date);
-            data.put("dateString", DateUtil.toISOString(reading.date));
-            data.put("sgv", reading.value);
-            data.put("direction", reading.direction);
-            data.put("type", "sgv");
-        } catch (JSONException e) {
-            log.error("Unhandled exception", e);
-        }
-        UploadQueue.add(new DbRequest("dbAdd", "entries", data));
-    }
-
     public static void uploadAppStart() {
         if (SP.getBoolean(R.string.key_ns_logappstartedevent, true)) {
             JSONObject data = new JSONObject();
@@ -440,47 +424,6 @@ public class NSUpload {
         try {
             UploadQueue.add(new DbRequest("dbRemove", "food", _id));
         } catch (Exception e) {
-            log.error("Unhandled exception", e);
-        }
-
-    }
-
-    @Deprecated
-    public static void sendToXdrip(BgReading bgReading) {
-        final String XDRIP_PLUS_NS_EMULATOR = "com.eveningoutpost.dexdrip.NS_EMULATOR";
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
-
-        try {
-            final JSONArray entriesBody = new JSONArray();
-            JSONObject json = new JSONObject();
-            json.put("sgv", bgReading.value);
-            if (bgReading.direction == null) {
-                json.put("direction", "NONE");
-            } else {
-                json.put("direction", bgReading.direction);
-            }
-            json.put("device", "G5");
-            json.put("type", "sgv");
-            json.put("date", bgReading.date);
-            json.put("dateString", format.format(bgReading.date));
-            entriesBody.put(json);
-
-            final Bundle bundle = new Bundle();
-            bundle.putString("action", "add");
-            bundle.putString("collection", "entries");
-            bundle.putString("data", entriesBody.toString());
-            final Intent intent = new Intent(XDRIP_PLUS_NS_EMULATOR);
-            intent.putExtras(bundle).addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-            MainApp.instance().sendBroadcast(intent);
-            List<ResolveInfo> receivers = MainApp.instance().getPackageManager().queryBroadcastReceivers(intent, 0);
-            if (receivers.size() < 1) {
-                log.debug("No xDrip receivers found. ");
-            } else {
-                log.debug(receivers.size() + " xDrip receivers");
-            }
-
-
-        } catch (JSONException e) {
             log.error("Unhandled exception", e);
         }
 

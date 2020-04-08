@@ -12,6 +12,7 @@ import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.ArrayAdapter
 import android.widget.CompoundButton
+import dagger.android.HasAndroidInjector
 import dagger.android.support.DaggerDialogFragment
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.MainApp
@@ -28,13 +29,9 @@ import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin
-import info.nightscout.androidaps.utils.DecimalFormatter
-import info.nightscout.androidaps.utils.FabricPrivacy
-import info.nightscout.androidaps.utils.SafeParse
-import info.nightscout.androidaps.utils.ToastUtils
+import info.nightscout.androidaps.utils.*
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import info.nightscout.androidaps.utils.toVisibility
 import info.nightscout.androidaps.utils.wizard.BolusWizard
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -57,6 +54,7 @@ class WizardDialog : DaggerDialogFragment() {
     @Inject lateinit var treatmentsPlugin: TreatmentsPlugin
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var iobCobCalculatorPlugin: IobCobCalculatorPlugin
+    @Inject lateinit var injector : HasAndroidInjector
 
     private var wizard: BolusWizard? = null
 
@@ -308,7 +306,7 @@ class WizardDialog : DaggerDialogFragment() {
             treatment_wizard_notes.text.toString(), carbTime)
 
         wizard?.let { wizard ->
-            treatments_wizard_bg.text = String.format(resourceHelper.gs(R.string.format_bg_isf), BgReading().value(Profile.toMgdl(bg, profileFunction.getUnits())).valueToUnitsToString(profileFunction.getUnits()), wizard.sens)
+            treatments_wizard_bg.text = String.format(resourceHelper.gs(R.string.format_bg_isf), BgReading(injector).value(Profile.toMgdl(bg, profileFunction.getUnits())).valueToUnitsToString(profileFunction.getUnits()), wizard.sens)
             treatments_wizard_bginsulin.text = resourceHelper.gs(R.string.formatinsulinunits, wizard.insulinFromBG)
 
             treatments_wizard_carbs.text = String.format(resourceHelper.gs(R.string.format_carbs_ic), carbs.toDouble(), wizard.ic)

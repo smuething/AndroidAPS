@@ -89,35 +89,6 @@ class BgReadingTest : TestBase() {
         Assert.assertEquals(81.0, bgReading.value(valueToSet).value, 0.01)
     }
 
-    @Test fun copyFromTest() {
-        val databaseHelper = Mockito.mock(DatabaseHelper::class.java)
-        `when`(MainApp.getDbHelper()).thenReturn(databaseHelper)
-        setReadings(72, 0)
-        val bgReading = BgReading(injector)
-        val copy = BgReading(injector)
-        bgReading.value = 81.0
-        val now = System.currentTimeMillis()
-        bgReading.date = now
-        copy.date = now
-        copy.copyFrom(bgReading)
-        Assert.assertEquals(81.0, copy.value, 0.1)
-        Assert.assertEquals(now, copy.date)
-        Assert.assertEquals(bgReading.directionToSymbol(), copy.directionToSymbol())
-    }
-
-    @Test
-    fun isEqualTest() {
-        val bgReading = BgReading(injector)
-        val copy = BgReading(injector)
-        bgReading.value = 81.0
-        val now = System.currentTimeMillis()
-        bgReading.date = now
-        copy.date = now
-        copy.copyFrom(bgReading)
-        Assert.assertTrue(copy.isEqual(bgReading))
-        Assert.assertFalse(copy.isEqual(BgReading(injector)))
-    }
-
     @Test fun calculateDirection() {
         val bgReading = BgReading(injector)
         val bgReadingsList: List<BgReading>? = null

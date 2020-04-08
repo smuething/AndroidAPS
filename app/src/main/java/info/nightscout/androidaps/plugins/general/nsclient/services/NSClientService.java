@@ -20,7 +20,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -31,7 +30,6 @@ import javax.inject.Inject;
 
 import dagger.android.DaggerService;
 import dagger.android.HasAndroidInjector;
-import info.nightscout.androidaps.BuildConfig;
 import info.nightscout.androidaps.Config;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
@@ -66,6 +64,7 @@ import info.nightscout.androidaps.plugins.general.overview.events.EventDismissNo
 import info.nightscout.androidaps.plugins.general.overview.events.EventNewNotification;
 import info.nightscout.androidaps.plugins.general.overview.notifications.Notification;
 import info.nightscout.androidaps.plugins.general.overview.notifications.NotificationWithAction;
+import info.nightscout.androidaps.services.DataExchangeStore;
 import info.nightscout.androidaps.services.Intents;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.FabricPrivacy;
@@ -720,7 +719,18 @@ public class NSClientService extends DaggerService {
                                 rxBus.send(new EventDismissNotification(Notification.NSALARM));
                                 rxBus.send(new EventDismissNotification(Notification.NSURGENTALARM));
                             }
-                            handleNewSgv(sgvs, isDelta);
+                            if (DataExchangeStore.INSTANCE.getNsclientSgvs() != null) {
+                                for (int index = 0; index < sgvs.length(); index++) {
+                                    JSONObject jsonSgv = sgvs.getJSONObject(index);
+                                    DataExchangeStore.INSTANCE.getNsclientSgvs().put(jsonSgv);
+                                }
+                            } else {
+                                // store data and notify DataService
+                                DataExchangeStore.INSTANCE.setNsclientSgvs(sgvs);
+                            }
+                            LocalBroadcastManager.getInstance(mainApp).sendBroadcast(new Intent(Intents.ACTION_NEW_SGV).addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES));
+                            // broadcast to xDrip
+                            broadcastNewSgv(sgvs, isDelta);
                         }
                         rxBus.send(new EventNSClientNewLog("LAST", DateUtil.dateAndTimeString(latestDateInReceivedData)));
                     } catch (JSONException e) {
@@ -920,18 +930,8 @@ public class NSClientService extends DaggerService {
         }
     }
 
-    public void handleNewSgv(JSONArray sgvs, boolean isDelta) {
+    public void broadcastNewSgv(JSONArray sgvs, boolean isDelta) {
         List<JSONArray> splitted = splitArray(sgvs);
-        for (JSONArray part : splitted) {
-            Bundle bundle = new Bundle();
-            bundle.putString("sgvs", part.toString());
-            bundle.putBoolean("delta", isDelta);
-            Intent intent = new Intent(Intents.ACTION_NEW_SGV);
-            intent.putExtras(bundle);
-            intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-            LocalBroadcastManager.getInstance(mainApp).sendBroadcast(intent);
-        }
-
         if (sp.getBoolean(R.string.key_nsclient_localbroadcasts, false)) {
             for (JSONArray part : splitted) {
                 Bundle bundle = new Bundle();

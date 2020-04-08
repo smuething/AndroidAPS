@@ -78,7 +78,7 @@ public class DataService extends DaggerIntentService {
         } else if (Intents.TOMATO_BG.equals(action)) {
             tomatoPlugin.handleNewData(intent);
         } else if (Intents.ACTION_NEW_SGV.equals(action)) {
-            nsClientSourcePlugin.handleNewData(intent);
+            nsClientSourcePlugin.handleNewData();
         } else if (Intents.ACTION_NEW_PROFILE.equals(action)) {
             // always handle Profile if NSProfile is enabled without looking at nsUploadOnly
             nsProfilePlugin.handleNewData(intent);

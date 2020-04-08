@@ -27,6 +27,7 @@ import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.Profile
+import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.dialogs.CalibrationDialog
 import info.nightscout.androidaps.dialogs.CarbsDialog
 import info.nightscout.androidaps.dialogs.InsulinDialog
@@ -550,9 +551,9 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
                 else                                  -> resourceHelper.gc(R.color.inrange)
             }
 
-            overview_bg?.text = lastBG.valueToUnitsToString(units)
+            overview_bg?.text = lastBG.valueToUnitsString(units)
             overview_bg?.setTextColor(color)
-            overview_arrow?.text = lastBG.directionToSymbol()
+            overview_arrow?.text = BgReading(injector, lastBG).directionToSymbol()
             overview_arrow?.setTextColor(color)
 
             val glucoseStatus = GlucoseStatus(injector).glucoseStatusData
@@ -574,8 +575,8 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
                 } else flag and Paint.STRIKE_THRU_TEXT_FLAG.inv()
                 overview_bg.paintFlags = flag
             }
-            overview_timeago?.text = DateUtil.minAgo(resourceHelper, lastBG.date)
-            overview_timeagoshort?.text = "(" + DateUtil.minAgoShort(lastBG.date) + ")"
+            overview_timeago?.text = DateUtil.minAgo(resourceHelper, lastBG.timestamp)
+            overview_timeagoshort?.text = "(" + DateUtil.minAgoShort(lastBG.timestamp) + ")"
 
         }
         val closedLoopEnabled = constraintChecker.isClosedLoopAllowed()

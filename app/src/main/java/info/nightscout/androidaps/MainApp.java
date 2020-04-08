@@ -35,10 +35,7 @@ import dagger.android.DaggerApplication;
 import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.database.AppRepository;
-import info.nightscout.androidaps.database.entities.GlucoseValue;
-import info.nightscout.androidaps.database.interfaces.DBEntry;
-import info.nightscout.androidaps.database.transactions.VersionChangeTransaction;
-import info.nightscout.androidaps.db.BgReading;
+import info.nightscout.androidaps.db.CompatDBHelper;
 import info.nightscout.androidaps.db.DatabaseHelper;
 import info.nightscout.androidaps.dependencyInjection.DaggerAppComponent;
 import info.nightscout.androidaps.interfaces.PluginBase;
@@ -59,12 +56,10 @@ import info.nightscout.androidaps.receivers.TimeDateOrTZChangeReceiver;
 import info.nightscout.androidaps.services.Intents;
 import info.nightscout.androidaps.utils.ActivityMonitor;
 import info.nightscout.androidaps.utils.FabricPrivacy;
-import info.nightscout.androidaps.utils.GlucoseValueUtilsKt;
 import info.nightscout.androidaps.utils.LocaleHelper;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
 import io.fabric.sdk.android.Fabric;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
 public class MainApp extends DaggerApplication {
@@ -81,7 +76,6 @@ public class MainApp extends DaggerApplication {
     private Notification notification; // TODO: move to OngoingNotificationProvider (and dagger)
     private CompositeDisposable disposable = new CompositeDisposable();
 
-    @Inject public AppRepository repository;
     @Inject PluginStore pluginStore;
     @Inject public HasAndroidInjector injector;
     @Inject AAPSLogger aapsLogger;
@@ -96,18 +90,11 @@ public class MainApp extends DaggerApplication {
     @Inject ConfigBuilderPlugin configBuilderPlugin;
     @Inject KeepAliveReceiver.KeepAliveManager keepAliveManager;
     @Inject List<PluginBase> plugins;
+    @Inject CompatDBHelper compatDBHelper;
 
     @Override
     public void onCreate() {
         super.onCreate();
-
-        String gitRemote = BuildConfig.REMOTE;
-        String commitHash = BuildConfig.HEAD;
-        if (gitRemote.contains("NoGitSystemAvailable")) {
-            gitRemote = null;
-            commitHash = null;
-        }
-        disposable.add(repository.runTransaction(new VersionChangeTransaction(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, gitRemote, commitHash)).subscribe());
 
         aapsLogger.debug("onCreate");
         sInstance = this;
@@ -115,14 +102,7 @@ public class MainApp extends DaggerApplication {
         LocaleHelper.INSTANCE.update(this);
         generateEmptyNotification();
         sDatabaseHelper = OpenHelperManager.getHelper(sInstance, DatabaseHelper.class);
-
-        disposable.add(repository.getChangeObservable().observeOn(AndroidSchedulers.mainThread()).subscribe((entries) -> {
-            GlucoseValue changedGlucoseValue = null;
-            for (DBEntry entry : entries) {
-                if (entry instanceof GlucoseValue) changedGlucoseValue = (GlucoseValue) entry;
-            }
-            if (changedGlucoseValue != null) getDbHelper().scheduleBgChange(GlucoseValueUtilsKt.convertToBGReading(changedGlucoseValue));
-        }));
+        compatDBHelper.triggerStart();
 
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
             if (ex instanceof InternalError) {

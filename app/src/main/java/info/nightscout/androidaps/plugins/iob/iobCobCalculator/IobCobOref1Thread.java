@@ -18,6 +18,7 @@ import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.IobTotal;
 import info.nightscout.androidaps.data.Profile;
+import info.nightscout.androidaps.database.entities.GlucoseValue;
 import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.TempTarget;
 import info.nightscout.androidaps.events.Event;
@@ -111,7 +112,7 @@ public class IobCobOref1Thread extends Thread {
                     iobCobCalculatorPlugin.loadBgData(end);
                     iobCobCalculatorPlugin.createBucketedData();
                 }
-                List<BgReading> bucketed_data = iobCobCalculatorPlugin.getBucketedData();
+                List<GlucoseValue> bucketed_data = iobCobCalculatorPlugin.getBucketedData();
                 LongSparseArray<AutosensData> autosensDataTable = iobCobCalculatorPlugin.getAutosensDataTable();
 
                 if (bucketed_data == null || bucketed_data.size() < 3) {
@@ -119,7 +120,7 @@ public class IobCobOref1Thread extends Thread {
                     return;
                 }
 
-                long prevDataTime = IobCobCalculatorPlugin.roundUpTime(bucketed_data.get(bucketed_data.size() - 3).date);
+                long prevDataTime = IobCobCalculatorPlugin.roundUpTime(bucketed_data.get(bucketed_data.size() - 3).getTimestamp());
                 aapsLogger.debug(LTag.AUTOSENS, "Prev data time: " + DateUtil.dateAndTimeString(prevDataTime));
                 AutosensData previous = autosensDataTable.get(prevDataTime);
                 // start from oldest to be able sub cob
@@ -133,7 +134,7 @@ public class IobCobOref1Thread extends Thread {
                         return;
                     }
                     // check if data already exists
-                    long bgTime = bucketed_data.get(i).date;
+                    long bgTime = bucketed_data.get(i).getTimestamp();
                     bgTime = IobCobCalculatorPlugin.roundUpTime(bgTime);
                     if (bgTime > IobCobCalculatorPlugin.roundUpTime(now()))
                         continue;
@@ -165,14 +166,14 @@ public class IobCobOref1Thread extends Thread {
                     double bg;
                     double avgDelta;
                     double delta;
-                    bg = bucketed_data.get(i).value;
-                    if (bg < 39 || bucketed_data.get(i + 3).value < 39) {
+                    bg = bucketed_data.get(i).getValue();
+                    if (bg < 39 || bucketed_data.get(i + 3).getValue() < 39) {
                         aapsLogger.error("! value < 39");
                         continue;
                     }
                     autosensData.bg = bg;
-                    delta = (bg - bucketed_data.get(i + 1).value);
-                    avgDelta = (bg - bucketed_data.get(i + 3).value) / 3;
+                    delta = (bg - bucketed_data.get(i + 1).getValue());
+                    avgDelta = (bg - bucketed_data.get(i + 3).getValue()) / 3;
 
                     IobTotal iob = iobCobCalculatorPlugin.calculateFromTreatmentsAndTemps(bgTime, profile);
 

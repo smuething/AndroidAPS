@@ -17,8 +17,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -32,7 +30,7 @@ import info.nightscout.androidaps.activities.ErrorHelperActivity;
 import info.nightscout.androidaps.data.DetailedBolusInfo;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.PumpEnactResult;
-import info.nightscout.androidaps.db.BgReading;
+import info.nightscout.androidaps.database.entities.GlucoseValue;
 import info.nightscout.androidaps.db.CareportalEvent;
 import info.nightscout.androidaps.db.Source;
 import info.nightscout.androidaps.db.TemporaryBasal;
@@ -49,7 +47,6 @@ import info.nightscout.androidaps.interfaces.PluginType;
 import info.nightscout.androidaps.interfaces.PumpDescription;
 import info.nightscout.androidaps.interfaces.PumpInterface;
 import info.nightscout.androidaps.logging.AAPSLogger;
-import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.aps.loop.events.EventLoopSetLastRunGui;
 import info.nightscout.androidaps.plugins.aps.loop.events.EventLoopUpdateGui;
@@ -105,7 +102,7 @@ public class LoopPlugin extends PluginBase {
         public PumpEnactResult tbrSetByPump = null;
         public PumpEnactResult smbSetByPump = null;
         public String source = null;
-        public long  lastAPSRun = DateUtil.now();
+        public long lastAPSRun = DateUtil.now();
         public long lastTBREnact = 0;
         public long lastSMBEnact = 0;
         public long lastTBRRequest = 0;
@@ -183,13 +180,13 @@ public class LoopPlugin extends PluginBase {
                     // Autosens calculation not triggered by a new BG
                     if (!(event.getCause() instanceof EventNewBG)) return;
 
-                    BgReading bgReading = iobCobCalculatorPlugin.actualBg();
+                    GlucoseValue bgReading = iobCobCalculatorPlugin.actualBg();
                     // BG outdated
                     if (bgReading == null) return;
                     // already looped with that value
-                    if (bgReading.date <= lastBgTriggeredRun) return;
+                    if (bgReading.getTimestamp() <= lastBgTriggeredRun) return;
 
-                    lastBgTriggeredRun = bgReading.date;
+                    lastBgTriggeredRun = bgReading.getTimestamp();
                     invoke("AutosenseCalculation for " + bgReading, true);
                 }, exception -> FabricPrivacy.getInstance().logException(exception))
         );

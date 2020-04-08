@@ -13,13 +13,13 @@ import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSSgv
+import info.nightscout.androidaps.services.DataExchangeStore
 import info.nightscout.androidaps.utils.determineSourceSensor
 import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable
-import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -53,19 +53,16 @@ class NSClientSourcePlugin @Inject constructor(
         return isAdvancedFilteringEnabled
     }
 
-    override fun handleNewData(intent: Intent) {
+    // Not used, data goes through DataExchangeStore
+    override fun handleNewData(intent: Intent) {}
+
+    fun handleNewData() {
         if (!isEnabled(PluginType.BGSOURCE) && !sp.getBoolean(R.string.key_ns_autobackfill, true)) return
-        val bundles = intent.extras ?: return
         val glucoseValues = mutableListOf<CgmSourceTransaction.TransactionGlucoseValue?>()
-        if (bundles.containsKey("sgv")) {
-            glucoseValues += JSONObject(bundles.getString("sgv")).toGlucoseValue()
-        }
-        if (bundles.containsKey("sgvs")) {
-            val sgvString = bundles.getString("sgvs")
-            aapsLogger.debug(LTag.BGSOURCE, "Received NS Data: $sgvString")
-            val jsonArray = JSONArray(sgvString)
-            for (i in 0 until jsonArray.length()) {
-                glucoseValues += jsonArray.getJSONObject(i).toGlucoseValue()
+        DataExchangeStore.nsclientSgvs?.let {
+            aapsLogger.debug(LTag.BGSOURCE, "Received NS Data: $it")
+            for (i in 0 until it.length()) {
+                glucoseValues += it.getJSONObject(i).toGlucoseValue()
             }
         }
         disposable += repository.runTransaction(CgmSourceTransaction(glucoseValues.filterNotNull(), emptyList(), null)).subscribe({}, {

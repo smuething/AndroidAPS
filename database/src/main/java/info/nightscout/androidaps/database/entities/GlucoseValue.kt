@@ -30,6 +30,17 @@ data class GlucoseValue(
         var sourceSensor: SourceSensor
 ) : TraceableDBEntry, DBEntryWithTime {
 
+    // to build in memory objects
+    constructor() : this (
+        timestamp = 0,
+        utcOffset = 0,
+        raw = null,
+        value = 0.0,
+        trendArrow = TrendArrow.NONE,
+        noise = null,
+        sourceSensor = SourceSensor.UNKNOWN
+    )
+
     fun contentEqualsTo(other: GlucoseValue): Boolean {
         return timestamp == other.timestamp &&
                 utcOffset == other.utcOffset &&

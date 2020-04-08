@@ -29,6 +29,8 @@ import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutos
 import info.nightscout.androidaps.utils.DecimalFormatter
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import info.nightscout.androidaps.utils.toSymbol
+import info.nightscout.androidaps.utils.valueToUnitsString
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
@@ -140,12 +142,12 @@ class PersistentNotificationPlugin @Inject constructor(
             val lastBG = iobCobCalculatorPlugin.lastBg()
             val glucoseStatus = GlucoseStatus(injector).getGlucoseStatusData()
             if (lastBG != null) {
-                line1_aa = lastBG.valueToUnitsToString(units)
+                line1_aa = lastBG.valueToUnitsString(units)
                 line1 = line1_aa
                 if (glucoseStatus != null) {
                     line1 += ("  Δ" + Profile.toSignedUnitsString(glucoseStatus.delta, glucoseStatus.delta * Constants.MGDL_TO_MMOLL, units)
                         + " avgΔ" + Profile.toSignedUnitsString(glucoseStatus.avgdelta, glucoseStatus.avgdelta * Constants.MGDL_TO_MMOLL, units))
-                    line1_aa += "  " + lastBG.directionToSymbol()
+                    line1_aa += "  " + lastBG.trendArrow.toSymbol()
                 } else {
                     line1 += " " +
                         resourceHelper.gs(R.string.old_data) +

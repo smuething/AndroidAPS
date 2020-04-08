@@ -56,12 +56,6 @@ class GlimpPlugin @Inject constructor(
         if (!isEnabled(PluginType.BGSOURCE)) return
         val bundle = intent.extras ?: return
         aapsLogger.debug(LTag.BGSOURCE, "Received Glimp Data: ${BundleLogger.log(bundle)}")
-        val bgReading = BgReading()
-        bgReading.value = bundle.getDouble("mySGV")
-        bgReading.direction = bundle.getString("myTrend")
-        bgReading.date = bundle.getLong("myTimestamp")
-        bgReading.raw = 0.0
-        MainApp.getDbHelper().createIfNotExists(bgReading, "GLIMP")
         val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
             timestamp = bundle.getLong("myTimestamp"),
             value = bundle.getDouble("mySGV"),

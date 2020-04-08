@@ -99,16 +99,14 @@ class TidepoolPlugin @Inject constructor(
             .filter { it.bgReading != null } // better would be optional in API level >24
             .map { it.bgReading }
             .subscribe({ bgReading ->
-                if (bgReading!!.date < uploadChunk.getLastEnd())
-                    uploadChunk.setLastEnd(bgReading.date)
+                if (bgReading!!.timestamp < uploadChunk.getLastEnd())
+                    uploadChunk.setLastEnd(bgReading.timestamp)
                 if (isEnabled(PluginType.GENERAL)
                     && (!sp.getBoolean(R.string.key_tidepool_only_while_charging, false) || receiverStatusStore.isCharging)
                     && (!sp.getBoolean(R.string.key_tidepool_only_while_unmetered, false) || receiverStatusStore.isWifiConnected)
                     && rateLimit.rateLimit("tidepool-new-data-upload", T.mins(4).secs().toInt()))
                     doUpload()
-            }, {
-                fabricPrivacy.logException(it)
-            })
+            }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventPreferenceChange::class.java)
             .observeOn(Schedulers.io())
@@ -118,9 +116,7 @@ class TidepoolPlugin @Inject constructor(
                     || event.isChanged(resourceHelper, R.string.key_tidepool_password)
                 )
                     tidepoolUploader.resetInstance()
-            }, {
-                fabricPrivacy.logException(it)
-            })
+            }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventNetworkChange::class.java)
             .observeOn(Schedulers.io())

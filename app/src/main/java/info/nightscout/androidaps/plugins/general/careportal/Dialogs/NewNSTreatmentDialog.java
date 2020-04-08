@@ -29,7 +29,6 @@ import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -42,17 +41,15 @@ import javax.inject.Inject;
 import dagger.android.HasAndroidInjector;
 import dagger.android.support.DaggerDialogFragment;
 import info.nightscout.androidaps.Constants;
-import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
-import info.nightscout.androidaps.db.BgReading;
+import info.nightscout.androidaps.database.AppRepository;
+import info.nightscout.androidaps.database.entities.GlucoseValue;
 import info.nightscout.androidaps.db.CareportalEvent;
 import info.nightscout.androidaps.db.ProfileSwitch;
 import info.nightscout.androidaps.interfaces.ActivePluginProvider;
 import info.nightscout.androidaps.logging.AAPSLogger;
-import info.nightscout.androidaps.logging.StacktraceLoggerWrapper;
-import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin;
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker;
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction;
 import info.nightscout.androidaps.plugins.general.careportal.OptionsToShow;
@@ -81,6 +78,7 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
     @Inject ActivePluginProvider activePlugin;
     @Inject TreatmentsPlugin treatmentsPlugin;
     @Inject HardLimits hardLimits;
+    @Inject AppRepository repository;
 
     private static OptionsToShow options;
     private static @StringRes int event;
@@ -464,11 +462,11 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
 
     private void updateBGforDateTime() {
         long millis = eventTime.getTime() - (150 * 1000L); // 2,5 * 60 * 1000
-        List<BgReading> data = MainApp.getDbHelper().getBgreadingsDataFromTime(millis, true);
+        List<GlucoseValue> data = repository.compatGetBgreadingsDataFromTime(millis, true).blockingGet();
         if ((data.size() > 0) &&
-                (data.get(0).date > millis - 7 * 60 * 1000L) &&
-                (data.get(0).date < millis + 7 * 60 * 1000L)) {
-            editBg.setValue(Profile.fromMgdlToUnits(data.get(0).value, profileFunction.getUnits()));
+                (data.get(0).getTimestamp() > millis - 7 * 60 * 1000L) &&
+                (data.get(0).getTimestamp() < millis + 7 * 60 * 1000L)) {
+            editBg.setValue(Profile.fromMgdlToUnits(data.get(0).getValue(), profileFunction.getUnits()));
         }
     }
 

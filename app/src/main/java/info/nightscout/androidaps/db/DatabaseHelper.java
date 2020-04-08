@@ -75,7 +75,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     private static Logger log = StacktraceLoggerWrapper.getLogger(L.DATABASE);
 
     public static final String DATABASE_NAME = "AndroidAPSDb";
-    public static final String DATABASE_BGREADINGS = "BgReadings";
     public static final String DATABASE_TEMPORARYBASALS = "TemporaryBasals";
     public static final String DATABASE_EXTENDEDBOLUSES = "ExtendedBoluses";
     public static final String DATABASE_TEMPTARGETS = "TempTargets";
@@ -91,9 +90,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     private static final int DATABASE_VERSION = 11;
 
     public static Long earliestDataChange = null;
-
-    private static final ScheduledExecutorService bgWorker = Executors.newSingleThreadScheduledExecutor();
-    private static ScheduledFuture<?> scheduledBgPost = null;
 
     private static final ScheduledExecutorService tempBasalsWorker = Executors.newSingleThreadScheduledExecutor();
     private static ScheduledFuture<?> scheduledTemBasalsPost = null;
@@ -125,7 +121,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             if (L.isEnabled(L.DATABASE))
                 log.info("onCreate");
             TableUtils.createTableIfNotExists(connectionSource, TempTarget.class);
-            TableUtils.createTableIfNotExists(connectionSource, BgReading.class);
             TableUtils.createTableIfNotExists(connectionSource, DanaRHistoryRecord.class);
             TableUtils.createTableIfNotExists(connectionSource, DbRequest.class);
             TableUtils.createTableIfNotExists(connectionSource, TemporaryBasal.class);
@@ -155,7 +150,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             if (oldVersion < 7) {
                 log.info(DatabaseHelper.class.getName(), "onUpgrade");
                 TableUtils.dropTable(connectionSource, TempTarget.class, true);
-                TableUtils.dropTable(connectionSource, BgReading.class, true);
                 TableUtils.dropTable(connectionSource, DanaRHistoryRecord.class, true);
                 TableUtils.dropTable(connectionSource, DbRequest.class, true);
                 TableUtils.dropTable(connectionSource, TemporaryBasal.class, true);
@@ -204,7 +198,8 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     public void resetDatabases() {
         try {
             TableUtils.dropTable(connectionSource, TempTarget.class, true);
-            TableUtils.dropTable(connectionSource, BgReading.class, true);
+            // TODO: Clear BGReading
+            //TableUtils.dropTable(connectionSource, BgReading.class, true);
             TableUtils.dropTable(connectionSource, DanaRHistoryRecord.class, true);
             TableUtils.dropTable(connectionSource, DbRequest.class, true);
             TableUtils.dropTable(connectionSource, TemporaryBasal.class, true);
@@ -226,7 +221,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             log.error("Unhandled exception", e);
         }
         VirtualPumpPlugin.Companion.getPlugin().setFakingStatus(true);
-        scheduleBgChange(null); // trigger refresh
         scheduleTemporaryBasalChange();
         scheduleExtendedBolusChange();
         scheduleTemporaryTargetChange();
@@ -361,80 +355,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             if (L.isEnabled(L.DATABASE))
                 log.debug("Rounding " + date + " to " + rounded);
         return rounded;
-    }
-    // -------------------  BgReading handling -----------------------
-
-    public boolean createIfNotExists(BgReading bgReading, String from) {
-        try {
-            bgReading.date = roundDateToSec(bgReading.date);
-            BgReading old = getDaoBgReadings().queryForId(bgReading.date);
-            if (old == null) {
-                getDaoBgReadings().create(bgReading);
-                if (L.isEnabled(L.DATABASE))
-                    log.debug("BG: New record from: " + from + " " + bgReading.toString());
-                scheduleBgChange(bgReading);
-                return true;
-            }
-            if (!old.isEqual(bgReading)) {
-                if (L.isEnabled(L.DATABASE))
-                    log.debug("BG: Similiar found: " + old.toString());
-                old.copyFrom(bgReading);
-                getDaoBgReadings().update(old);
-                if (L.isEnabled(L.DATABASE))
-                    log.debug("BG: Updating record from: " + from + " New data: " + old.toString());
-                scheduleBgChange(bgReading);
-                return false;
-            }
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        return false;
-    }
-
-    public void update(BgReading bgReading) {
-        bgReading.date = roundDateToSec(bgReading.date);
-        try {
-            getDaoBgReadings().update(bgReading);
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-    }
-
-    public static void scheduleBgChange(@Nullable final BgReading bgReading) {
-        class PostRunnable implements Runnable {
-            public void run() {
-                if (L.isEnabled(L.DATABASE))
-                    log.debug("Firing EventNewBg");
-                RxBus.Companion.getINSTANCE().send(new EventNewBG(bgReading));
-                scheduledBgPost = null;
-            }
-        }
-        // prepare task for execution in 1 sec
-        // cancel waiting task to prevent sending multiple posts
-        if (scheduledBgPost != null)
-            scheduledBgPost.cancel(false);
-        Runnable task = new PostRunnable();
-        final int sec = 1;
-        scheduledBgPost = bgWorker.schedule(task, sec, TimeUnit.SECONDS);
-
-    }
-
-    public List<BgReading> getBgreadingsDataFromTime(long mills, boolean ascending) {
-        return MainApp.instance().repository.compatGetBgreadingsDataFromTime(mills, ascending)
-                .map(GlucoseValueUtilsKt::convertToBGReadings)
-                .blockingGet();
-    }
-
-    public List<BgReading> getBgreadingsDataFromTime(long start, long end, boolean ascending) {
-        return MainApp.instance().repository.compatGetBgreadingsDataFromTime(start, end, ascending)
-                .map(GlucoseValueUtilsKt::convertToBGReadings)
-                .blockingGet();
-    }
-
-    public List<BgReading> getAllBgreadingsDataFromTime(long mills, boolean ascending) {
-        return MainApp.instance().repository.compatGetAllBgreadingsDataFromTime(mills, ascending)
-                .map(GlucoseValueUtilsKt::convertToBGReadings)
-                .blockingGet();
     }
 
     // -------------------  TDD handling -----------------------

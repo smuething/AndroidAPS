@@ -9,7 +9,6 @@ import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.IobTotal
-import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.events.Event
 import info.nightscout.androidaps.events.EventExtendedBolusChange
 import info.nightscout.androidaps.events.EventNewBasalProfile
@@ -21,8 +20,8 @@ import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
-import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.aps.events.EventOpenAPSUpdateGui
+import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSDeviceStatus
@@ -35,6 +34,7 @@ import info.nightscout.androidaps.utils.BatteryLevel
 import info.nightscout.androidaps.utils.DefaultValueHelper
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import info.nightscout.androidaps.utils.toText
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
@@ -124,13 +124,13 @@ class DataBroadcastPlugin @Inject constructor(
     }
 
     private fun bgStatus(bundle: Bundle) {
-        val lastBG: BgReading = iobCobCalculatorPlugin.lastBg() ?: return
+        val lastBG = iobCobCalculatorPlugin.lastBg() ?: return
         val glucoseStatus = GlucoseStatus(injector).glucoseStatusData ?: return
 
         bundle.putDouble("glucoseMgdl", lastBG.value)   // last BG in mgdl
-        bundle.putLong("glucoseTimeStamp", lastBG.date) // timestamp
+        bundle.putLong("glucoseTimeStamp", lastBG.timestamp) // timestamp
         bundle.putString("units", profileFunction.getUnits()) // units used in AAPS "mg/dl" or "mmol"
-        bundle.putString("slopeArrow", lastBG.directionToSymbol()) // direction arrow as string
+        bundle.putString("slopeArrow", lastBG.trendArrow.toText()) // direction arrow as string
         bundle.putDouble("deltaMgdl", glucoseStatus.delta) // bg delta in mgdl
         bundle.putDouble("avgDeltaMgdl", glucoseStatus.avgdelta) // average bg delta
         bundle.putDouble("high", defaultValueHelper.determineHighLine()) // predefined top value of in range (green area)

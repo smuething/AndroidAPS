@@ -9,24 +9,20 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.android.support.DaggerFragment
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.InvalidateGlucoseValueTransaction
-import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished
-import info.nightscout.androidaps.plugins.source.BGSourceFragment.RecyclerViewAdapter.BgReadingsViewHolder
-import info.nightscout.androidaps.utils.DateUtil
-import info.nightscout.androidaps.utils.FabricPrivacy
-import info.nightscout.androidaps.utils.OKDialog
-import info.nightscout.androidaps.utils.T
+import info.nightscout.androidaps.utils.*
 import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.bgsource_fragment.*
 import javax.inject.Inject
 
@@ -51,7 +47,10 @@ class BGSourceFragment : DaggerFragment() {
         bgsource_recyclerview.setHasFixedSize(true)
         bgsource_recyclerview.layoutManager = LinearLayoutManager(view.context)
         val now = System.currentTimeMillis()
-        bgsource_recyclerview.adapter = RecyclerViewAdapter(MainApp.getDbHelper().getAllBgreadingsDataFromTime(now - MILLS_TO_THE_PAST, false))
+        disposable += repository
+            .compatGetBgreadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe { list -> bgsource_recyclerview.adapter = RecyclerViewAdapter(list) }
     }
 
     @Synchronized
@@ -59,8 +58,14 @@ class BGSourceFragment : DaggerFragment() {
         super.onResume()
         disposable.add(rxBus
             .toObservable(EventAutosensCalculationFinished::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ updateGUI() }) { fabricPrivacy.logException(it) }
+            .observeOn(Schedulers.io())
+            .subscribe({
+                val now = System.currentTimeMillis()
+                disposable += repository
+                    .compatGetBgreadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { list -> bgsource_recyclerview?.swapAdapter(RecyclerViewAdapter(list), true) }
+            }) { fabricPrivacy.logException(it) }
         )
     }
 
@@ -70,32 +75,27 @@ class BGSourceFragment : DaggerFragment() {
         super.onPause()
     }
 
-    private fun updateGUI() {
-        val now = System.currentTimeMillis()
-        bgsource_recyclerview?.swapAdapter(RecyclerViewAdapter(MainApp.getDbHelper().getAllBgreadingsDataFromTime(now - MILLS_TO_THE_PAST, false)), true)
-    }
-
-    inner class RecyclerViewAdapter internal constructor(private var bgReadings: List<BgReading>) : RecyclerView.Adapter<BgReadingsViewHolder>() {
-        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): BgReadingsViewHolder {
+    inner class RecyclerViewAdapter internal constructor(private var glucoseValues: List<GlucoseValue>) : RecyclerView.Adapter<RecyclerViewAdapter.GlucoseValuesViewHolder>() {
+        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): GlucoseValuesViewHolder {
             val v = LayoutInflater.from(viewGroup.context).inflate(R.layout.bgsource_item, viewGroup, false)
-            return BgReadingsViewHolder(v)
+            return GlucoseValuesViewHolder(v)
         }
 
-        override fun onBindViewHolder(holder: BgReadingsViewHolder, position: Int) {
-            val bgReading = bgReadings[position]
-            holder.ns.visibility = if (NSUpload.isIdValid(bgReading._id)) View.VISIBLE else View.GONE
-            holder.invalid.visibility = if (!bgReading.isValid) View.VISIBLE else View.GONE
-            holder.date.text = DateUtil.dateAndTimeString(bgReading.date)
-            holder.value.text = bgReading.valueToUnitsToString(profileFunction.getUnits())
-            holder.direction.text = bgReading.directionToSymbol()
-            holder.remove.tag = bgReading
+        override fun onBindViewHolder(holder: GlucoseValuesViewHolder, position: Int) {
+            val glucoseValue = glucoseValues[position]
+            holder.ns.visibility = NSUpload.isIdValid(glucoseValue.interfaceIDs.nightscoutId).toVisibility()
+            holder.invalid.visibility = (!glucoseValue.isValid).toVisibility()
+            holder.date.text = DateUtil.dateAndTimeString(glucoseValue.timestamp)
+            holder.value.text = glucoseValue.valueToUnitsString(profileFunction.getUnits())
+            holder.direction.text = glucoseValue.trendArrow.toSymbol()
+            holder.remove.tag = glucoseValue
         }
 
         override fun getItemCount(): Int {
-            return bgReadings.size
+            return glucoseValues.size
         }
 
-        inner class BgReadingsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        inner class GlucoseValuesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             var date: TextView = itemView.findViewById(R.id.bgsource_date)
             var value: TextView = itemView.findViewById(R.id.bgsource_value)
             var direction: TextView = itemView.findViewById(R.id.bgsource_direction)
@@ -105,11 +105,11 @@ class BGSourceFragment : DaggerFragment() {
 
             init {
                 remove.setOnClickListener { v: View ->
-                    val bgReading = v.tag as BgReading
+                    val glucoseValue = v.tag as GlucoseValue
                     activity?.let { activity ->
-                        val text = DateUtil.dateAndTimeString(bgReading.date) + "\n" + bgReading.valueToUnitsToString(profileFunction.getUnits())
+                        val text = DateUtil.dateAndTimeString(glucoseValue.timestamp) + "\n" + glucoseValue.valueToUnitsString(profileFunction.getUnits())
                         OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.removerecord), text, Runnable {
-                            disposable += repository.runTransaction(InvalidateGlucoseValueTransaction(bgReading.backing.id)).subscribe()
+                            disposable += repository.runTransaction(InvalidateGlucoseValueTransaction(glucoseValue.id)).subscribe()
                         })
                     }
                 }
