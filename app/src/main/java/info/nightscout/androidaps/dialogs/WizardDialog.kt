@@ -29,9 +29,14 @@ import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin
-import info.nightscout.androidaps.utils.*
+import info.nightscout.androidaps.utils.DecimalFormatter
+import info.nightscout.androidaps.utils.FabricPrivacy
+import info.nightscout.androidaps.utils.SafeParse
+import info.nightscout.androidaps.utils.ToastUtils
+import info.nightscout.androidaps.utils.extensions.toVisibility
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
+import info.nightscout.androidaps.utils.valueToUnits
 import info.nightscout.androidaps.utils.wizard.BolusWizard
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -54,7 +59,7 @@ class WizardDialog : DaggerDialogFragment() {
     @Inject lateinit var treatmentsPlugin: TreatmentsPlugin
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var iobCobCalculatorPlugin: IobCobCalculatorPlugin
-    @Inject lateinit var injector : HasAndroidInjector
+    @Inject lateinit var injector: HasAndroidInjector
 
     private var wizard: BolusWizard? = null
 

@@ -61,7 +61,7 @@ import info.nightscout.androidaps.utils.DefaultValueHelper;
 import info.nightscout.androidaps.utils.HardLimits;
 import info.nightscout.androidaps.utils.JsonHelper;
 import info.nightscout.androidaps.utils.NumberPicker;
-import info.nightscout.androidaps.utils.OKDialog;
+import info.nightscout.androidaps.utils.alertDialogs.OKDialog;
 import info.nightscout.androidaps.utils.SafeParse;
 import info.nightscout.androidaps.utils.Translator;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;

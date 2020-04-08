@@ -58,7 +58,9 @@ import info.nightscout.androidaps.plugins.source.XdripPlugin
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin
 import info.nightscout.androidaps.queue.CommandQueue
 import info.nightscout.androidaps.utils.*
+import info.nightscout.androidaps.utils.alertDialogs.OKDialog
 import info.nightscout.androidaps.utils.buildHelper.BuildHelper
+import info.nightscout.androidaps.utils.extensions.toVisibility
 import info.nightscout.androidaps.utils.protection.ProtectionCheck
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
@@ -765,7 +767,7 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
                 val fromTime: Long
                 val endTime: Long
                 val apsResult = if (Config.APS) lastRun?.constraintsProcessed else NSDeviceStatus.getAPSResult(injector)
-                if (predictionsAvailable && apsResult != null && sp.getBoolean("showprediction", false)) {
+                if (predictionsAvailable && apsResult != null && overviewMenus.setting[0][OverviewMenus.CharType.PRE.ordinal]) {
                     var predHours = (ceil(apsResult.latestPredictionsTime - System.currentTimeMillis().toDouble()) / (60 * 60 * 1000)).toInt()
                     predHours = min(2, predHours)
                     predHours = max(0, predHours)
