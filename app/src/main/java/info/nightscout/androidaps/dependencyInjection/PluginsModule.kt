@@ -26,6 +26,7 @@ import info.nightscout.androidaps.plugins.general.dataBroadcaster.DataBroadcastP
 import info.nightscout.androidaps.plugins.general.food.FoodPlugin
 import info.nightscout.androidaps.plugins.general.maintenance.MaintenancePlugin
 import info.nightscout.androidaps.plugins.general.nsclient.NSClientPlugin
+import info.nightscout.androidaps.plugins.general.nsclient2.NSClient2Plugin
 import info.nightscout.androidaps.plugins.general.overview.OverviewPlugin
 import info.nightscout.androidaps.plugins.general.persistentNotification.PersistentNotificationPlugin
 import info.nightscout.androidaps.plugins.general.smsCommunicator.SmsCommunicatorPlugin
@@ -284,6 +285,12 @@ abstract class PluginsModule {
     @IntoMap
     @IntKey(360)
     abstract fun bindNSClientPlugin(plugin: NSClientPlugin): PluginBase
+
+    @Binds
+    @AllConfigs
+    @IntoMap
+    @IntKey(361)
+    abstract fun bindNSClient2Plugin(plugin: NSClient2Plugin): PluginBase
 
     @Binds
     @AllConfigs

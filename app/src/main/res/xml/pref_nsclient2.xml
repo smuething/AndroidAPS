@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:validate="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/nsclientinternal2"
+        app:initialExpandedChildrenCount="0">
+        <info.nightscout.androidaps.utils.textValidator.ValidatingEditTextPreference
+            android:defaultValue="https://{YOUR-SITE}.azurewebsites.net/"
+            android:dialogMessage="@string/nsclientinternal_url_dialogmessage"
+            android:inputType="textUri"
+            android:key="@string/key_nsclient2_baseurl"
+            android:selectAllOnFocus="true"
+            android:title="@string/nsclientinternal_url_title"
+            validate:testType="httpsUrl" />
+
+        <EditTextPreference
+            android:dialogMessage="@string/nsclient2_token_dialogmessage"
+            android:dialogTitle="@string/nsclient2_token_dialogtitle"
+            android:inputType="textPassword"
+            android:key="@string/key_nsclient2_token"
+            android:title="@string/nsclient2_token_title" />
+    </PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>

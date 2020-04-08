@@ -567,6 +567,8 @@
     <string name="wrongpassword">Wrong password</string>
     <string name="approachingdailylimit">Approaching insulin daily limit</string>
     <string name="nsclientinternal">NSClient</string>
+    <string name="nsclientinternal2">NSClientREST</string>
+    <string name="nsclientinternal2_shortname">NSCR</string>
     <string name="nsclientinternal_shortname">NSCI</string>
     <string name="nsclientinternal_url">URL:</string>
     <string name="nsclientinternal_autoscroll">Autoscroll</string>
@@ -585,6 +587,13 @@
     <string name="paused">Paused</string>
     <string name="key_nsclientinternal_url" translatable="false">nsclientinternal_url</string>
     <string name="key_nsclientinternal_api_secret" translatable="false">nsclientinternal_api_secret</string>
+
+    <string name="key_nsclient2_baseurl" translatable="false">nsclient2_baseurl</string>
+    <string name="key_nsclient2_token" translatable="false">nsclient2_token</string>
+    <string name="nsclient2_token_title">NS access token</string>
+    <string name="nsclient2_token_dialogtitle">NS access token</string>
+    <string name="nsclient2_token_dialogmessage">Enter NS access token (From Roles in Admin panel)</string>
+
     <string name="key_danar_bt_name" translatable="false">danar_bt_name</string>
     <string name="key_danar_password" translatable="false">danar_password</string>
     <string name="key_danar_useextended" translatable="false">danar_useextended</string>

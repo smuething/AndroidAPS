@@ -11,6 +11,7 @@ import info.nightscout.androidaps.data.PumpEnactResult
 import info.nightscout.androidaps.database.DatabaseModule
 import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.db.ProfileSwitch
+import info.nightscout.androidaps.dependencyInjection.networking.NetModule
 import info.nightscout.androidaps.plugins.aps.loop.APSResult
 import info.nightscout.androidaps.plugins.aps.openAPSAMA.DetermineBasalResultAMA
 import info.nightscout.androidaps.plugins.aps.logger.LoggerCallback
@@ -45,6 +46,7 @@ import javax.inject.Singleton
         ActivitiesModule::class,
         FragmentsModule::class,
         AppModule::class,
+        NetModule::class,
         ReceiversModule::class,
         ServicesModule::class,
         DatabaseModule::class

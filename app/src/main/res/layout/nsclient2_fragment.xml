@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/nsclient2_test_Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Perform test call" />
+
+    <Button
+        android:id="@+id/nsclient2_status_Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Perform status call" />
+
+    <Button
+        android:id="@+id/nsclient2_lastmodified_Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Perform lastModfied call" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/nsclient2_test_textoutput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </ScrollView>
+
+</LinearLayout>
