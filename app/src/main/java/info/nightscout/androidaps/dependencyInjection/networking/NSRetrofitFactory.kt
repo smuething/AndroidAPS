@@ -35,7 +35,7 @@ class NSRetrofitFactory(
     private fun getBaseURL() = sp.getString(R.string.key_nsclient2_baseurl, "") // Test-Server: "nsapiv3.herokuapp.com"
 
     private fun getRetrofit(): Retrofit = Retrofit.Builder()
-        .baseUrl("${getBaseURL()}/api/")
+        .baseUrl("${getBaseURL()}")
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create(gson))
         .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))

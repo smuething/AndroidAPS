@@ -28,7 +28,8 @@ class NSClient2Fragment : DaggerFragment() {
         nsclient2_test_Button.setOnClickListener { viewModel.testConnection() }
         nsclient2_status_Button.setOnClickListener { viewModel.exampleStatusCall() }
         nsclient2_lastmodified_Button.setOnClickListener { viewModel.lastModifiedCall() }
-        nsclient2_postglucosevalue_Button.setOnClickListener { viewModel.postGlusoveValueCall() }
+        nsclient2_postglucosevalue_Button.setOnClickListener { viewModel.postGlucoseValueCall() }
+        nsclient2_getentries_Button.setOnClickListener { viewModel.getEntriesCall() }
 
         viewModel.testResultLiveData.observe(viewLifecycleOwner, Observer {
             nsclient2_test_textoutput.text = it

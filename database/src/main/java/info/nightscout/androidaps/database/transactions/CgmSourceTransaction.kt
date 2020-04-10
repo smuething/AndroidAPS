@@ -65,9 +65,9 @@ class CgmSourceTransaction(
             val value: Double,
             val raw: Double?,
             val noise: Double?,
-            val trendArrow: info.nightscout.androidaps.database.entities.GlucoseValue.TrendArrow,
+            val trendArrow: GlucoseValue.TrendArrow,
             val nightscoutId: String? = null,
-            val sourceSensor: info.nightscout.androidaps.database.entities.GlucoseValue.SourceSensor
+            val sourceSensor: GlucoseValue.SourceSensor
     )
 
     data class Calibration(

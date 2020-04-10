@@ -29,6 +29,12 @@
         android:layout_height="wrap_content"
         android:text="Perform postGlucoseValue call" />
 
+    <Button
+        android:id="@+id/nsclient2_getentries_Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Perform getEntries call" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"

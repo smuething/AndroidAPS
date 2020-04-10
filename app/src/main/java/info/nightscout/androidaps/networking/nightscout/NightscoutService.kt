@@ -3,6 +3,7 @@ package info.nightscout.androidaps.networking.nightscout
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.dependencyInjection.networking.NSRetrofitFactory
+import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.requests.EntryRequestBody
 import info.nightscout.androidaps.networking.nightscout.responses.*
@@ -101,6 +102,12 @@ class NightscoutService(private val nsRetrofitFactory: NSRetrofitFactory, privat
             else     -> PostEntryResponseType.Failure(FailureReason.UNKNOWN)
         }
     }
+
+    fun getByDate(collection: NightscoutCollection, from: Long, sort: String = "date", limit: Int = 1000) =
+        nsRetrofitFactory.getNSService().getByDate(collection, from, sort, limit)
+
+    fun getByLastModified(collection: NightscoutCollection, from: Long, sort: String = "srvModified", limit: Int = 1000) =
+        nsRetrofitFactory.getNSService().getByLastModified(collection, from, sort, limit)
 
     companion object {
         const val BAD_ACCESS_TOKEN_MESSAGE = "Missing or bad access token or JWT"

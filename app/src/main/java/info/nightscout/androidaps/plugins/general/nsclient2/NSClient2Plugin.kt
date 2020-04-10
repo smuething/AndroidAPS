@@ -10,10 +10,12 @@ import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.networking.nightscout.NightscoutService
+import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.responses.PostEntryResponseType
 import info.nightscout.androidaps.networking.nightscout.responses.id
 import info.nightscout.androidaps.utils.DateUtil
+import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.subscribeBy
@@ -68,7 +70,7 @@ class NSClient2Plugin @Inject constructor(
             onError = { _testResultLiveData.postValue("failure: ${it.message}") })
     )
 
-    fun postGlusoveValueCall() {
+    fun postGlucoseValueCall() {
         val glucoseValue = GlucoseValue()
         glucoseValue.timestamp = DateUtil.now()
         glucoseValue.value = Math.random() * 200 + 40
@@ -81,6 +83,14 @@ class NSClient2Plugin @Inject constructor(
                     }
 
                 }, onError = { _testResultLiveData.postValue("failure: ${it.message}") })
+        )
+    }
+
+    fun getEntriesCall() {
+        compositeDisposable.add(
+            nightscoutService.getByDate(NightscoutCollection.ENTRIES, DateUtil.now() - T.mins(20).msecs()).subscribeBy(
+                onSuccess = { _testResultLiveData.postValue("success: ${it.body()}") },
+                onError = { _testResultLiveData.postValue("failure: ${it.message}") })
         )
     }
 }

@@ -20,7 +20,8 @@ data class EntryRequestBody(
     @SerializedName("direction") val direction: String? = null,
     @SerializedName("device") val device: String? = null,
     @SerializedName("units") val units: Units? = null,
-    @SerializedName("isValid") val isValid: Boolean? = null
+    @SerializedName("isValid") val isValid: Boolean? = null,
+    @SerializedName("type") val type: EntriesType? = null
 
     // TODO: add all other possible fields
 )
