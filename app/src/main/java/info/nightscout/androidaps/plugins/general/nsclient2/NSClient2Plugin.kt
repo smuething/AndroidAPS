@@ -4,12 +4,16 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.networking.nightscout.NightscoutService
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
+import info.nightscout.androidaps.networking.nightscout.responses.PostEntryResponseType
+import info.nightscout.androidaps.networking.nightscout.responses.id
+import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.subscribeBy
@@ -64,4 +68,19 @@ class NSClient2Plugin @Inject constructor(
             onError = { _testResultLiveData.postValue("failure: ${it.message}") })
     )
 
+    fun postGlusoveValueCall() {
+        val glucoseValue = GlucoseValue()
+        glucoseValue.timestamp = DateUtil.now()
+        glucoseValue.value = Math.random() * 200 + 40
+        compositeDisposable.add(
+            nightscoutService.postGlucoseStatus(glucoseValue).subscribeBy(
+                onSuccess = {
+                    when (it) {
+                        is PostEntryResponseType.Success -> _testResultLiveData.postValue("success: ${it.location?.id}")
+                        is PostEntryResponseType.Failure -> _testResultLiveData.postValue("success: ${it.reason}")
+                    }
+
+                }, onError = { _testResultLiveData.postValue("failure: ${it.message}") })
+        )
+    }
 }

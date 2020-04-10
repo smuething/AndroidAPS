@@ -1,10 +1,13 @@
 package info.nightscout.androidaps.networking.nightscout
 
+import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.dependencyInjection.networking.NSRetrofitFactory
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.requests.EntryRequestBody
 import info.nightscout.androidaps.networking.nightscout.responses.*
-import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
+import info.nightscout.androidaps.utils.resources.ResourceHelper
+import info.nightscout.androidaps.utils.toText
 import io.reactivex.Single
 import okhttp3.Headers
 import retrofit2.Response
@@ -14,7 +17,7 @@ import java.net.UnknownHostException
 /**
  * Created by adrian on 2019-12-23.
  */
-class NightscoutService(private val nsRetrofitFactory: NSRetrofitFactory) {
+class NightscoutService(private val nsRetrofitFactory: NSRetrofitFactory, private val resourceHelper: ResourceHelper) {
 
     fun testSetup(): Single<SetupState> = nsRetrofitFactory.getNSService().statusVerbose().map {
         when {
@@ -69,11 +72,15 @@ class NightscoutService(private val nsRetrofitFactory: NSRetrofitFactory) {
 
     fun lastModified() = nsRetrofitFactory.getNSService().lastModified()
 
-    fun postGlucoseStatus(glucoseStatus: GlucoseStatus) = postEntry(
+    fun postGlucoseStatus(glucoseValue: GlucoseValue) = postEntry(
         EntryRequestBody(
-            identifier = "todo",
-            date = glucoseStatus.date,
-            utcOffset = 0
+            date = glucoseValue.timestamp,
+            utcOffset = glucoseValue.utcOffset,
+            app = resourceHelper.gs(R.string.app_name),
+            device = glucoseValue.sourceSensor.toString(),
+            sgv = glucoseValue.value,
+            direction = glucoseValue.trendArrow.toText(),
+            isValid = glucoseValue.isValid
         )
     )
 

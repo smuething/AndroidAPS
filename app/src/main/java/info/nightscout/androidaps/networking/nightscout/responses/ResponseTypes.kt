@@ -17,6 +17,12 @@ enum class FailureReason (@StringRes val message: Int) {
 }
 
 sealed class PostEntryResponseType {
-    data class Success(val lastModified: String?, val location: String?) : PostEntryResponseType()
+    data class Success(val lastModified: String?, val location: Location?) : PostEntryResponseType()
     data class Failure(val reason: FailureReason): PostEntryResponseType()
 }
+
+typealias Location = String
+
+val Location.id : String
+    get() =
+        Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}").find(this)?.value ?: ""
