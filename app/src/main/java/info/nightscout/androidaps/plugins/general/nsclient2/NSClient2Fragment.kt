@@ -45,7 +45,6 @@ class NSClient2Fragment : DaggerFragment() {
             sp.putBoolean(R.string.key_nsclientinternal_autoscroll, isChecked)
         }
 
-        nsclient2_test_Button.setOnClickListener { nsClient2Plugin.testConnection() }
         nsclient2_status_Button.setOnClickListener { nsClient2Plugin.exampleStatusCall() }
         nsclient2_lastmodified_Button.setOnClickListener { nsClient2Plugin.lastModifiedCall() }
         nsclient2_postglucosevalue_Button.setOnClickListener { nsClient2Plugin.postGlucoseValueCall() }

@@ -23,4 +23,8 @@
             android:title="@string/nsclient2_token_title" />
     </PreferenceCategory>
 
+    <Preference
+        android:key="@string/key_nsclient_test_login"
+        android:title="@string/title_verify_credentials" />
+
 </androidx.preference.PreferenceScreen>

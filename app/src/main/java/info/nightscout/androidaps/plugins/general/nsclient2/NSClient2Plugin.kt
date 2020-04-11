@@ -4,6 +4,7 @@ import android.content.Context
 import android.text.Spanned
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import dagger.android.HasAndroidInjector
@@ -27,6 +28,9 @@ import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.HtmlHelper
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.ToastUtils
+import info.nightscout.androidaps.utils.alertDialogs.ErrorDialog
+import info.nightscout.androidaps.utils.alertDialogs.OKDialog
+import info.nightscout.androidaps.utils.extensions.runOnUiThread
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.disposables.CompositeDisposable
@@ -74,7 +78,7 @@ class NSClient2Plugin @Inject constructor(
 
     override fun preprocessPreferences(preferenceFragment: PreferenceFragmentCompat) {
         super.preprocessPreferences(preferenceFragment)
-        if (Config.NSCLIENT) {
+        if (Config.NSCLIENT) { // TODO needed?
             val screenAdvancedSettings: PreferenceScreen? = preferenceFragment.findPreference(resourceHelper.gs(R.string.key_advancedsettings))
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_statuslights_res_warning)))
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_statuslights_res_critical)))
@@ -83,19 +87,30 @@ class NSClient2Plugin @Inject constructor(
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_show_statuslights)))
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_show_statuslights_extended)))
         }
+        val testLogin: Preference? = preferenceFragment.findPreference(resourceHelper.gs(R.string.key_nsclient_test_login))
+        testLogin?.setOnPreferenceClickListener {
+            preferenceFragment.context?.let { context -> testConnection(context) }
+            false
+        }
     }
 
-    fun testConnection() = compositeDisposable.add(
-        nightscoutService.testSetup().subscribeBy(
-            onSuccess = {
-                addToLog(EventNSClientNewLog("RESULT",
-                    when (it) {
-                        SetupState.Success  -> "SUCCESS!"
-                        is SetupState.Error -> it.message
-                    }
-                ))
-            },
-            onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}")) })
+    fun testConnection(context: Context) = compositeDisposable.add(
+        nightscoutService
+            .testSetup()
+            .subscribeBy(
+                onSuccess = {
+                    runOnUiThread(Runnable {
+                        when (it) {
+                            SetupState.Success  -> OKDialog.show(context, "", resourceHelper.gs(R.string.connection_verified), null)
+                            is SetupState.Error -> ErrorDialog.showError(context, resourceHelper.gs(R.string.error), it.message)
+                        }
+                    })
+                },
+                onError = {
+                    runOnUiThread(Runnable {
+                        it.message?.let { message -> ErrorDialog.showError(context, resourceHelper.gs(R.string.error), message) }
+                    })
+                })
     )
 
     fun exampleStatusCall() = compositeDisposable.add(

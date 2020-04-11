@@ -21,7 +21,7 @@
 
         <Preference
             android:key="@string/key_tidepool_test_login"
-            android:title="@string/title_tidepool_test_login" />
+            android:title="@string/title_verify_credentials" />
 
         <CheckBoxPreference
             android:defaultValue="true"
