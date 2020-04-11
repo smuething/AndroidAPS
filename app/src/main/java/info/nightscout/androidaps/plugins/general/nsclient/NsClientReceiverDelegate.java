@@ -75,7 +75,7 @@ class NsClientReceiverDelegate {
         boolean newAllowedState = allowedChargingState && allowedNetworkState;
         if (newAllowedState != allowed) {
             allowed = newAllowedState;
-            rxBus.send(new EventPreferenceChange(resourceHelper.gs(R.string.key_nsclientinternal_paused)));
+            rxBus.send(new EventPreferenceChange(resourceHelper.gs(R.string.key_nsclient_paused)));
         }
     }
 

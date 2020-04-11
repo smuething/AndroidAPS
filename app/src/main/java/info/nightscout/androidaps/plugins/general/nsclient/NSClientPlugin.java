@@ -118,7 +118,7 @@ public class NSClientPlugin extends PluginBase {
 
     @Override
     protected void onStart() {
-        paused = sp.getBoolean(R.string.key_nsclientinternal_paused, false);
+        paused = sp.getBoolean(R.string.key_nsclient_paused, false);
         autoscroll = sp.getBoolean(R.string.key_nsclientinternal_autoscroll, true);
 
         Intent intent = new Intent(context, NSClientService.class);
@@ -254,9 +254,9 @@ public class NSClientPlugin extends PluginBase {
     }
 
     public void pause(boolean newState) {
-        sp.putBoolean(R.string.key_nsclientinternal_paused, newState);
+        sp.putBoolean(R.string.key_nsclient_paused, newState);
         paused = newState;
-        rxBus.send(new EventPreferenceChange(resourceHelper, R.string.key_nsclientinternal_paused));
+        rxBus.send(new EventPreferenceChange(resourceHelper, R.string.key_nsclient_paused));
     }
 
     public UploadQueue queue() {

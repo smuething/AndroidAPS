@@ -570,7 +570,7 @@
     <string name="nsclientinternal2">NSClientREST</string>
     <string name="nsclientinternal2_shortname">NSCR</string>
     <string name="nsclientinternal_shortname">NSCI</string>
-    <string name="nsclientinternal_url">URL:</string>
+    <string name="nsclient_url">URL:</string>
     <string name="nsclientinternal_autoscroll">Autoscroll</string>
     <string name="restart">Restart</string>
     <string name="nsclientinternal_title">NSClient</string>
@@ -600,7 +600,7 @@
     <string name="key_danar_visualizeextendedaspercentage" translatable="false">danar_visualizeextendedaspercentage"</string>
     <string name="clearlog">Clear log</string>
     <string name="key_nsclientinternal_autoscroll" translatable="false">nsclientinternal_autoscroll</string>
-    <string name="key_nsclientinternal_paused" translatable="false">nsclientinternal_paused</string>
+    <string name="key_nsclient_paused" translatable="false">nsclientinternal_paused</string>
     <string name="nowritepermission">NSCLIENT has no write permission. Wrong API secret?</string>
     <string name="wear_settings">Wear settings</string>
     <string name="wear_detailedIOB_title">Show detailed IOB</string>
@@ -1813,4 +1813,5 @@
     <string name="overview_show_predictions">Predictions</string>
     <string name="overview_show_deviationslope">Deviation slope</string>
     <string name="key_graphconfig" translatable="false">graphconfig</string>
+    <string name="fullsync">Full sync</string>
 </resources>

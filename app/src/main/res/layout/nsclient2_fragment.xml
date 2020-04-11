@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context=".plugins.general.nsclient2.NSClient2Fragment">
 
     <Button
         android:id="@+id/nsclient2_test_Button"
@@ -35,13 +37,126 @@
         android:layout_height="wrap_content"
         android:text="Perform getEntries call" />
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginBottom="5dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/nsclient_url" />
+
+        <TextView
+            android:id="@+id/nsclient_url"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:autoLink="web" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginBottom="5dp"
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/nsclient_paused"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/paused" />
+
+        <CheckBox
+            android:id="@+id/nsclient_autoscroll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="10dp"
+            android:text="@string/nsclientinternal_autoscroll" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="5dp"
+            android:text="@string/status" />
+
+        <TextView
+            android:id="@+id/nsclient_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="normal|bold" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginBottom="10dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/nsclient_clearlog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/clearlog"
+            android:textAlignment="center"
+            android:textColor="@android:color/holo_orange_light"
+            android:textStyle="normal|bold" />
+
+        <Button
+            android:id="@+id/nsclient_fullsync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/fullsync"
+            android:textAlignment="center"
+            android:textColor="@android:color/holo_orange_light"
+            android:textStyle="normal|bold" />
+
+        <Button
+            android:id="@+id/nsclient_delivernow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/deliver_now"
+            android:textAlignment="center"
+            android:textColor="@android:color/holo_orange_light"
+            android:textStyle="normal|bold" />
+
+    </LinearLayout>
+
     <ScrollView
+        android:id="@+id/nsclient_logscrollview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
         android:layout_weight="1">
 
         <TextView
-            android:id="@+id/nsclient2_test_textoutput"
+            android:id="@+id/nsclient_log"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </ScrollView>

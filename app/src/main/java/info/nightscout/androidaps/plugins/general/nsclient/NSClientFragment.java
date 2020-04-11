@@ -55,25 +55,25 @@ public class NSClientFragment extends DaggerFragment implements View.OnClickList
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.nsclientinternal_fragment, container, false);
 
-        logScrollview = view.findViewById(R.id.nsclientinternal_logscrollview);
-        autoscrollCheckbox = view.findViewById(R.id.nsclientinternal_autoscroll);
+        logScrollview = view.findViewById(R.id.nsclient_logscrollview);
+        autoscrollCheckbox = view.findViewById(R.id.nsclient_autoscroll);
         autoscrollCheckbox.setChecked(nsClientPlugin.autoscroll);
         autoscrollCheckbox.setOnCheckedChangeListener(this);
-        pausedCheckbox = view.findViewById(R.id.nsclientinternal_paused);
+        pausedCheckbox = view.findViewById(R.id.nsclient_paused);
         pausedCheckbox.setChecked(nsClientPlugin.paused);
         pausedCheckbox.setOnCheckedChangeListener(this);
-        logTextView = view.findViewById(R.id.nsclientinternal_log);
+        logTextView = view.findViewById(R.id.nsclient_log);
         queueTextView = view.findViewById(R.id.nsclientinternal_queue);
-        urlTextView = view.findViewById(R.id.nsclientinternal_url);
-        statusTextView = view.findViewById(R.id.nsclientinternal_status);
+        urlTextView = view.findViewById(R.id.nsclient_url);
+        statusTextView = view.findViewById(R.id.nsclient_status);
 
-        clearlog = view.findViewById(R.id.nsclientinternal_clearlog);
+        clearlog = view.findViewById(R.id.nsclient_clearlog);
         clearlog.setOnClickListener(this);
         clearlog.setPaintFlags(clearlog.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-        restart = view.findViewById(R.id.nsclientinternal_restart);
+        restart = view.findViewById(R.id.nsclient_restart);
         restart.setOnClickListener(this);
         restart.setPaintFlags(restart.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-        delivernow = view.findViewById(R.id.nsclientinternal_delivernow);
+        delivernow = view.findViewById(R.id.nsclient_delivernow);
         delivernow.setOnClickListener(this);
         delivernow.setPaintFlags(delivernow.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         clearqueue = view.findViewById(R.id.nsclientinternal_clearqueue);
@@ -106,15 +106,15 @@ public class NSClientFragment extends DaggerFragment implements View.OnClickList
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.nsclientinternal_restart:
+            case R.id.nsclient_restart:
                 rxBus.send(new EventNSClientRestart());
                 fabricPrivacy.logCustom("NSClientRestart");
                 break;
-            case R.id.nsclientinternal_delivernow:
+            case R.id.nsclient_delivernow:
                 nsClientPlugin.resend("GUI");
                 fabricPrivacy.logCustom("NSClientDeliverNow");
                 break;
-            case R.id.nsclientinternal_clearlog:
+            case R.id.nsclient_clearlog:
                 nsClientPlugin.clearLog();
                 break;
             case R.id.nsclientinternal_clearqueue:
@@ -133,12 +133,12 @@ public class NSClientFragment extends DaggerFragment implements View.OnClickList
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         switch (buttonView.getId()) {
-            case R.id.nsclientinternal_paused:
+            case R.id.nsclient_paused:
                 nsClientPlugin.pause(isChecked);
                 updateGui();
                 fabricPrivacy.logCustom("NSClientPause");
                 break;
-            case R.id.nsclientinternal_autoscroll:
+            case R.id.nsclient_autoscroll:
                 sp.putBoolean(R.string.key_nsclientinternal_autoscroll, isChecked);
                 nsClientPlugin.autoscroll = isChecked;
                 updateGui();
@@ -148,7 +148,7 @@ public class NSClientFragment extends DaggerFragment implements View.OnClickList
 
     protected void updateGui() {
         nsClientPlugin.updateLog();
-        pausedCheckbox.setChecked(sp.getBoolean(R.string.key_nsclientinternal_paused, false));
+        pausedCheckbox.setChecked(sp.getBoolean(R.string.key_nsclient_paused, false));
         logTextView.setText(nsClientPlugin.textLog);
         if (nsClientPlugin.autoscroll) {
             logScrollview.fullScroll(ScrollView.FOCUS_DOWN);
