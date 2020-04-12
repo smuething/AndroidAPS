@@ -49,12 +49,15 @@ class NSClient2Fragment : DaggerFragment() {
         nsclient2_postglucosevalue_Button.setOnClickListener { nsClient2Plugin.postGlucoseValueCall() }
         nsclient2_getentries_Button.setOnClickListener { nsClient2Plugin.getEntriesCall() }
 
-        nsClient2Plugin.logLiveData.observe(viewLifecycleOwner, Observer {
-            nsclient_log.text = it
-            if (nsclient_autoscroll.isChecked) nsclient_logscrollview.fullScroll(ScrollView.FOCUS_DOWN)
+        nsClient2Plugin.liveData.observe(viewLifecycleOwner, Observer {
+            when (it) {
+                is NSClient2LiveData.Log   -> {
+                    nsclient_log.text = it.spanned
+                    if (nsclient_autoscroll.isChecked) nsclient_logscrollview.fullScroll(ScrollView.FOCUS_DOWN)
+                }
+
+                is NSClient2LiveData.State -> nsclient_status.text = it.state
+            }
         })
-
-        nsClient2Plugin.statusLiveData.observe(viewLifecycleOwner, Observer { nsclient_status.text = it })
-
     }
 }
