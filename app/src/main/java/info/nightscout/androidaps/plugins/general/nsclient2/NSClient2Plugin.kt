@@ -1,7 +1,6 @@
 package info.nightscout.androidaps.plugins.general.nsclient2
 
 import android.content.Context
-import android.text.Spanned
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.preference.ListPreference
@@ -41,6 +40,8 @@ import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import info.nightscout.androidaps.utils.sharedPreferences.SP
+import info.nightscout.androidaps.utils.sharedPreferences.SPBoolean
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
@@ -71,14 +72,12 @@ class NSClient2Plugin @Inject constructor(
 ) {
 
     private val listLog: MutableList<EventNSClientNewLog> = ArrayList()
-    var paused = false
+    private val keyNSClientPaused = SPBoolean(R.string.key_nsclient_paused, sp, resourceHelper, rxBus)
 
     var permissions: StatusResponse? = null // grabbed permissions
 
-    private val _logLiveData: MutableLiveData<Spanned> = MutableLiveData(HtmlHelper.fromHtml(""))
-    val logLiveData: LiveData<Spanned> = _logLiveData // Expose non-mutable form (avoid post from other classes)
-    private val _statusLiveData: MutableLiveData<String> = MutableLiveData("")
-    val statusLiveData: LiveData<String> = _statusLiveData // Expose non-mutable form (avoid post from other classes)
+    private val _liveData: MutableLiveData<NSClient2LiveData> = MutableLiveData(NSClient2LiveData.Log(HtmlHelper.fromHtml("")))
+    val liveData: LiveData<NSClient2LiveData> = _liveData // Expose non-mutable form (avoid post from other classes)
 
     private val disposable = CompositeDisposable() //TODO: once transformed to VM, clear! (atm plugins live forever)
 
@@ -195,7 +194,7 @@ class NSClient2Plugin @Inject constructor(
     @Synchronized
     fun clearLog() {
         listLog.clear()
-        _logLiveData.postValue(HtmlHelper.fromHtml(""))
+        _liveData.postValue(NSClient2LiveData.Log(HtmlHelper.fromHtml("")))
     }
 
     @Synchronized
@@ -208,7 +207,7 @@ class NSClient2Plugin @Inject constructor(
         try {
             val newTextLog = StringBuilder()
             for (log in listLog) newTextLog.append(log.toPreparedHtml())
-            _logLiveData.postValue(HtmlHelper.fromHtml(newTextLog.toString()))
+            _liveData.postValue(NSClient2LiveData.Log(HtmlHelper.fromHtml(newTextLog.toString())))
         } catch (e: OutOfMemoryError) {
             ToastUtils.errorToast(context, "Out of memory!\nStop using this phone !!!")
         }
@@ -224,48 +223,46 @@ class NSClient2Plugin @Inject constructor(
     }
 
     fun pause(newState: Boolean) {
-        sp.putBoolean(R.string.key_nsclient_paused, newState)
-        paused = newState
-        rxBus.send(EventPreferenceChange(resourceHelper, R.string.key_nsclient_paused))
+        keyNSClientPaused.value = newState
     }
 
-    fun commAllowed(): Boolean {
+    private fun commAllowed(): Boolean {
         val eventNetworkChange: EventNetworkChange = receiverStatusStore.lastNetworkEvent
             ?: return false
 
         val chargingOnly = sp.getBoolean(R.string.key_ns_chargingonly, false)
         if (!receiverStatusStore.isCharging && chargingOnly) {
-            _statusLiveData.postValue(resourceHelper.gs(R.string.notcharging))
+            _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.notcharging)))
             return false
         }
 
         if (!receiverStatusStore.isConnected) {
-            _statusLiveData.postValue(resourceHelper.gs(R.string.disconnected))
+            _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.disconnected)))
             return false
         }
         val wifiOnly = sp.getBoolean(R.string.key_ns_wifionly, false)
         val allowedSSIDs = sp.getString(R.string.key_ns_wifi_ssids, "")
         val allowRoaming = sp.getBoolean(R.string.key_ns_allowroaming, true)
         if (wifiOnly && !receiverStatusStore.isWifiConnected) {
-            _statusLiveData.postValue(resourceHelper.gs(R.string.wifinotconnected))
+            _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.wifinotconnected)))
             return false
         }
         if (wifiOnly && allowedSSIDs.trim { it <= ' ' }.isNotEmpty()) {
             if (!allowedSSIDs.contains(eventNetworkChange.connectedSsid()) && !allowedSSIDs.contains(eventNetworkChange.ssid)) {
-                _statusLiveData.postValue(resourceHelper.gs(R.string.ssidnotmatch))
+                _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ssidnotmatch)))
                 return false
             }
         }
         if (wifiOnly && receiverStatusStore.isWifiConnected) {
-            _statusLiveData.postValue(resourceHelper.gs(R.string.connected))
+            _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.connected)))
             return true
         }
         if (!allowRoaming && eventNetworkChange.roaming) {
-            _statusLiveData.postValue(resourceHelper.gs(R.string.roamingnotallowed))
+            _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.roamingnotallowed)))
             return false
         }
 
-        _statusLiveData.postValue(resourceHelper.gs(R.string.connected))
+        _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.connected)))
         return true
     }
 }

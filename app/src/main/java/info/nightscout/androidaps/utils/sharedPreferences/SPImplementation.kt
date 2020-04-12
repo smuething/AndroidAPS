@@ -99,6 +99,10 @@ class SPImplementation @Inject constructor(
     override fun putBoolean(resourceID: Int, value: Boolean) =
         sharedPreferences.edit().putBoolean(resourceHelper.gs(resourceID), value).apply()
 
+    override fun putDouble(resourceID: Int, value: Double) {
+        sharedPreferences.edit().putString(resourceHelper.gs(resourceID), value.toString()).apply()
+    }
+
     override fun putDouble(key: String, value: Double) =
         sharedPreferences.edit().putString(key, value.toString()).apply()
 
