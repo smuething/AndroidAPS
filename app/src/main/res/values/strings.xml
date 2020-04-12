@@ -1813,6 +1813,18 @@
     <string name="key_graphconfig" translatable="false">graphconfig</string>
     <string name="fullsync">Full sync</string>
     <string name="key_nsclient_test_login">nsclient_test_login</string>
-    <string name="title_verify_credentials">Verify crendentials</string>
+    <string name="title_verify_credentials">Verify credentials</string>
     <string name="connection_verified">Connection verified</string>
+    <string name="cgmdata">CGM data</string>
+    <string name="key_ns_cgm" translatable="false">ns_cgm</string>
+    <string name="key_ns_food" translatable="false">ns_food</string>
+    <string name="key_ns_profile" translatable="false">ns_profile</string>
+    <string name="key_ns_insulin" translatable="false">ns_insulin</string>
+    <string name="key_ns_carbs" translatable="false">ns_carbs</string>
+    <string name="key_ns_careportal" translatable="false">ns_careportal</string>
+    <string name="key_ns_settings" translatable="false">ns_settings</string>
+    <string name="ssidnotmatch">SSID not match</string>
+    <string name="roamingnotallowed">Roaming not allowed</string>
+    <string name="notcharging">Not charging</string>
+    <string name="wifinotconnected">WiFi not connected</string>
 </resources>

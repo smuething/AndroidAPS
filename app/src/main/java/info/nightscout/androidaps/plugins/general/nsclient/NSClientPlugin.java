@@ -42,6 +42,7 @@ import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientR
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientStatus;
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientUpdateGUI;
 import info.nightscout.androidaps.plugins.general.nsclient.services.NSClientService;
+import info.nightscout.androidaps.receivers.ReceiverStatusStore;
 import info.nightscout.androidaps.utils.FabricPrivacy;
 import info.nightscout.androidaps.utils.ToastUtils;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
@@ -58,6 +59,7 @@ public class NSClientPlugin extends PluginBase {
     private final ResourceHelper resourceHelper;
     private final Context context;
     private final SP sp;
+    private final ReceiverStatusStore receiverStatusStore;
 
     public Handler handler;
 
@@ -81,7 +83,8 @@ public class NSClientPlugin extends PluginBase {
             ResourceHelper resourceHelper,
             Context context,
             SP sp,
-            NsClientReceiverDelegate nsClientReceiverDelegate
+            NsClientReceiverDelegate nsClientReceiverDelegate,
+            ReceiverStatusStore receiverStatusStore
     ) {
         super(new PluginDescription()
                         .mainType(PluginType.GENERAL)
@@ -99,6 +102,7 @@ public class NSClientPlugin extends PluginBase {
         this.context = context;
         this.sp = sp;
         this.nsClientReceiverDelegate = nsClientReceiverDelegate;
+        this.receiverStatusStore = receiverStatusStore;
 
         if (Config.NSCLIENT) {
             getPluginDescription().alwaysEnabled(true).visibleByDefault(true);
@@ -125,7 +129,7 @@ public class NSClientPlugin extends PluginBase {
         context.bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         super.onStart();
 
-        nsClientReceiverDelegate.grabReceiversState();
+        receiverStatusStore.updateNetworkStatus();
         disposable.add(rxBus
                 .toObservable(EventNSClientStatus.class)
                 .observeOn(Schedulers.io())
@@ -142,7 +146,16 @@ public class NSClientPlugin extends PluginBase {
         disposable.add(rxBus
                 .toObservable(EventPreferenceChange.class)
                 .observeOn(Schedulers.io())
-                .subscribe(event -> nsClientReceiverDelegate.onStatusEvent(event), exception -> FabricPrivacy.getInstance().logException(exception))
+                .subscribe(event -> {
+                    if (event.isChanged(resourceHelper, R.string.key_ns_wifionly) ||
+                            event.isChanged(resourceHelper, R.string.key_ns_wifi_ssids) ||
+                            event.isChanged(resourceHelper, R.string.key_ns_allowroaming)
+                    ) {
+                        receiverStatusStore.updateNetworkStatus();
+                    } else if (event.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
+                        receiverStatusStore.broadcastChargingState();
+                    }
+                }, exception -> FabricPrivacy.getInstance().logException(exception))
         );
         disposable.add(rxBus
                 .toObservable(EventAppExit.class)

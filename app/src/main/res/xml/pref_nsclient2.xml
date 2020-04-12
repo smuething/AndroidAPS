@@ -27,4 +27,41 @@
         android:key="@string/key_nsclient_test_login"
         android:title="@string/title_verify_credentials" />
 
+    <ListPreference
+        android:defaultValue="PULL"
+        android:entries="@array/syncOptionsArray"
+        android:entryValues="@array/syncOptionsValues"
+        android:key="@string/key_ns_cgm"
+        android:title="@string/cgmdata" />
+
+    <androidx.preference.PreferenceScreen
+        android:key="@string/connectionsettings_title"
+        android:title="@string/connectionsettings_title">
+
+        <SwitchPreference
+            android:defaultValue="false"
+            android:disableDependentsState="true"
+            android:key="@string/key_ns_wifionly"
+            android:title="@string/ns_wifionly" />
+
+        <EditTextPreference
+            android:dialogMessage="@string/ns_wifi_allowedssids"
+            android:inputType="text"
+            android:key="@string/key_ns_wifi_ssids"
+            android:title="@string/ns_wifi_ssids" />
+
+        <SwitchPreference
+            android:defaultValue="true"
+            android:dependency="@string/key_ns_wifionly"
+            android:key="@string/key_ns_allowroaming"
+            android:title="@string/ns_allowroaming" />
+
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="@string/key_ns_chargingonly"
+            android:title="@string/ns_chargingonly" />
+
+    </androidx.preference.PreferenceScreen>
+
+
 </androidx.preference.PreferenceScreen>

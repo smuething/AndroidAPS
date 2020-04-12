@@ -4,6 +4,7 @@ import android.content.Context
 import android.text.Spanned
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
@@ -12,6 +13,9 @@ import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.entities.GlucoseValue
+import info.nightscout.androidaps.events.EventChargingState
+import info.nightscout.androidaps.events.EventNetworkChange
+import info.nightscout.androidaps.events.EventNewBG
 import info.nightscout.androidaps.events.EventPreferenceChange
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
@@ -21,20 +25,25 @@ import info.nightscout.androidaps.networking.nightscout.NightscoutService
 import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.responses.PostEntryResponseType
+import info.nightscout.androidaps.networking.nightscout.responses.StatusResponse
 import info.nightscout.androidaps.networking.nightscout.responses.id
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientNewLog
+import info.nightscout.androidaps.receivers.ReceiverStatusStore
 import info.nightscout.androidaps.utils.DateUtil
+import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.HtmlHelper
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.ToastUtils
 import info.nightscout.androidaps.utils.alertDialogs.ErrorDialog
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog
-import info.nightscout.androidaps.utils.extensions.runOnUiThread
+import info.nightscout.androidaps.utils.extensions.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.subscribeBy
+import io.reactivex.schedulers.Schedulers
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -47,7 +56,9 @@ class NSClient2Plugin @Inject constructor(
     private val context: Context,
     private val rxBus: RxBusWrapper,
     private val sp: SP,
-    private val nightscoutService: NightscoutService
+    private val receiverStatusStore: ReceiverStatusStore,
+    private val nightscoutService: NightscoutService,
+    private val fabricPrivacy: FabricPrivacy
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .fragmentClass(NSClient2Fragment::class.java.name)
@@ -61,19 +72,53 @@ class NSClient2Plugin @Inject constructor(
     private val listLog: MutableList<EventNSClientNewLog> = ArrayList()
     var paused = false
 
+    var permissions: StatusResponse? = null // grabbed permissions
+
     private val _logLiveData: MutableLiveData<Spanned> = MutableLiveData(HtmlHelper.fromHtml(""))
     val logLiveData: LiveData<Spanned> = _logLiveData // Expose non-mutable form (avoid post from other classes)
     private val _statusLiveData: MutableLiveData<String> = MutableLiveData("")
     val statusLiveData: LiveData<String> = _statusLiveData // Expose non-mutable form (avoid post from other classes)
 
-    private val compositeDisposable = CompositeDisposable() //TODO: once transformed to VM, clear! (atm plugins live forever)
+    private val disposable = CompositeDisposable() //TODO: once transformed to VM, clear! (atm plugins live forever)
 
     override fun onStart() {
         super.onStart()
+        disposable += rxBus
+            .toObservable(EventPreferenceChange::class.java)
+            .observeOn(Schedulers.io())
+            .subscribe({ event ->
+                if (event.isChanged(resourceHelper, R.string.key_ns_wifionly) ||
+                    event.isChanged(resourceHelper, R.string.key_ns_wifi_ssids) ||
+                    event.isChanged(resourceHelper, R.string.key_ns_allowroaming)) {
+                    receiverStatusStore.updateNetworkStatus()
+                    commAllowed()
+                } else if (event.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
+                    receiverStatusStore.broadcastChargingState()
+                    commAllowed()
+                }
+                if (event.isChanged(resourceHelper, R.string.key_ns_cgm)) {
+                    // TODO
+                }
+            }, { fabricPrivacy.logException(it) })
+        disposable += rxBus
+            .toObservable(EventChargingState::class.java)
+            .observeOn(Schedulers.io())
+            .subscribe({ sync("EventChargingState") }, { fabricPrivacy.logException(it) })
+        disposable += rxBus
+            .toObservable(EventNetworkChange::class.java)
+            .observeOn(Schedulers.io())
+            .subscribe({ sync("EventNetworkChange") }, { fabricPrivacy.logException(it) })
+        disposable += rxBus
+            .toObservable(EventNewBG::class.java)
+            .observeOn(Schedulers.io())
+            .subscribe({ sync("EventNewBG") }, { fabricPrivacy.logException(it) })
+
+        receiverStatusStore.updateNetworkStatus() // broadcast status to be catched for initial sync
     }
 
     override fun onStop() {
         super.onStop()
+        disposable.clear()
     }
 
     override fun preprocessPreferences(preferenceFragment: PreferenceFragmentCompat) {
@@ -86,7 +131,12 @@ class NSClient2Plugin @Inject constructor(
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_statuslights_bat_critical)))
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_show_statuslights)))
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_show_statuslights_extended)))
+
+            val cgmData = preferenceFragment.findPreference(resourceHelper.gs(R.string.key_ns_cgm)) as ListPreference?
+            cgmData?.value = "PULL"
+            cgmData?.isEnabled = false
         }
+        // test connection from preferences
         val testLogin: Preference? = preferenceFragment.findPreference(resourceHelper.gs(R.string.key_nsclient_test_login))
         testLogin?.setOnPreferenceClickListener {
             preferenceFragment.context?.let { context -> testConnection(context) }
@@ -94,32 +144,23 @@ class NSClient2Plugin @Inject constructor(
         }
     }
 
-    fun testConnection(context: Context) = compositeDisposable.add(
+    private fun testConnection(context: Context) = disposable.add(
         nightscoutService
-            .testSetup()
+            .testConnection()
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribeBy(
                 onSuccess = {
-                    runOnUiThread(Runnable {
-                        when (it) {
-                            SetupState.Success  -> OKDialog.show(context, "", resourceHelper.gs(R.string.connection_verified), null)
-                            is SetupState.Error -> ErrorDialog.showError(context, resourceHelper.gs(R.string.error), it.message)
-                        }
-                    })
+                    when (it) {
+                        SetupState.Success  -> OKDialog.show(context, "", resourceHelper.gs(R.string.connection_verified), null)
+                        is SetupState.Error -> ErrorDialog.showError(context, resourceHelper.gs(R.string.error), it.message)
+                    }
                 },
                 onError = {
-                    runOnUiThread(Runnable {
-                        it.message?.let { message -> ErrorDialog.showError(context, resourceHelper.gs(R.string.error), message) }
-                    })
+                    it.message?.let { message -> ErrorDialog.showError(context, resourceHelper.gs(R.string.error), message) }
                 })
     )
 
-    fun exampleStatusCall() = compositeDisposable.add(
-        nightscoutService.status().subscribeBy(
-            onSuccess = { addToLog(EventNSClientNewLog("RESULT", "success: $it")) },
-            onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}")) })
-    )
-
-    fun lastModifiedCall() = compositeDisposable.add(
+    fun lastModifiedCall() = disposable.add(
         nightscoutService.lastModified().subscribeBy(
             onSuccess = { addToLog(EventNSClientNewLog("RESULT", "success: $it")) },
             onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}")) })
@@ -129,7 +170,7 @@ class NSClient2Plugin @Inject constructor(
         val glucoseValue = GlucoseValue()
         glucoseValue.timestamp = DateUtil.now()
         glucoseValue.value = Math.random() * 200 + 40
-        compositeDisposable.add(
+        disposable.add(
             nightscoutService.postGlucoseStatus(glucoseValue).subscribeBy(
                 onSuccess = {
                     addToLog(EventNSClientNewLog("RESULT",
@@ -143,7 +184,7 @@ class NSClient2Plugin @Inject constructor(
     }
 
     fun getEntriesCall() {
-        compositeDisposable.add(
+        disposable.add(
             nightscoutService.getByDate(NightscoutCollection.ENTRIES, DateUtil.now() - T.mins(20).msecs()).subscribeBy(
                 onSuccess = { addToLog(EventNSClientNewLog("RESULT", "success: ${it.body()}")) },
                 onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}")) })
@@ -173,10 +214,11 @@ class NSClient2Plugin @Inject constructor(
     }
 
     fun sync(s: String) {
-
+        if (!commAllowed()) return
     }
 
     fun fullSync(s: String) {
+        if (!commAllowed()) return
 
     }
 
@@ -184,5 +226,45 @@ class NSClient2Plugin @Inject constructor(
         sp.putBoolean(R.string.key_nsclient_paused, newState)
         paused = newState
         rxBus.send(EventPreferenceChange(resourceHelper, R.string.key_nsclient_paused))
+    }
+
+    fun commAllowed(): Boolean {
+        val eventNetworkChange: EventNetworkChange = receiverStatusStore.lastNetworkEvent
+            ?: return false
+
+        val chargingOnly = sp.getBoolean(R.string.key_ns_chargingonly, false)
+        if (!receiverStatusStore.isCharging && chargingOnly) {
+            _statusLiveData.postValue(resourceHelper.gs(R.string.notcharging))
+            return false
+        }
+
+        if (!receiverStatusStore.isConnected) {
+            _statusLiveData.postValue(resourceHelper.gs(R.string.disconnected))
+            return false
+        }
+        val wifiOnly = sp.getBoolean(R.string.key_ns_wifionly, false)
+        val allowedSSIDs = sp.getString(R.string.key_ns_wifi_ssids, "")
+        val allowRoaming = sp.getBoolean(R.string.key_ns_allowroaming, true)
+        if (wifiOnly && !receiverStatusStore.isWifiConnected) {
+            _statusLiveData.postValue(resourceHelper.gs(R.string.wifinotconnected))
+            return false
+        }
+        if (wifiOnly && allowedSSIDs.trim { it <= ' ' }.isNotEmpty()) {
+            if (!allowedSSIDs.contains(eventNetworkChange.connectedSsid()) && !allowedSSIDs.contains(eventNetworkChange.ssid)) {
+                _statusLiveData.postValue(resourceHelper.gs(R.string.ssidnotmatch))
+                return false
+            }
+        }
+        if (wifiOnly && receiverStatusStore.isWifiConnected) {
+            _statusLiveData.postValue(resourceHelper.gs(R.string.connected))
+            return true
+        }
+        if (!allowRoaming && eventNetworkChange.roaming) {
+            _statusLiveData.postValue(resourceHelper.gs(R.string.roamingnotallowed))
+            return false
+        }
+
+        _statusLiveData.postValue(resourceHelper.gs(R.string.connected))
+        return true
     }
 }

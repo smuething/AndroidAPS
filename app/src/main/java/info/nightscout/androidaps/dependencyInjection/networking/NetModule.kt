@@ -25,8 +25,8 @@ class NetModule {
 
     @Provides
     @Singleton
-    internal fun providesNightscoutService(nsRetrofitFactory: NSRetrofitFactory, resourceHelper: ResourceHelper): NightscoutService {
-        return NightscoutService(nsRetrofitFactory, resourceHelper)
+    internal fun providesNightscoutService(nsRetrofitFactory: NSRetrofitFactory, resourceHelper: ResourceHelper, sp: SP): NightscoutService {
+        return NightscoutService(nsRetrofitFactory, resourceHelper, sp)
     }
 
     @Provides

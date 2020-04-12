@@ -61,7 +61,7 @@ class GraphData(injector: HasAndroidInjector, private val graph: GraphView, priv
     @Suppress("UNUSED_PARAMETER")
     fun addBgReadings(fromTime: Long, toTime: Long, lowLine: Double, highLine: Double, predictions: MutableList<BgReading>?) {
         var maxBgValue = Double.MIN_VALUE
-        bgReadingsArray = iobCobCalculatorPlugin.bgReadings.convertToBGReadings(injector)
+        bgReadingsArray = iobCobCalculatorPlugin.bgReadings?.convertToBGReadings(injector)
         if (bgReadingsArray?.isEmpty() != false) {
             aapsLogger.debug("No BG data.")
             maxY = 10.0

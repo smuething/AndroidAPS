@@ -90,6 +90,19 @@
         <item>2</item>
     </string-array>
 
+    <string-array name="syncOptionsArray">
+        <item>None</item>
+        <item>Pull</item>
+        <item>Push</item>
+        <item>Sync</item>
+    </string-array>
+    <string-array name="syncOptionsValues">
+        <item>NONE</item>
+        <item>PULL</item>
+        <item>PUSH</item>
+        <item>SYNC</item>
+    </string-array>
+
     <string-array name="quickWizardYesNo">
         <item>@string/yes</item>
         <item>@string/no</item>

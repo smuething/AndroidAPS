@@ -1,6 +1,8 @@
 package info.nightscout.androidaps.networking.nightscout.responses
 
+import androidx.appcompat.app.AppCompatDelegate
 import com.google.gson.annotations.SerializedName
+import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 
 /**
  * Created by adrian on 2019-12-23.
@@ -20,7 +22,7 @@ data class Storage(
 )
 
 data class ApiPermissions(
-    @SerializedName("devicestatus") internal val deviceStatus: ApiPermission,
+    @SerializedName("devicestatus") val deviceStatus: ApiPermission,
     @SerializedName("entries") val entries: ApiPermission,
     @SerializedName("food") val food: ApiPermission,
     @SerializedName("profile") val profile: ApiPermission,
@@ -45,5 +47,18 @@ val ApiPermission.delete: Boolean
 val ApiPermission.readCreate: Boolean
     get() = this.read && this.create
 
+val ApiPermission.createUpdate: Boolean
+    get() = this.update && this.create
+
 val ApiPermission.full: Boolean
     get() = this.create && this.read && this.update && this.delete
+
+fun ApiPermissions.of(collection: NightscoutCollection) : ApiPermission =
+    when(collection) {
+        NightscoutCollection.DEVICESTATUS -> deviceStatus
+        NightscoutCollection.ENTRIES      -> entries
+        NightscoutCollection.FOOD         -> food
+        NightscoutCollection.PROFILE      -> profile
+        NightscoutCollection.SETTINGS     -> settings
+        NightscoutCollection.TREATMENTS   -> treatments
+    }

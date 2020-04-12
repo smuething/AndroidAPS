@@ -54,6 +54,7 @@ class NetworkChangeReceiver : DaggerBroadcastReceiver() {
 
         aapsLogger.debug(LTag.CORE, event.toString())
         receiverStatusStore.lastNetworkEvent = event
+        receiverStatusStore.broadcastChargingState()
         return event
     }
 }

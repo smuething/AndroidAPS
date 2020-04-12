@@ -22,35 +22,16 @@ class NsClientReceiverDelegate {
     private RxBusWrapper rxBus;
     private ResourceHelper resourceHelper;
     private SP sp;
-    private ReceiverStatusStore receiverStatusStore;
 
     @Inject
     public NsClientReceiverDelegate(
             RxBusWrapper rxBus,
             ResourceHelper resourceHelper,
-            SP sp,
-            ReceiverStatusStore receiverStatusStore
+            SP sp
     ) {
         this.rxBus = rxBus;
         this.resourceHelper = resourceHelper;
         this.sp = sp;
-        this.receiverStatusStore = receiverStatusStore;
-    }
-
-    void grabReceiversState() {
-
-        receiverStatusStore.updateNetworkStatus();
-    }
-
-    void onStatusEvent(EventPreferenceChange ev) {
-        if (ev.isChanged(resourceHelper, R.string.key_ns_wifionly) ||
-                ev.isChanged(resourceHelper, R.string.key_ns_wifi_ssids) ||
-                ev.isChanged(resourceHelper, R.string.key_ns_allowroaming)
-        ) {
-            receiverStatusStore.updateNetworkStatus();
-        } else if (ev.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
-            receiverStatusStore.broadcastChargingState();
-        }
     }
 
     void onStatusEvent(final EventChargingState ev) {

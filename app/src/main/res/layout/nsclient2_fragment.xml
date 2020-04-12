@@ -8,12 +8,6 @@
     tools:context=".plugins.general.nsclient2.NSClient2Fragment">
 
     <Button
-        android:id="@+id/nsclient2_status_Button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Perform status call" />
-
-    <Button
         android:id="@+id/nsclient2_lastmodified_Button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
