@@ -23,7 +23,7 @@ import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.protection.ProtectionCheck
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.extensions.toVisibility
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.configbuilder_fragment.*
 import java.util.*
@@ -36,6 +36,7 @@ class ConfigBuilderFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var protectionCheck: ProtectionCheck
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
     private val pluginViewHolders = ArrayList<PluginViewHolder>()
@@ -70,7 +71,7 @@ class ConfigBuilderFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventConfigBuilderUpdateGui::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 for (pluginViewHolder in pluginViewHolders) pluginViewHolder.update()
             }, { fabricPrivacy.logException(it) })

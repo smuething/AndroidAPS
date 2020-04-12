@@ -26,7 +26,7 @@ import info.nightscout.androidaps.utils.extensions.toVisibility
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.toSymbol
 import info.nightscout.androidaps.utils.valueToUnitsString
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.bgsource_fragment.*
@@ -38,6 +38,7 @@ class BGSourceFragment : DaggerFragment() {
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var repository: AppRepository
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
     private val MILLS_TO_THE_PAST = T.hours(12).msecs()
@@ -55,7 +56,7 @@ class BGSourceFragment : DaggerFragment() {
         val now = System.currentTimeMillis()
         disposable += repository
             .compatGetBgreadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe { list -> bgsource_recyclerview.adapter = RecyclerViewAdapter(list) }
     }
 
@@ -69,7 +70,7 @@ class BGSourceFragment : DaggerFragment() {
                 val now = System.currentTimeMillis()
                 disposable += repository
                     .compatGetBgreadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
-                    .observeOn(AndroidSchedulers.mainThread())
+                    .observeOn(aapsSchedlulers.main)
                     .subscribe { list -> bgsource_recyclerview?.swapAdapter(RecyclerViewAdapter(list), true) }
             }) { fabricPrivacy.logException(it) }
         )

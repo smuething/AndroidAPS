@@ -31,7 +31,7 @@ import info.nightscout.androidaps.utils.SetWarnColor
 import info.nightscout.androidaps.utils.T
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.danar_fragment.*
 import javax.inject.Inject
@@ -45,6 +45,7 @@ class DanaRFragment : DaggerFragment() {
     @Inject lateinit var danaRKoreanPlugin: DanaRKoreanPlugin
     @Inject lateinit var danaRPump: DanaRPump
     @Inject lateinit var resourceHelper: ResourceHelper
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -101,23 +102,23 @@ class DanaRFragment : DaggerFragment() {
         loopHandler.postDelayed(refreshLoop, T.mins(1).msecs())
         disposable += rxBus
             .toObservable(EventDanaRNewStatus::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGUI() }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventExtendedBolusChange::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGUI() }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventTempBasalChange::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGUI() }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventQueueChanged::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGUI() }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventPumpStatusChanged::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 when {
                     it.status == EventPumpStatusChanged.Status.CONNECTING   ->

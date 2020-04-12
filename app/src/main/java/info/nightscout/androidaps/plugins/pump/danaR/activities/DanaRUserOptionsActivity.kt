@@ -22,7 +22,7 @@ import info.nightscout.androidaps.queue.Callback
 import info.nightscout.androidaps.utils.FabricPrivacy
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.danar_user_options_activity.*
 import java.text.DecimalFormat
@@ -41,6 +41,7 @@ class DanaRUserOptionsActivity : NoSplashAppCompatActivity() {
     @Inject lateinit var danaRv2Plugin: DanaRv2Plugin
     @Inject lateinit var danaRPump: DanaRPump
     @Inject lateinit var commandQueue: CommandQueueProvider
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
 
@@ -55,7 +56,7 @@ class DanaRUserOptionsActivity : NoSplashAppCompatActivity() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventInitializationChanged::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ setData() }) { fabricPrivacy.logException(it) }
     }
 

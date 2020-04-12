@@ -38,7 +38,7 @@ import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import info.nightscout.androidaps.utils.valueToUnits
 import info.nightscout.androidaps.utils.wizard.BolusWizard
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.dialog_wizard.*
 import java.text.DecimalFormat
@@ -60,6 +60,7 @@ class WizardDialog : DaggerDialogFragment() {
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var iobCobCalculatorPlugin: IobCobCalculatorPlugin
     @Inject lateinit var injector: HasAndroidInjector
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private var wizard: BolusWizard? = null
 
@@ -170,7 +171,7 @@ class WizardDialog : DaggerDialogFragment() {
         // bus
         disposable.add(rxBus
             .toObservable(EventAutosensCalculationFinished::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 activity?.runOnUiThread { calculateInsulin() }
             }, { fabricPrivacy.logException(it) })

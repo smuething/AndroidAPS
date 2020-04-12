@@ -17,7 +17,7 @@ import info.nightscout.androidaps.plugins.general.automation.triggers.TriggerCon
 import info.nightscout.androidaps.plugins.general.automation.triggers.TriggerDummy
 import info.nightscout.androidaps.utils.FabricPrivacy
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.automation_dialog_edit_trigger.*
 import org.json.JSONObject
@@ -27,6 +27,7 @@ class EditTriggerDialog : DialogFragmentWithDate() {
     @Inject lateinit var rxBus: RxBusWrapper
     @Inject lateinit var mainApp: MainApp
     @Inject lateinit var fabricPrivacy: FabricPrivacy
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -48,14 +49,14 @@ class EditTriggerDialog : DialogFragmentWithDate() {
 
         disposable += rxBus
             .toObservable(EventTriggerChanged::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 automation_layoutTrigger.removeAllViews()
                 triggers?.generateDialog(automation_layoutTrigger)
             }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventTriggerRemove::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 findParent(triggers, it.trigger)?.list?.remove(it.trigger)
                 automation_layoutTrigger.removeAllViews()
@@ -64,7 +65,7 @@ class EditTriggerDialog : DialogFragmentWithDate() {
 
         disposable += rxBus
             .toObservable(EventTriggerClone::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 findParent(triggers, it.trigger)?.list?.add(it.trigger.duplicate())
                 automation_layoutTrigger.removeAllViews()

@@ -28,7 +28,7 @@ import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog.showConfirmation
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.treatments_extendedbolus_fragment.*
 import javax.inject.Inject
@@ -40,6 +40,7 @@ class TreatmentsExtendedBolusesFragment : DaggerFragment() {
     @Inject lateinit var rxBus: RxBusWrapper
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var fabricPrivacy: FabricPrivacy
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -131,12 +132,12 @@ class TreatmentsExtendedBolusesFragment : DaggerFragment() {
         super.onResume()
         disposable.add(rxBus
             .toObservable(EventExtendedBolusChange::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGui() }) { fabricPrivacy.logException(it) }
         )
         disposable.add(rxBus
             .toObservable(EventAutosensCalculationFinished::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGui() }) { fabricPrivacy.logException(it) }
         )
         updateGui()

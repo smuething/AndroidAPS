@@ -15,7 +15,7 @@ import info.nightscout.androidaps.plugins.treatments.fragments.*
 import info.nightscout.androidaps.utils.FabricPrivacy
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.treatments_fragment.*
 import javax.inject.Inject
@@ -26,6 +26,7 @@ class TreatmentsFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var treatmentsPlugin: TreatmentsPlugin
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
 
@@ -70,7 +71,7 @@ class TreatmentsFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventExtendedBolusChange::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGui() }) { fabricPrivacy.logException(it) }
         updateGui()
     }

@@ -14,7 +14,7 @@ import info.nightscout.androidaps.plugins.general.nsclient.data.NSSettingsStatus
 import info.nightscout.androidaps.plugins.general.overview.StatusLightHandler
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.careportal_fragment.*
 import kotlinx.android.synthetic.main.careportal_stats_fragment.*
@@ -27,6 +27,7 @@ class CareportalFragment : DaggerFragment(), View.OnClickListener {
     @Inject lateinit var statusLightHandler: StatusLightHandler
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var activePlugin: ActivePluginProvider
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
 
@@ -71,7 +72,7 @@ class CareportalFragment : DaggerFragment(), View.OnClickListener {
         super.onResume()
         disposable.add(rxBus
             .toObservable(EventCareportalEventChange::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGUI() }) { fabricPrivacy.logException(it) }
         )
         updateGUI()

@@ -17,7 +17,7 @@ import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.JSONFormatter
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.openapsama_fragment.*
 import org.json.JSONArray
@@ -32,6 +32,7 @@ class OpenAPSAMAFragment : DaggerFragment() {
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var openAPSAMAPlugin: OpenAPSAMAPlugin
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -52,13 +53,13 @@ class OpenAPSAMAFragment : DaggerFragment() {
 
         disposable += rxBus
             .toObservable(EventOpenAPSUpdateGui::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 updateGUI()
             }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventOpenAPSUpdateResultGui::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 updateResultGUI(it.text)
             }, { fabricPrivacy.logException(it) })

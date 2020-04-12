@@ -57,7 +57,7 @@ import info.nightscout.androidaps.utils.extensions.isRunningRealPumpTest
 import info.nightscout.androidaps.utils.protection.ProtectionCheck
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
@@ -79,6 +79,7 @@ class MainActivity : NoSplashAppCompatActivity() {
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var protectionCheck: ProtectionCheck
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
     private var pluginPreferencesMenuItem: MenuItem? = null
@@ -115,7 +116,7 @@ class MainActivity : NoSplashAppCompatActivity() {
         setupViews()
         disposable.add(rxBus
             .toObservable(EventRebuildTabs::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 update(applicationContext)
                 if (it.recreate) recreate()
@@ -128,7 +129,7 @@ class MainActivity : NoSplashAppCompatActivity() {
         )
         disposable.add(rxBus
             .toObservable(EventPreferenceChange::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ processPreferenceChange(it) }) { fabricPrivacy.logException(it) }
         )
         if (!sp.getBoolean(R.string.key_setupwizard_processed, false) && !isRunningRealPumpTest()) {

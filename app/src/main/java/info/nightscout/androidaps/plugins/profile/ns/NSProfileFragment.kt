@@ -18,7 +18,7 @@ import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.close.*
 import kotlinx.android.synthetic.main.nsprofile_fragment.*
@@ -33,6 +33,7 @@ class NSProfileFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var nsProfilePlugin: NSProfilePlugin
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -109,7 +110,7 @@ class NSProfileFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventNSProfileUpdateGUI::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGUI() }, { fabricPrivacy.logException(it) })
         updateGUI()
     }

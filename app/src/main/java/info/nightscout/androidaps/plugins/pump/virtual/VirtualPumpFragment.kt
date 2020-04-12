@@ -16,7 +16,7 @@ import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.T
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.virtualpump_fragment.*
 import javax.inject.Inject
@@ -27,6 +27,7 @@ class VirtualPumpFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var virtualPumpPlugin: VirtualPumpPlugin
     @Inject lateinit var treatmentsPlugin: TreatmentsPlugin
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
 
@@ -49,15 +50,15 @@ class VirtualPumpFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventVirtualPumpUpdateGui::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGui() }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventTempBasalChange::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGui() }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventExtendedBolusChange::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGui() }, { fabricPrivacy.logException(it) })
         loopHandler.postDelayed(refreshLoop, T.mins(1).msecs())
         updateGui()

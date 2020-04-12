@@ -35,7 +35,7 @@ import info.nightscout.androidaps.utils.HtmlHelper
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog.showConfirmation
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.automation_fragment.*
 import java.util.*
@@ -47,6 +47,7 @@ class AutomationFragment : DaggerFragment(), OnStartDragListener {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var automationPlugin: AutomationPlugin
     @Inject lateinit var mainApp : MainApp
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
     private lateinit var eventListAdapter: EventListAdapter
@@ -86,13 +87,13 @@ class AutomationFragment : DaggerFragment(), OnStartDragListener {
         super.onResume()
         disposable += rxBus
             .toObservable(EventAutomationUpdateGui::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 updateGui()
             }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventAutomationDataChanged::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 eventListAdapter.notifyDataSetChanged()
             }, { fabricPrivacy.logException(it) })

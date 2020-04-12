@@ -47,7 +47,7 @@ import info.nightscout.androidaps.utils.T;
 import info.nightscout.androidaps.utils.buildHelper.BuildHelper;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
-import io.reactivex.android.schedulers.AndroidSchedulers;
+import info.nightscout.androidaps.utils.rx.AapsSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
 public class HistoryBrowseActivity extends NoSplashAppCompatActivity {
@@ -63,6 +63,7 @@ public class HistoryBrowseActivity extends NoSplashAppCompatActivity {
     @Inject BuildHelper buildHelper;
     @Inject FabricPrivacy fabricPrivacy;
     @Inject OverviewMenus overviewMenus;
+    @Inject AapsSchedulers aapsSchedlulers;
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -189,7 +190,7 @@ public class HistoryBrowseActivity extends NoSplashAppCompatActivity {
         super.onResume();
         disposable.add(rxBus
                 .toObservable(EventAutosensCalculationFinished.class)
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(aapsSchedlulers.getMain())
                 .subscribe(event -> {
                     if (event.getCause() == eventCustomCalculationFinished) {
                         aapsLogger.debug(LTag.AUTOSENS, "EventAutosensCalculationFinished");
@@ -201,7 +202,7 @@ public class HistoryBrowseActivity extends NoSplashAppCompatActivity {
         );
         disposable.add(rxBus
                 .toObservable(EventIobCalculationProgress.class)
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(aapsSchedlulers.getMain())
                 .subscribe(event -> {
                     if (iobCalculationProgressView != null)
                         iobCalculationProgressView.setText(event.getProgress());
@@ -209,7 +210,7 @@ public class HistoryBrowseActivity extends NoSplashAppCompatActivity {
         );
         disposable.add(rxBus
                 .toObservable(EventRefreshOverview.class)
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(aapsSchedlulers.getMain())
                 .subscribe(event ->  updateGUI("EventRefreshOverview") , fabricPrivacy::logException)
         );
         // set start of current day
