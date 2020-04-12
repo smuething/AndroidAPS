@@ -37,10 +37,10 @@ import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.ToastUtils
 import info.nightscout.androidaps.utils.alertDialogs.ErrorDialog
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog
-import info.nightscout.androidaps.utils.extensions.plusAssign
+import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
@@ -58,7 +58,8 @@ class NSClient2Plugin @Inject constructor(
     private val sp: SP,
     private val receiverStatusStore: ReceiverStatusStore,
     private val nightscoutService: NightscoutService,
-    private val fabricPrivacy: FabricPrivacy
+    private val fabricPrivacy: FabricPrivacy,
+    private val aapsSchedulers: AapsSchedulers
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .fragmentClass(NSClient2Fragment::class.java.name)
@@ -147,7 +148,7 @@ class NSClient2Plugin @Inject constructor(
     private fun testConnection(context: Context) = disposable.add(
         nightscoutService
             .testConnection()
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedulers.main)
             .subscribeBy(
                 onSuccess = {
                     when (it) {

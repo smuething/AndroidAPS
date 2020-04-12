@@ -55,6 +55,8 @@ import info.nightscout.androidaps.utils.CryptoUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.resources.ResourceHelperImplementation
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
+import info.nightscout.androidaps.utils.rx.DefaultAapsSchedulers
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import info.nightscout.androidaps.utils.sharedPreferences.SPImplementation
 import info.nightscout.androidaps.utils.storage.FileStorage
@@ -114,6 +116,10 @@ open class AppModule {
     fun provideStorage(): Storage {
         return FileStorage()
     }
+
+    @Provides
+    @Singleton
+    internal fun provideSchedulers(): AapsSchedulers = DefaultAapsSchedulers()
 
     @Module
     interface AppBindings {
