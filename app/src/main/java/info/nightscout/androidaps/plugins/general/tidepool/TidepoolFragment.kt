@@ -13,9 +13,9 @@ import info.nightscout.androidaps.plugins.general.tidepool.events.EventTidepoolD
 import info.nightscout.androidaps.plugins.general.tidepool.events.EventTidepoolResetData
 import info.nightscout.androidaps.plugins.general.tidepool.events.EventTidepoolUpdateGUI
 import info.nightscout.androidaps.utils.FabricPrivacy
-import info.nightscout.androidaps.utils.extensions.plusAssign
+import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.tidepool_fragment.*
 import javax.inject.Inject
@@ -26,6 +26,7 @@ class TidepoolFragment : DaggerFragment() {
     @Inject lateinit var tidepoolUploader: TidepoolUploader
     @Inject lateinit var sp: SP
     @Inject lateinit var fabricPrivacy: FabricPrivacy
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -46,7 +47,7 @@ class TidepoolFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventTidepoolUpdateGUI::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 tidepoolPlugin.updateLog()
                 tidepool_log?.text = tidepoolPlugin.textLog

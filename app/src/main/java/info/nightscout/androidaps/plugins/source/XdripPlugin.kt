@@ -14,7 +14,7 @@ import info.nightscout.androidaps.logging.BundleLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.services.Intents
 import info.nightscout.androidaps.utils.determineSourceSensor
-import info.nightscout.androidaps.utils.extensions.plusAssign
+import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable

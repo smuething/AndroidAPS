@@ -11,8 +11,8 @@ import info.nightscout.androidaps.plugins.general.smsCommunicator.events.EventSm
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.HtmlHelper
-import info.nightscout.androidaps.utils.extensions.plusAssign
-import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.smscommunicator_fragment.*
 import java.util.*
@@ -23,6 +23,7 @@ class SmsCommunicatorFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy : FabricPrivacy
     @Inject lateinit var rxBus: RxBusWrapper
     @Inject lateinit var smsCommunicatorPlugin: SmsCommunicatorPlugin
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
 
@@ -36,7 +37,7 @@ class SmsCommunicatorFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventSmsCommunicatorUpdateGui::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ updateGui() }) { fabricPrivacy.logException(it) }
         updateGui()
     }

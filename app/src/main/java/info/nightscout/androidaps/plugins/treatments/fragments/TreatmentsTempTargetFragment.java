@@ -33,8 +33,8 @@ import info.nightscout.androidaps.utils.DecimalFormatter;
 import info.nightscout.androidaps.utils.FabricPrivacy;
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
+import info.nightscout.androidaps.utils.rx.AapsSchedulers;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
 /**
@@ -47,6 +47,8 @@ public class TreatmentsTempTargetFragment extends DaggerFragment {
     @Inject RxBusWrapper rxBus;
     @Inject ProfileFunction profileFunction;
     @Inject ResourceHelper resourceHelper;
+    @Inject AapsSchedulers aapsSchedulers;
+
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -188,7 +190,7 @@ public class TreatmentsTempTargetFragment extends DaggerFragment {
         super.onResume();
         disposable.add(rxBus
                 .toObservable(EventTempTargetChange.class)
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(aapsSchedulers.getMain())
                 .subscribe(event -> updateGui(), exception -> FabricPrivacy.getInstance().logException(exception))
         );
         updateGui();

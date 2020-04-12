@@ -24,8 +24,8 @@ import info.nightscout.androidaps.plugins.general.automation.events.EventAutomat
 import info.nightscout.androidaps.plugins.general.automation.triggers.TriggerConnector
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.ToastUtils
-import info.nightscout.androidaps.utils.extensions.plusAssign
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.automation_dialog_event.*
 import javax.inject.Inject
@@ -35,6 +35,7 @@ class EditEventDialog : DialogFragmentWithDate() {
     @Inject lateinit var mainApp: MainApp
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var automationPlugin: AutomationPlugin
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private var actionListAdapter: ActionListAdapter? = null
     private lateinit var event: AutomationEvent
@@ -80,7 +81,7 @@ class EditEventDialog : DialogFragmentWithDate() {
 
         disposable += rxBus
             .toObservable(EventAutomationUpdateGui::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 actionListAdapter?.notifyDataSetChanged()
                 showPreconditions()
@@ -88,7 +89,7 @@ class EditEventDialog : DialogFragmentWithDate() {
             )
         disposable += rxBus
             .toObservable(EventAutomationAddAction::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 event.addAction(it.action)
                 actionListAdapter?.notifyDataSetChanged()
@@ -96,7 +97,7 @@ class EditEventDialog : DialogFragmentWithDate() {
             )
         disposable += rxBus
             .toObservable(EventAutomationUpdateTrigger::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 event.trigger = it.trigger
                 automation_triggerDescription.text = event.trigger.friendlyDescription()
@@ -104,7 +105,7 @@ class EditEventDialog : DialogFragmentWithDate() {
             )
         disposable += rxBus
             .toObservable(EventAutomationUpdateAction::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 event.actions[it.position] = it.action
                 actionListAdapter?.notifyDataSetChanged()

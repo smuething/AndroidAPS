@@ -27,8 +27,8 @@ import info.nightscout.androidaps.queue.events.EventQueueChanged;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.FabricPrivacy;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
+import info.nightscout.androidaps.utils.rx.AapsSchedulers;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 
 public class ComboFragment extends DaggerFragment implements View.OnClickListener {
@@ -37,6 +37,7 @@ public class ComboFragment extends DaggerFragment implements View.OnClickListene
     @Inject ResourceHelper resourceHelper;
     @Inject RxBusWrapper rxBus;
     @Inject SP sp;
+    @Inject AapsSchedulers aapsSchedulers;
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -79,12 +80,12 @@ public class ComboFragment extends DaggerFragment implements View.OnClickListene
         super.onResume();
         disposable.add(rxBus
                 .toObservable(EventComboPumpUpdateGUI.class)
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(aapsSchedulers.getMain())
                 .subscribe(event -> updateGui(), exception -> FabricPrivacy.getInstance().logException(exception))
         );
         disposable.add(rxBus
                 .toObservable(EventQueueChanged.class)
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(aapsSchedulers.getMain())
                 .subscribe(event -> updateGui(), exception -> FabricPrivacy.getInstance().logException(exception))
         );
         updateGui();

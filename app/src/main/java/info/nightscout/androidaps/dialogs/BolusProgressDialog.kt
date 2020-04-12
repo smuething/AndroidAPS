@@ -20,7 +20,7 @@ import info.nightscout.androidaps.plugins.general.overview.events.EventDismissBo
 import info.nightscout.androidaps.plugins.general.overview.events.EventOverviewBolusProgress
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import io.reactivex.android.schedulers.AndroidSchedulers
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.dialog_bolusprogress.*
 import javax.inject.Inject
@@ -31,6 +31,7 @@ class BolusProgressDialog : DaggerDialogFragment() {
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var commandQueue: CommandQueueProvider
     @Inject lateinit var fabricPrivacy: FabricPrivacy
+    @Inject lateinit var aapsSchedlulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
 
@@ -102,17 +103,17 @@ class BolusProgressDialog : DaggerDialogFragment() {
 
         disposable.add(rxBus
             .toObservable(EventPumpStatusChanged::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ overview_bolusprogress_status.text = it.getStatus(resourceHelper) }) { fabricPrivacy.logException(it) }
         )
         disposable.add(rxBus
             .toObservable(EventDismissBolusProgressIfRunning::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({ if (running) dismiss() }) { fabricPrivacy.logException(it) }
         )
         disposable.add(rxBus
             .toObservable(EventOverviewBolusProgress::class.java)
-            .observeOn(AndroidSchedulers.mainThread())
+            .observeOn(aapsSchedlulers.main)
             .subscribe({
                 aapsLogger.debug(LTag.UI, "Status: ${it.status} Percent: ${it.percent}")
                 overview_bolusprogress_status.text = it.status
