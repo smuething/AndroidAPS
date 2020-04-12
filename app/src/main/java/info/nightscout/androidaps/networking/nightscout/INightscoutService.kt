@@ -43,10 +43,10 @@ interface INightscoutService {
         @Query("limit") limit: Int
     ): Single<Response<ArrayOfData>>
 
-    @GET("/api/v3/{collection}")
+    @GET("/api/v3/{collection}/history/{lastModified}")
     fun getByLastModified(
         @Path("collection") collection: NightscoutCollection,
-        @Query("srvModified\$gte") from: Long,
+        @Path("lastModified") from: Long,
         @Query("sort") sort : String,
         @Query("limit") limit: Int
     ): Single<Response<ArrayOfData>>
