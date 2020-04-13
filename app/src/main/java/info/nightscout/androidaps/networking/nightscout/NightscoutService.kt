@@ -57,23 +57,18 @@ class NightscoutService(
 
                 NightscoutCollection.FOOD         -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_food, collection, errors)
                 NightscoutCollection.PROFILE      -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_profile, collection, errors)
+
                 NightscoutCollection.TREATMENTS   -> {
                     statusResponse.mapRequiredPermissionToError(R.string.key_ns_insulin, collection, errors)
                     statusResponse.mapRequiredPermissionToError(R.string.key_ns_carbs, collection, errors)
                     statusResponse.mapRequiredPermissionToError(R.string.key_ns_careportal, collection, errors)
                 }
+
                 NightscoutCollection.ENTRIES      -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_cgm, collection, errors)
                 NightscoutCollection.SETTINGS     -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_settings, collection, errors)
             }
-        statusResponse.apiPermissions.let {
-
-            if (!it.settings.read) errors.add(PERMISSIONS_INSUFFICIENT.format("settings"))
-            if (!it.entries.full) errors.add(PERMISSIONS_INSUFFICIENT.format("entries"))
-            if (!it.treatments.full) errors.add(PERMISSIONS_INSUFFICIENT.format("treatments"))
-            if (!it.food.full) errors.add(PERMISSIONS_INSUFFICIENT.format("food"))
-        }
         return if (errors.isEmpty()) {
-            SetupState.Success
+            SetupState.Success(statusResponse.apiPermissions)
         } else {
             SetupState.Error(errors.reduce { acc: String, s: String -> acc + "\n" + s })
         }

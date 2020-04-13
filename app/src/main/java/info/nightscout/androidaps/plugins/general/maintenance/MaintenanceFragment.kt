@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import dagger.android.support.DaggerFragment
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.plugins.general.food.FoodPlugin
 import info.nightscout.androidaps.plugins.general.maintenance.activities.LogSettingActivity
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin
@@ -24,6 +25,7 @@ class MaintenanceFragment : DaggerFragment() {
     @Inject lateinit var treatmentsPlugin: TreatmentsPlugin
     @Inject lateinit var foodPlugin: FoodPlugin
     @Inject lateinit var importExportPrefs: ImportExportPrefs
+    @Inject lateinit var repository: AppRepository
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.maintenance_fragment, container, false)
@@ -41,6 +43,7 @@ class MaintenanceFragment : DaggerFragment() {
                     // additional service interface and plugin registry
                     foodPlugin.service?.resetFood()
                     treatmentsPlugin.service.resetTreatments()
+                    repository.clearDatabases()
                 })
             }
         }

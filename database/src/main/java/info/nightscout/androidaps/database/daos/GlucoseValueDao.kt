@@ -28,4 +28,7 @@ internal interface GlucoseValueDao : TraceableDao<GlucoseValue> {
 
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE timestamp >= :timestamp AND isValid = 1 AND referenceId IS NULL ORDER BY timestamp ASC")
     fun compatGetAllBgreadingsDataFromTime(timestamp: Long): Single<List<GlucoseValue>>
+
+    @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE id > :lastId AND referenceId IS NULL ORDER BY timestamp ASC")
+    fun getDataFromId(lastId: Long): Single<List<GlucoseValue>>
 }

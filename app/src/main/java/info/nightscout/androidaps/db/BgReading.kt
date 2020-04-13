@@ -32,7 +32,7 @@ class BgReading : DataPointWithLabelInterface {
         data.timestamp = timeStamp
     }
 
-    fun getDate(): Long = data.dateCreated
+    fun getDate(): Long = data.timestamp
     fun getValue(): Double = data.value
     fun setValue(value: Double) {
         data.value = value

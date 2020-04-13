@@ -1,6 +1,6 @@
 package info.nightscout.androidaps.networking.nightscout.data
 
-enum class NightscoutCollection (val collection: String) {
+enum class NightscoutCollection(val collection: String) {
     DEVICESTATUS("devicestatus"),
     ENTRIES("entries"),
     FOOD("food"),

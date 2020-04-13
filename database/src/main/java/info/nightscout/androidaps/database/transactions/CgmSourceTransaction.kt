@@ -18,7 +18,7 @@ class CgmSourceTransaction(
         glucoseValues.forEach {
             val current = database.glucoseValueDao.findByTimestampAndSensor(it.timestamp, it.sourceSensor)
             val glucoseValue = GlucoseValue(
-                    utcOffset = TimeZone.getDefault().getOffset(it.timestamp).toLong(),
+                    utcOffset = TimeZone.getDefault().getOffset(it.timestamp) / 60000L,
                     timestamp = it.timestamp,
                     raw = it.raw,
                     value = it.value,
@@ -42,7 +42,7 @@ class CgmSourceTransaction(
             if (database.therapyEventDao.findByTimestamp(TherapyEvent.Type.FINGER_STICK_BG_VALUE, it.timestamp) == null) {
                 database.therapyEventDao.insertNewEntry(TherapyEvent(
                         timestamp = it.timestamp,
-                        utcOffset = TimeZone.getDefault().getOffset(it.timestamp).toLong(),
+                        utcOffset = TimeZone.getDefault().getOffset(it.timestamp) / 60000L,
                         type = TherapyEvent.Type.FINGER_STICK_BG_VALUE,
                         amount = it.value
                 ))
@@ -52,7 +52,7 @@ class CgmSourceTransaction(
             if (database.therapyEventDao.findByTimestamp(TherapyEvent.Type.SENSOR_INSERTED, it) == null) {
                 database.therapyEventDao.insertNewEntry(TherapyEvent(
                         timestamp = it,
-                        utcOffset = TimeZone.getDefault().getOffset(it).toLong(),
+                        utcOffset = TimeZone.getDefault().getOffset(it) / 60000L,
                         type = TherapyEvent.Type.SENSOR_INSERTED
                 ))
             }
@@ -65,9 +65,9 @@ class CgmSourceTransaction(
             val value: Double,
             val raw: Double?,
             val noise: Double?,
-            val trendArrow: GlucoseValue.TrendArrow,
+            val trendArrow: info.nightscout.androidaps.database.entities.GlucoseValue.TrendArrow,
             val nightscoutId: String? = null,
-            val sourceSensor: GlucoseValue.SourceSensor
+            val sourceSensor: info.nightscout.androidaps.database.entities.GlucoseValue.SourceSensor
     )
 
     data class Calibration(

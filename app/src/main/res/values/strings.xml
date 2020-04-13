@@ -1827,4 +1827,5 @@
     <string name="roamingnotallowed">Roaming not allowed</string>
     <string name="notcharging">Not charging</string>
     <string name="wifinotconnected">WiFi not connected</string>
+    <string name="ready">Ready</string>
 </resources>

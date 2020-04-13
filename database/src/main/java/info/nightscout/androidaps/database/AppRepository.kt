@@ -54,6 +54,8 @@ class AppRepository @Inject internal constructor(
         }
     }
 
+    fun clearDatabases() = database.clearAllTables()
+
     fun compatGetBgreadingsDataFromTime(timestamp: Long, ascending: Boolean) =
         database.glucoseValueDao.compatGetBgreadingsDataFromTime(timestamp)
             .map { if (!ascending) it.reversed() else it }
@@ -67,5 +69,9 @@ class AppRepository @Inject internal constructor(
     fun compatGetAllBgreadingsDataFromTime(timestamp: Long, ascending: Boolean) =
         database.glucoseValueDao.compatGetAllBgreadingsDataFromTime(timestamp)
             .map { if (!ascending) it.reversed() else it }
+            .subscribeOn(Schedulers.io())
+
+    fun getDataFromId(lastId: Long) =
+        database.glucoseValueDao.getDataFromId(lastId)
             .subscribeOn(Schedulers.io())
 }

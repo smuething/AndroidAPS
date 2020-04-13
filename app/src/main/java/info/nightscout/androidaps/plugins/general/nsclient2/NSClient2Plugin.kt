@@ -11,7 +11,9 @@ import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
+import info.nightscout.androidaps.database.transactions.UpdateGlucoseValueTransaction
 import info.nightscout.androidaps.events.EventChargingState
 import info.nightscout.androidaps.events.EventNetworkChange
 import info.nightscout.androidaps.events.EventNewBG
@@ -20,11 +22,12 @@ import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
+import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.networking.nightscout.NightscoutService
 import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
+import info.nightscout.androidaps.networking.nightscout.responses.ApiPermissions
 import info.nightscout.androidaps.networking.nightscout.responses.PostEntryResponseType
-import info.nightscout.androidaps.networking.nightscout.responses.StatusResponse
 import info.nightscout.androidaps.networking.nightscout.responses.id
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientNewLog
@@ -36,15 +39,14 @@ import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.ToastUtils
 import info.nightscout.androidaps.utils.alertDialogs.ErrorDialog
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog
-import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
+import info.nightscout.androidaps.utils.sharedPreferences.PreferenceBoolean
+import info.nightscout.androidaps.utils.sharedPreferences.PreferenceLong
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import info.nightscout.androidaps.utils.sharedPreferences.SPBoolean
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.subscribeBy
-import io.reactivex.schedulers.Schedulers
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -60,7 +62,8 @@ class NSClient2Plugin @Inject constructor(
     private val receiverStatusStore: ReceiverStatusStore,
     private val nightscoutService: NightscoutService,
     private val fabricPrivacy: FabricPrivacy,
-    private val aapsSchedulers: AapsSchedulers
+    private val aapsSchedulers: AapsSchedulers,
+    private val repository: AppRepository
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .fragmentClass(NSClient2Fragment::class.java.name)
@@ -72,9 +75,12 @@ class NSClient2Plugin @Inject constructor(
 ) {
 
     private val listLog: MutableList<EventNSClientNewLog> = ArrayList()
-    private val keyNSClientPaused = SPBoolean(R.string.key_nsclient_paused, sp, resourceHelper, rxBus)
+    private val keyNSClientPaused = PreferenceBoolean(R.string.key_nsclient_paused, false, sp, resourceHelper, rxBus)
 
-    var permissions: StatusResponse? = null // grabbed permissions
+    val lastProcessedId = Array(NightscoutCollection.values().size) { i -> PreferenceLong("lastProcessedId_" + NightscoutCollection.values()[i].collection, 0L, sp, rxBus) }
+    val receiveTimestamp = Array(NightscoutCollection.values().size) { i -> PreferenceLong("receiveTimestamp_" + NightscoutCollection.values()[i].collection, 0L, sp, rxBus) }
+
+    var permissions: ApiPermissions? = null // grabbed permissions
 
     private val _liveData: MutableLiveData<NSClient2LiveData> = MutableLiveData(NSClient2LiveData.Log(HtmlHelper.fromHtml("")))
     val liveData: LiveData<NSClient2LiveData> = _liveData // Expose non-mutable form (avoid post from other classes)
@@ -85,7 +91,7 @@ class NSClient2Plugin @Inject constructor(
         super.onStart()
         disposable += rxBus
             .toObservable(EventPreferenceChange::class.java)
-            .observeOn(Schedulers.io())
+            .observeOn(aapsSchedulers.io)
             .subscribe({ event ->
                 if (event.isChanged(resourceHelper, R.string.key_ns_wifionly) ||
                     event.isChanged(resourceHelper, R.string.key_ns_wifi_ssids) ||
@@ -96,24 +102,31 @@ class NSClient2Plugin @Inject constructor(
                     receiverStatusStore.broadcastChargingState()
                     commAllowed()
                 }
-                if (event.isChanged(resourceHelper, R.string.key_ns_cgm)) {
-                    // TODO
+                for (c in arrayOf(R.string.key_ns_cgm,
+                    R.string.key_ns_food,
+                    R.string.key_ns_profile,
+                    R.string.key_ns_insulin,
+                    R.string.key_ns_carbs,
+                    R.string.key_ns_careportal,
+                    R.string.key_ns_settings)) {
+                    if (event.isChanged(resourceHelper, c))
+                        permissions = null // force new permissions read
                 }
             }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventChargingState::class.java)
-            .observeOn(Schedulers.io())
+            .observeOn(aapsSchedulers.io)
             .subscribe({ sync("EventChargingState") }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventNetworkChange::class.java)
-            .observeOn(Schedulers.io())
+            .observeOn(aapsSchedulers.io)
             .subscribe({ sync("EventNetworkChange") }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventNewBG::class.java)
-            .observeOn(Schedulers.io())
+            .observeOn(aapsSchedulers.io)
             .subscribe({ sync("EventNewBG") }, { fabricPrivacy.logException(it) })
 
-        receiverStatusStore.updateNetworkStatus() // broadcast status to be catched for initial sync
+        receiverStatusStore.updateNetworkStatus() // broadcast status to be caught for initial sync
     }
 
     override fun onStop() {
@@ -144,6 +157,24 @@ class NSClient2Plugin @Inject constructor(
         }
     }
 
+    private fun readPermissions(ok: () -> Unit) = disposable.add(
+        nightscoutService
+            .testConnection()
+            .observeOn(aapsSchedulers.io)
+            .subscribeBy(
+                onSuccess = {
+                    when (it) {
+                        is SetupState.Success -> {
+                            permissions = it.permissions
+                            ok()
+                        }
+
+                        is SetupState.Error   -> permissions = null
+                    }
+                },
+                onError = { permissions = null })
+    )
+
     private fun testConnection(context: Context) = disposable.add(
         nightscoutService
             .testConnection()
@@ -151,8 +182,12 @@ class NSClient2Plugin @Inject constructor(
             .subscribeBy(
                 onSuccess = {
                     when (it) {
-                        SetupState.Success  -> OKDialog.show(context, "", resourceHelper.gs(R.string.connection_verified), null)
-                        is SetupState.Error -> ErrorDialog.showError(context, resourceHelper.gs(R.string.error), it.message)
+                        is SetupState.Success -> {
+                            permissions = it.permissions
+                            OKDialog.show(context, "", resourceHelper.gs(R.string.connection_verified), null)
+                        }
+
+                        is SetupState.Error   -> ErrorDialog.showError(context, resourceHelper.gs(R.string.error), it.message)
                     }
                 },
                 onError = {
@@ -199,6 +234,7 @@ class NSClient2Plugin @Inject constructor(
 
     @Synchronized
     private fun addToLog(ev: EventNSClientNewLog) {
+        aapsLogger.debug(LTag.NSCLIENT, ev.toString())
         listLog.add(ev)
         // remove the first line if log is too large
         if (listLog.size >= Constants.MAX_LOG_LINES) {
@@ -214,7 +250,47 @@ class NSClient2Plugin @Inject constructor(
     }
 
     fun sync(s: String) {
+        aapsLogger.debug(LTag.NSCLIENT, "Running sync from $s")
+        if (keyNSClientPaused.get()) {
+            _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.paused)))
+            return
+        }
         if (!commAllowed()) return
+        if (permissions == null) readPermissions(::doSync)
+        else doSync()
+    }
+
+    @Synchronized
+    private fun doSync() {
+        val list =
+            repository
+                .getDataFromId(lastProcessedId[NightscoutCollection.ENTRIES.ordinal].get())
+                .blockingGet()
+
+        for (gv in list) {
+            aapsLogger.debug(LTag.NSCLIENT, "Uploading $gv")
+            disposable.add(
+                nightscoutService.postGlucoseStatus(gv).subscribeBy(
+                    onSuccess = { result ->
+                        when (result) {
+                            is PostEntryResponseType.Success -> {
+                                gv.interfaceIDs.nightscoutId = result.location?.id
+                                disposable += repository.runTransaction(UpdateGlucoseValueTransaction(gv)).subscribeBy(
+                                    onComplete = {
+                                        lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.dateCreated)
+                                        addToLog(EventNSClientNewLog("RESULT", "success: ${result.location?.id}"))
+                                    },
+                                    onError = { addToLog(EventNSClientNewLog("DBRESULT", "failure: ${it.message}")) }
+                                )
+                            }
+
+                            is PostEntryResponseType.Failure -> addToLog(EventNSClientNewLog("RESULT", "failure: ${result.reason}"))
+                        }
+                    },
+                    onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}")) }
+                ))
+        }
+
     }
 
     fun fullSync(s: String) {
@@ -223,7 +299,9 @@ class NSClient2Plugin @Inject constructor(
     }
 
     fun pause(newState: Boolean) {
-        keyNSClientPaused.value = newState
+        keyNSClientPaused.store(newState)
+        if (newState) _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.paused)))
+        else commAllowed()
     }
 
     private fun commAllowed(): Boolean {
@@ -254,7 +332,7 @@ class NSClient2Plugin @Inject constructor(
             }
         }
         if (wifiOnly && receiverStatusStore.isWifiConnected) {
-            _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.connected)))
+            _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ready)))
             return true
         }
         if (!allowRoaming && eventNetworkChange.roaming) {
@@ -262,7 +340,7 @@ class NSClient2Plugin @Inject constructor(
             return false
         }
 
-        _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.connected)))
+        _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ready)))
         return true
     }
 }
