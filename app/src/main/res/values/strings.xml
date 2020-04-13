@@ -1828,4 +1828,11 @@
     <string name="notcharging">Not charging</string>
     <string name="wifinotconnected">WiFi not connected</string>
     <string name="ready">Ready</string>
+    <string name="recordcreated">Record created</string>
+    <string name="recordexist">Record already exists</string>
+    <string name="malformatedrequest">Malformated request</string>
+    <string name="unauthorized">Unauthorized</string>
+    <string name="collectionnotfound">Collection not found</string>
+    <string name="forbidden">Forbidden</string>
+    <string name="unprocessableentity">Unprocessable entity</string>
 </resources>

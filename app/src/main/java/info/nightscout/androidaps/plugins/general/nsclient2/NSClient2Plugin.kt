@@ -12,8 +12,6 @@ import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
-import info.nightscout.androidaps.database.entities.GlucoseValue
-import info.nightscout.androidaps.database.transactions.UpdateGlucoseValueTransaction
 import info.nightscout.androidaps.events.EventChargingState
 import info.nightscout.androidaps.events.EventNetworkChange
 import info.nightscout.androidaps.events.EventNewBG
@@ -28,9 +26,12 @@ import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollectio
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.responses.ApiPermissions
 import info.nightscout.androidaps.networking.nightscout.responses.PostEntryResponseType
+import info.nightscout.androidaps.networking.nightscout.responses.ResponseCode
 import info.nightscout.androidaps.networking.nightscout.responses.id
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientNewLog
+import info.nightscout.androidaps.plugins.general.nsclient2.events.EventNSClientFullSync
+import info.nightscout.androidaps.plugins.general.nsclient2.events.EventNSClientSync
 import info.nightscout.androidaps.receivers.ReceiverStatusStore
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
@@ -125,6 +126,14 @@ class NSClient2Plugin @Inject constructor(
             .toObservable(EventNewBG::class.java)
             .observeOn(aapsSchedulers.io)
             .subscribe({ sync("EventNewBG") }, { fabricPrivacy.logException(it) })
+        disposable += rxBus
+            .toObservable(EventNSClientSync::class.java)
+            .observeOn(aapsSchedulers.io)
+            .subscribe({ sync("EventNSClientSync") }, { fabricPrivacy.logException(it) })
+        disposable += rxBus
+            .toObservable(EventNSClientFullSync::class.java)
+            .observeOn(aapsSchedulers.io)
+            .subscribe({ fullSync("EventNSClientFullSync") }, { fabricPrivacy.logException(it) })
 
         receiverStatusStore.updateNetworkStatus() // broadcast status to be caught for initial sync
     }
@@ -232,8 +241,8 @@ class NSClient2Plugin @Inject constructor(
         }
     }
 
-    fun sync(s: String) {
-        aapsLogger.debug(LTag.NSCLIENT, "Running sync from $s")
+    fun sync(from: String) {
+        aapsLogger.debug(LTag.NSCLIENT, "Running sync from $from")
         if (keyNSClientPaused.get()) {
             _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.paused)))
             return
@@ -245,40 +254,40 @@ class NSClient2Plugin @Inject constructor(
 
     @Synchronized
     private fun doSync() {
-        val list =
-            repository
-                .getDataFromId(lastProcessedId[NightscoutCollection.ENTRIES.ordinal].get())
-                .blockingGet()
+        val list = repository
+            .getDataFromId(lastProcessedId[NightscoutCollection.ENTRIES.ordinal].get())
+            .blockingGet()
 
         for (gv in list) {
             aapsLogger.debug(LTag.NSCLIENT, "Uploading $gv")
-            disposable.add(
-                nightscoutService.postGlucoseStatus(gv).subscribeBy(
-                    onSuccess = { result ->
-                        when (result) {
-                            is PostEntryResponseType.Success -> {
-                                gv.interfaceIDs.nightscoutId = result.location?.id
-                                disposable += repository.runTransaction(UpdateGlucoseValueTransaction(gv)).subscribeBy(
-                                    onComplete = {
-                                        lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.id)
-                                        addToLog(EventNSClientNewLog("RESULT", "success: ${result.location?.id}"))
-                                    },
-                                    onError = { addToLog(EventNSClientNewLog("DBRESULT", "failure: ${it.message}")) }
-                                )
-                            }
 
-                            is PostEntryResponseType.Failure -> addToLog(EventNSClientNewLog("RESULT", "failure: ${result.reason}"))
-                        }
-                    },
-                    onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}")) }
-                ))
+            val httpResult = nightscoutService.postGlucoseStatus(gv).blockingGet()
+            gv.interfaceIDs.nightscoutId = httpResult.location?.id
+            when (httpResult.code) {
+                ResponseCode.RECORD_CREATED -> {
+                    lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.id)
+                    repository.updateGlucoseValue(gv)
+                    addToLog(EventNSClientNewLog("RESULT", "added: ${httpResult.location?.id}"))
+                }
+
+                ResponseCode.RECORD_EXISTS  -> {
+                    lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.id)
+                    addToLog(EventNSClientNewLog("RESULT", "existing: ${httpResult.location?.id}"))
+                }
+                else                        -> {
+                    addToLog(EventNSClientNewLog("ERROR", "${httpResult.code}"))
+                    return
+                }
+            }
         }
-
     }
 
-    fun fullSync(s: String) {
-        if (!commAllowed()) return
-
+    private fun fullSync(from: String) {
+        aapsLogger.debug(LTag.NSCLIENT, "Running FULL sync from $from")
+        // reset upload timestamp
+        for (c in NightscoutCollection.values())
+            lastProcessedId[c.ordinal].store(0)
+        sync(from)
     }
 
     fun pause(newState: Boolean) {

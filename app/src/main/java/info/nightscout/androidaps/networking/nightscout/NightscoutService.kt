@@ -116,16 +116,8 @@ class NightscoutService(
 
     private fun Response<DummyResponse>.toResponseType(): PostEntryResponseType {
         val headers: Headers = this.headers()
-        return when (this.code()) {
-            // Todo: do we want to distinguish between "created new document" (201) and "Successfully finished operation"?
-            201, 204 -> PostEntryResponseType.Success(headers["Last-Modified"], headers["Location"])  // here we should according to standard also get the datum back that we created?
-            400      -> PostEntryResponseType.Failure(FailureReason.MALFORMATTED_REQUEST)
-            401      -> PostEntryResponseType.Failure(FailureReason.UNAUTHORIZED)
-            403      -> PostEntryResponseType.Failure(FailureReason.FORBIDDEN)
-            404      -> PostEntryResponseType.Failure(FailureReason.NOT_FOUND)
-            422      -> PostEntryResponseType.Failure(FailureReason.UNPROCESSABLE_ENTITY)
-            else     -> PostEntryResponseType.Failure(FailureReason.UNKNOWN)
-        }
+        // headers["Last-Modified"] not used
+        return PostEntryResponseType(ResponseCode.fromInt(this.code()), headers["Location"])
     }
 
     fun getByDate(collection: NightscoutCollection, from: Long, sort: String = "date", limit: Int = 1000) =

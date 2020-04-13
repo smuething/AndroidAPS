@@ -9,6 +9,9 @@ import android.widget.ScrollView
 import androidx.lifecycle.Observer
 import dagger.android.support.DaggerFragment
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.plugins.bus.RxBusWrapper
+import info.nightscout.androidaps.plugins.general.nsclient2.events.EventNSClientFullSync
+import info.nightscout.androidaps.plugins.general.nsclient2.events.EventNSClientSync
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import kotlinx.android.synthetic.main.nsclient2_fragment.*
 import javax.inject.Inject
@@ -17,6 +20,7 @@ class NSClient2Fragment : DaggerFragment() {
 
     @Inject lateinit var sp: SP
     @Inject lateinit var nsClient2Plugin: NSClient2Plugin
+    @Inject lateinit var rxBus: RxBusWrapper
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.nsclient2_fragment, container, false)
@@ -32,14 +36,15 @@ class NSClient2Fragment : DaggerFragment() {
         nsclient_clearlog.setOnClickListener { nsClient2Plugin.clearLog() }
 
         nsclient_delivernow.paintFlags = nsclient_delivernow.paintFlags or Paint.UNDERLINE_TEXT_FLAG
-        nsclient_delivernow.setOnClickListener { nsClient2Plugin.sync("GUI") }
+        nsclient_delivernow.setOnClickListener { rxBus.send(EventNSClientSync()) }
 
         nsclient_fullsync.paintFlags = nsclient_fullsync.paintFlags or Paint.UNDERLINE_TEXT_FLAG
-        nsclient_fullsync.setOnClickListener { nsClient2Plugin.fullSync("GUI") }
+        nsclient_fullsync.setOnClickListener { rxBus.send(EventNSClientFullSync()) }
 
         nsclient_paused.setOnCheckedChangeListener { _, isChecked ->
             nsClient2Plugin.pause(isChecked)
         }
+        nsclient_paused.isChecked = sp.getBoolean(R.string.key_nsclient_paused, false)
 
         nsclient_autoscroll.setOnCheckedChangeListener { _, isChecked ->
             sp.putBoolean(R.string.key_nsclientinternal_autoscroll, isChecked)
