@@ -76,7 +76,7 @@ public class IobCobCalculatorPlugin extends PluginBase {
     private LongSparseArray<BasalData> basalDataTable = new LongSparseArray<>(); // oldest at index 0
 
     private volatile List<GlucoseValue> bgReadings = null; // newest at index 0
-    private volatile List<GlucoseValue> bucketed_data = null;
+    private volatile List<InMemoryGlucoseValue> bucketed_data = null;
 
     private final Object dataLock = new Object();
 
@@ -222,7 +222,7 @@ public class IobCobCalculatorPlugin extends PluginBase {
         this.bgReadings = bgReadings;
     }
 
-    public List<GlucoseValue> getBucketedData() {
+    public List<InMemoryGlucoseValue> getBucketedData() {
         return bucketed_data;
     }
 
@@ -332,13 +332,13 @@ public class IobCobCalculatorPlugin extends PluginBase {
                 break;
 
             if (older.getTimestamp() == newer.getTimestamp()) { // direct hit
-                bucketed_data.add(newer);
+                bucketed_data.add(new InMemoryGlucoseValue(newer));
             } else {
                 double bgDelta = newer.getValue() - older.getValue();
                 long timeDiffToNew = newer.getTimestamp() - currentTime;
 
                 double currentBg = newer.getValue() - (double) timeDiffToNew / (newer.getTimestamp() - older.getTimestamp()) * bgDelta;
-                GlucoseValue newBgreading = new GlucoseValue();
+                InMemoryGlucoseValue newBgreading = new InMemoryGlucoseValue();
                 newBgreading.setTimestamp(currentTime);
                 newBgreading.setValue(Math.round(currentBg));
                 bucketed_data.add(newBgreading);
@@ -357,7 +357,7 @@ public class IobCobCalculatorPlugin extends PluginBase {
         }
 
         bucketed_data = new ArrayList<>();
-        bucketed_data.add(bgReadings.get(0));
+        bucketed_data.add(new InMemoryGlucoseValue(bgReadings.get(0)));
         getAapsLogger().debug(LTag.AUTOSENS, "Adding. bgTime: " + DateUtil.toISOString(bgReadings.get(0).getTimestamp()) + " lastbgTime: " + "none-first-value" + " " + bgReadings.get(0).toString());
         int j = 0;
         for (int i = 1; i < bgReadings.size(); ++i) {
@@ -378,7 +378,7 @@ public class IobCobCalculatorPlugin extends PluginBase {
                 while (elapsed_minutes > 5) {
                     nextbgTime = lastbgTime - 5 * 60 * 1000;
                     j++;
-                    GlucoseValue newBgreading = new GlucoseValue();
+                    InMemoryGlucoseValue newBgreading = new InMemoryGlucoseValue();
                     newBgreading.setTimestamp(nextbgTime);
                     double gapDelta = bgReadings.get(i).getValue() - lastbg;
                     //console.error(gapDelta, lastbg, elapsed_minutes);
@@ -393,14 +393,14 @@ public class IobCobCalculatorPlugin extends PluginBase {
                     lastbgTime = nextbgTime;
                 }
                 j++;
-                GlucoseValue newBgreading = new GlucoseValue();
+                InMemoryGlucoseValue newBgreading = new InMemoryGlucoseValue();
                 newBgreading.setValue(bgReadings.get(i).getValue());
                 newBgreading.setTimestamp(bgTime);
                 bucketed_data.add(newBgreading);
                 getAapsLogger().debug(LTag.AUTOSENS, "Adding. bgTime: " + DateUtil.toISOString(bgTime) + " lastbgTime: " + DateUtil.toISOString(lastbgTime) + " " + newBgreading.toString());
             } else if (Math.abs(elapsed_minutes) > 2) {
                 j++;
-                GlucoseValue newBgreading = new GlucoseValue();
+                InMemoryGlucoseValue newBgreading = new InMemoryGlucoseValue();
                 newBgreading.setValue(bgReadings.get(i).getValue());
                 newBgreading.setTimestamp(bgTime);
                 bucketed_data.add(newBgreading);
@@ -413,8 +413,8 @@ public class IobCobCalculatorPlugin extends PluginBase {
 
         // Normalize bucketed data
         for (int i = bucketed_data.size() - 2; i >= 0; i--) {
-            GlucoseValue current = bucketed_data.get(i);
-            GlucoseValue previous = bucketed_data.get(i + 1);
+            InMemoryGlucoseValue current = bucketed_data.get(i);
+            InMemoryGlucoseValue previous = bucketed_data.get(i + 1);
             long msecDiff = current.getTimestamp() - previous.getTimestamp();
             long adjusted = (msecDiff - T.mins(5).msecs()) / 1000;
             getAapsLogger().debug(LTag.AUTOSENS, "Adjusting bucketed data time. Current: " + DateUtil.toISOString(current.getTimestamp()) + " to: " + DateUtil.toISOString(previous.getTimestamp() + T.mins(5).msecs()) + " by " + adjusted + " sec");

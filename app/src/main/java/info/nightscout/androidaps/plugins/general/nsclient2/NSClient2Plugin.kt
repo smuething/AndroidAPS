@@ -201,23 +201,6 @@ class NSClient2Plugin @Inject constructor(
             onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}")) })
     )
 
-    fun postGlucoseValueCall() {
-        val glucoseValue = GlucoseValue()
-        glucoseValue.timestamp = DateUtil.now()
-        glucoseValue.value = Math.random() * 200 + 40
-        disposable.add(
-            nightscoutService.postGlucoseStatus(glucoseValue).subscribeBy(
-                onSuccess = {
-                    addToLog(EventNSClientNewLog("RESULT",
-                        when (it) {
-                            is PostEntryResponseType.Success -> "success: ${it.location?.id}"
-                            is PostEntryResponseType.Failure -> "success: ${it.reason}"
-                        }))
-                },
-                onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}")) })
-        )
-    }
-
     fun getEntriesCall() {
         disposable.add(
             nightscoutService.getByDate(NightscoutCollection.ENTRIES, DateUtil.now() - T.mins(20).msecs()).subscribeBy(

@@ -107,7 +107,7 @@ public class IobCobThread extends Thread {
                     iobCobCalculatorPlugin.loadBgData(end);
                     iobCobCalculatorPlugin.createBucketedData();
                 }
-                List<GlucoseValue> bucketed_data = iobCobCalculatorPlugin.getBucketedData();
+                List<InMemoryGlucoseValue> bucketed_data = iobCobCalculatorPlugin.getBucketedData();
                 LongSparseArray<AutosensData> autosensDataTable = iobCobCalculatorPlugin.getAutosensDataTable();
 
                 if (bucketed_data == null || bucketed_data.size() < 3) {

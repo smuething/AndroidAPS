@@ -46,7 +46,6 @@ class NSClient2Fragment : DaggerFragment() {
         }
 
         nsclient2_lastmodified_Button.setOnClickListener { nsClient2Plugin.lastModifiedCall() }
-        nsclient2_postglucosevalue_Button.setOnClickListener { nsClient2Plugin.postGlucoseValueCall() }
         nsclient2_getentries_Button.setOnClickListener { nsClient2Plugin.getEntriesCall() }
 
         nsClient2Plugin.liveData.observe(viewLifecycleOwner, Observer {
