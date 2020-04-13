@@ -35,6 +35,7 @@ import dagger.android.DaggerApplication;
 import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.database.AppRepository;
+import info.nightscout.androidaps.database.transactions.VersionChangeTransaction;
 import info.nightscout.androidaps.db.CompatDBHelper;
 import info.nightscout.androidaps.db.DatabaseHelper;
 import info.nightscout.androidaps.dependencyInjection.DaggerAppComponent;
@@ -91,6 +92,7 @@ public class MainApp extends DaggerApplication {
     @Inject KeepAliveReceiver.KeepAliveManager keepAliveManager;
     @Inject List<PluginBase> plugins;
     @Inject CompatDBHelper compatDBHelper;
+    @Inject AppRepository repository;
 
     @Override
     public void onCreate() {
@@ -102,6 +104,15 @@ public class MainApp extends DaggerApplication {
         LocaleHelper.INSTANCE.update(this);
         generateEmptyNotification();
         sDatabaseHelper = OpenHelperManager.getHelper(sInstance, DatabaseHelper.class);
+
+        String gitRemote = BuildConfig.REMOTE;
+        String commitHash = BuildConfig.HEAD;
+        if (gitRemote.contains("NoGitSystemAvailable")) {
+            gitRemote = null;
+            commitHash = null;
+        }
+        disposable.add(repository.runTransaction(new VersionChangeTransaction(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, gitRemote, commitHash)).subscribe());
+
         compatDBHelper.triggerStart();
 
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {

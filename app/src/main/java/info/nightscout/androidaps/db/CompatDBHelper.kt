@@ -1,11 +1,9 @@
 package info.nightscout.androidaps.db
 
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.BuildConfig
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.interfaces.DBEntry
-import info.nightscout.androidaps.database.transactions.VersionChangeTransaction
 import info.nightscout.androidaps.events.EventNewBG
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
@@ -40,13 +38,6 @@ class CompatDBHelper @Inject constructor(
     }
 
     fun triggerStart() {
-        var gitRemote: String? = BuildConfig.REMOTE
-        var commitHash: String? = BuildConfig.HEAD
-        if (gitRemote?.contains("NoGitSystemAvailable") == true) {
-            gitRemote = null
-            commitHash = null
-        }
-        disposable.add(repository.runTransaction(VersionChangeTransaction(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, gitRemote, commitHash)).subscribe())
         scheduleBgChange(null)
     }
 
