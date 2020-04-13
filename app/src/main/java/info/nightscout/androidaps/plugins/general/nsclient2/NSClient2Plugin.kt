@@ -277,7 +277,7 @@ class NSClient2Plugin @Inject constructor(
                                 gv.interfaceIDs.nightscoutId = result.location?.id
                                 disposable += repository.runTransaction(UpdateGlucoseValueTransaction(gv)).subscribeBy(
                                     onComplete = {
-                                        lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.dateCreated)
+                                        lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.id)
                                         addToLog(EventNSClientNewLog("RESULT", "success: ${result.location?.id}"))
                                     },
                                     onError = { addToLog(EventNSClientNewLog("DBRESULT", "failure: ${it.message}")) }
