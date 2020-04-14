@@ -14,11 +14,9 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSSgv
 import info.nightscout.androidaps.services.DataExchangeStore
-import info.nightscout.androidaps.utils.determineSourceSensor
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable
 import org.json.JSONObject
 import javax.inject.Inject
@@ -78,9 +76,9 @@ class NSClientSourcePlugin @Inject constructor(
         val value = mgdl?.toDouble()
         val raw = unfiltered?.toDouble()
         val noise = noise?.toDouble()
-        val trendArrow = direction?.toTrendArrow() ?: GlucoseValue.TrendArrow.NONE
+        val trendArrow = GlucoseValue.TrendArrow.fromString(direction)
         val nightScout = id
-        val sourceSensor = source?.determineSourceSensor() ?: GlucoseValue.SourceSensor.UNKNOWN
+        val sourceSensor = GlucoseValue.SourceSensor.fromString(source)
         detectSource(source, mills)
         if (timestamp != null && value != null) {
             CgmSourceTransaction.TransactionGlucoseValue(

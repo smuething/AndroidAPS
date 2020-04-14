@@ -29,5 +29,10 @@ class RateLimit @Inject constructor(
         rateLimits[name] = DateUtil.now()
         return true
     }
+
+    @Synchronized
+    fun rateLimit(name: String, seconds: Int, runnable: Runnable) {
+        if (rateLimit(name, seconds)) runnable.run()
+    }
 }
 

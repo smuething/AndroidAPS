@@ -14,10 +14,9 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.utils.GlucoseValueUploader
 import info.nightscout.androidaps.utils.XDripBroadcast
-import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import org.json.JSONArray
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -68,7 +67,7 @@ class MM640gPlugin @Inject constructor(
                                 value = jsonObject.getDouble("sgv"),
                                 raw = jsonObject.getDouble("sgv"),
                                 noise = null,
-                                trendArrow = jsonObject.getString("direction").toTrendArrow(),
+                                trendArrow = GlucoseValue.TrendArrow.fromString(jsonObject.getString("direction")),
                                 sourceSensor = GlucoseValue.SourceSensor.MM_600_SERIES
                             )
                         }

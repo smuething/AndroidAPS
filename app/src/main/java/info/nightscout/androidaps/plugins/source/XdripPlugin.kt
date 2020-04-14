@@ -4,6 +4,7 @@ import android.content.Intent
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
@@ -13,11 +14,9 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.BundleLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.services.Intents
-import info.nightscout.androidaps.utils.determineSourceSensor
-import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,8 +57,8 @@ class XdripPlugin @Inject constructor(
             value = bundle.getDouble(Intents.EXTRA_BG_ESTIMATE),
             raw = bundle.getDouble(Intents.EXTRA_RAW),
             noise = null,
-            trendArrow = bundle.getString(Intents.EXTRA_BG_SLOPE_NAME)!!.toTrendArrow(),
-            sourceSensor = source.determineSourceSensor()
+            trendArrow = GlucoseValue.TrendArrow.fromString(bundle.getString(Intents.EXTRA_BG_SLOPE_NAME)!!),
+            sourceSensor = GlucoseValue.SourceSensor.fromString(source)
         )
         disposable += repository.runTransaction(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({}, {
             aapsLogger.error(LTag.BGSOURCE, "Error while saving values from xDrip", it)
@@ -67,6 +66,8 @@ class XdripPlugin @Inject constructor(
     }
 
     private fun setSource(source: String) {
-        advancedFiltering = source.contains("G5 Native") || source.contains("G6 Native")
+        advancedFiltering =
+            arrayOf(GlucoseValue.SourceSensor.DEXCOM_G6_NATIVE_XDRIP, GlucoseValue.SourceSensor.DEXCOM_G6_NATIVE_XDRIP)
+                .contains(GlucoseValue.SourceSensor.fromString(source))
     }
 }

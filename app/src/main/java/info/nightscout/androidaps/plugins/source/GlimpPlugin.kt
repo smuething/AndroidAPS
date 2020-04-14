@@ -2,12 +2,10 @@ package info.nightscout.androidaps.plugins.source
 
 import android.content.Intent
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.CgmSourceTransaction
-import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.BgSourceInterface
 import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
@@ -17,10 +15,9 @@ import info.nightscout.androidaps.logging.BundleLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.utils.GlucoseValueUploader
 import info.nightscout.androidaps.utils.XDripBroadcast
-import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -61,7 +58,7 @@ class GlimpPlugin @Inject constructor(
             value = bundle.getDouble("mySGV"),
             raw = null,
             noise = null,
-            trendArrow = bundle.getString("myTrend")!!.toTrendArrow(),
+            trendArrow = GlucoseValue.TrendArrow.fromString(bundle.getString("myTrend")!!),
             sourceSensor = GlucoseValue.SourceSensor.GLIMP
         )
         disposable += repository.runTransactionForResult(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({

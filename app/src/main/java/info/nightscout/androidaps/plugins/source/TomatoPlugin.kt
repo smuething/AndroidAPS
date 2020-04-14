@@ -14,9 +14,9 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.utils.GlucoseValueUploader
 import info.nightscout.androidaps.utils.XDripBroadcast
-import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,7 +58,7 @@ class TomatoPlugin @Inject constructor(
             raw = null,
             noise = null,
             trendArrow = GlucoseValue.TrendArrow.NONE,
-            sourceSensor = GlucoseValue.SourceSensor.TOMATO
+            sourceSensor = GlucoseValue.SourceSensor.LIBRE_1_TOMATO
         )
         disposable += repository.runTransactionForResult(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({
             it.forEach {

@@ -1835,4 +1835,5 @@
     <string name="collectionnotfound">Collection not found</string>
     <string name="forbidden">Forbidden</string>
     <string name="unprocessableentity">Unprocessable entity</string>
+    <string name="missingpermissions">Missing permissions</string>
 </resources>

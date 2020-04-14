@@ -28,7 +28,7 @@ class XDripBroadcast @Inject constructor(
                 val entriesBody = JSONArray()
                 val json = JSONObject()
                 json.put("sgv", glucoseValue.value)
-                json.put("direction", glucoseValue.trendArrow.toText())
+                json.put("direction", glucoseValue.trendArrow.text)
                 json.put("device", "G5")
                 json.put("type", "sgv")
                 json.put("date", glucoseValue.timestamp)

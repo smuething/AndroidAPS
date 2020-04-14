@@ -34,7 +34,6 @@ import info.nightscout.androidaps.utils.BatteryLevel
 import info.nightscout.androidaps.utils.DefaultValueHelper
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.toText
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
@@ -130,7 +129,7 @@ class DataBroadcastPlugin @Inject constructor(
         bundle.putDouble("glucoseMgdl", lastBG.value)   // last BG in mgdl
         bundle.putLong("glucoseTimeStamp", lastBG.timestamp) // timestamp
         bundle.putString("units", profileFunction.getUnits()) // units used in AAPS "mg/dl" or "mmol"
-        bundle.putString("slopeArrow", lastBG.trendArrow.toText()) // direction arrow as string
+        bundle.putString("slopeArrow", lastBG.trendArrow.text) // direction arrow as string
         bundle.putDouble("deltaMgdl", glucoseStatus.delta) // bg delta in mgdl
         bundle.putDouble("avgDeltaMgdl", glucoseStatus.avgdelta) // average bg delta
         bundle.putDouble("high", defaultValueHelper.determineHighLine()) // predefined top value of in range (green area)

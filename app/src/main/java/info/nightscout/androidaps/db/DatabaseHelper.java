@@ -208,7 +208,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             TableUtils.dropTable(connectionSource, ProfileSwitch.class, true);
             TableUtils.dropTable(connectionSource, TDD.class, true);
             TableUtils.createTableIfNotExists(connectionSource, TempTarget.class);
-            TableUtils.createTableIfNotExists(connectionSource, BgReading.class);
             TableUtils.createTableIfNotExists(connectionSource, DanaRHistoryRecord.class);
             TableUtils.createTableIfNotExists(connectionSource, DbRequest.class);
             TableUtils.createTableIfNotExists(connectionSource, TemporaryBasal.class);

@@ -8,10 +8,11 @@ import info.nightscout.androidaps.dependencyInjection.networking.NSRetrofitFacto
 import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.requests.EntryRequestBody
+import info.nightscout.androidaps.networking.nightscout.requests.fromGlucoseValue
 import info.nightscout.androidaps.networking.nightscout.responses.*
+import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import info.nightscout.androidaps.utils.toText
 import io.reactivex.Single
 import okhttp3.Headers
 import retrofit2.Response
@@ -99,15 +100,7 @@ class NightscoutService(
     fun lastModified() = nsRetrofitFactory.getNSService().lastModified()
 
     fun postGlucoseStatus(glucoseValue: GlucoseValue) = postEntry(
-        EntryRequestBody(
-            date = glucoseValue.timestamp,
-            utcOffset = glucoseValue.utcOffset,
-            app = resourceHelper.gs(R.string.app_name),
-            device = glucoseValue.sourceSensor.toString(),
-            sgv = glucoseValue.value,
-            direction = glucoseValue.trendArrow.toText(),
-            isValid = glucoseValue.isValid
-        )
+        fromGlucoseValue(glucoseValue, resourceHelper)
     )
 
     private fun postEntry(entryRequestBody: EntryRequestBody): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
@@ -124,7 +117,10 @@ class NightscoutService(
         nsRetrofitFactory.getNSService().getByDate(collection, from, sort, limit)
 
     fun getByLastModified(collection: NightscoutCollection, from: Long, sort: String = "srvModified", limit: Int = 1000) =
-        nsRetrofitFactory.getNSService().getByLastModified(collection, from, sort, limit)
+        nsRetrofitFactory.getNSService().getByLastModified(
+            collection,
+            if (from == 0L) System.currentTimeMillis() - T.months(2).msecs() else from,
+            sort, limit)
 
     companion object {
         const val BAD_ACCESS_TOKEN_MESSAGE = "Missing or bad access token or JWT"

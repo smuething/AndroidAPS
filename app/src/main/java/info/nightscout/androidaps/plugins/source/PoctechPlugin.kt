@@ -17,7 +17,6 @@ import info.nightscout.androidaps.utils.GlucoseValueUploader
 import info.nightscout.androidaps.utils.XDripBroadcast
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable
 import org.json.JSONArray
 import javax.inject.Inject
@@ -66,7 +65,7 @@ class PoctechPlugin @Inject constructor(
                 value = json.getDouble("current") * (if (json.getString("units") == "mmol/L") Constants.MMOLL_TO_MGDL else 1.0),
                 raw = json.getDouble("raw"),
                 noise = null,
-                trendArrow = json.getString("direction").toTrendArrow(),
+                trendArrow = GlucoseValue.TrendArrow.fromString(json.getString("direction")),
                 sourceSensor = GlucoseValue.SourceSensor.POCTECH_NATIVE
             )
         }

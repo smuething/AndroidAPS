@@ -8,6 +8,7 @@ import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.activities.RequestDexcomPermissionActivity
 import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.entities.GlucoseValue.SourceSensor.DEXCOM_G5_NATIVE
 import info.nightscout.androidaps.database.entities.GlucoseValue.SourceSensor.DEXCOM_G6_NATIVE
 import info.nightscout.androidaps.database.entities.GlucoseValue.SourceSensor.DEXCOM_NATIVE_UNKNOWN
@@ -25,7 +26,6 @@ import info.nightscout.androidaps.utils.XDripBroadcast
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import info.nightscout.androidaps.utils.toTrendArrow
 import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -84,7 +84,7 @@ class DexcomPlugin @Inject constructor(
                 value = glucoseValueBundle.getInt("glucoseValue").toDouble(),
                 noise = null,
                 raw = null,
-                trendArrow = glucoseValueBundle.getString("trendArrow")!!.toTrendArrow(),
+                trendArrow = GlucoseValue.TrendArrow.fromString(glucoseValueBundle.getString("trendArrow")!!),
                 sourceSensor = sourceSensor
             )
         }

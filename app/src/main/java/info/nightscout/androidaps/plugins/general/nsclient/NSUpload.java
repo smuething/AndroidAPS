@@ -377,7 +377,7 @@ public class NSUpload {
             data.put("date", glucoseValue.getTimestamp());
             data.put("dateString", DateUtil.toISOString(glucoseValue.getTimestamp()));
             data.put("sgv", glucoseValue.getValue());
-            data.put("direction", GlucoseValueUtilsKt.toText(glucoseValue.getTrendArrow()));
+            data.put("direction", glucoseValue.getTrendArrow().getText());
             data.put("type", "sgv");
         } catch (JSONException e) {
             log.error("Unhandled exception", e);

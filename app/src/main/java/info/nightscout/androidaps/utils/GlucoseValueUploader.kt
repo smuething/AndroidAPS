@@ -24,7 +24,7 @@ class GlucoseValueUploader @Inject constructor(
                 data.put("date", glucoseValue.timestamp)
                 data.put("dateString", DateUtil.toISOString(glucoseValue.timestamp))
                 data.put("sgv", glucoseValue.value)
-                data.put("direction", glucoseValue.trendArrow.toText())
+                data.put("direction", glucoseValue.trendArrow.text)
                 data.put("type", "sgv")
             } catch (e: JSONException) {
                 aapsLogger.error(LTag.NSCLIENT, "Unhandled exception", e)

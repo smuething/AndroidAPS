@@ -21,13 +21,12 @@ import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog
-import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.extensions.toVisibility
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.toSymbol
-import info.nightscout.androidaps.utils.valueToUnitsString
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
+import info.nightscout.androidaps.utils.valueToUnitsString
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.bgsource_fragment.*
 import javax.inject.Inject
@@ -94,7 +93,7 @@ class BGSourceFragment : DaggerFragment() {
             holder.invalid.visibility = (!glucoseValue.isValid).toVisibility()
             holder.date.text = DateUtil.dateAndTimeString(glucoseValue.timestamp)
             holder.value.text = glucoseValue.valueToUnitsString(profileFunction.getUnits())
-            holder.direction.text = glucoseValue.trendArrow.toSymbol()
+            holder.direction.text = glucoseValue.trendArrow.symbol
             holder.remove.tag = glucoseValue
         }
 

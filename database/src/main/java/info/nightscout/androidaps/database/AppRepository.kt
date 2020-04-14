@@ -72,10 +72,10 @@ class AppRepository @Inject internal constructor(
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
 
+    fun findBgReadingByNSId(nsId: String) =
+        database.glucoseValueDao.findByNSId(nsId)
+
     fun getDataFromId(lastId: Long) =
         database.glucoseValueDao.getDataFromId(lastId)
             .subscribeOn(Schedulers.io())
-
-    fun updateGlucoseValue(glucoseValue :GlucoseValue) : Long =
-        database.glucoseValueDao.updateExistingEntry(glucoseValue)
 }

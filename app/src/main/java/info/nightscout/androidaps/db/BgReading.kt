@@ -14,8 +14,6 @@ import info.nightscout.androidaps.utils.DecimalFormatter
 import info.nightscout.androidaps.utils.DefaultValueHelper
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.toSymbol
-import info.nightscout.androidaps.utils.toTrendArrow
 import javax.inject.Inject
 
 class BgReading : DataPointWithLabelInterface {
@@ -71,8 +69,8 @@ class BgReading : DataPointWithLabelInterface {
         else DecimalFormatter.to1Decimal(data.value * Constants.MGDL_TO_MMOLL)
 
     fun directionToSymbol(): String =
-        if (data.trendArrow == GlucoseValue.TrendArrow.NONE) calculateDirection().toTrendArrow().toSymbol()
-        else data.trendArrow.toSymbol()
+        if (data.trendArrow == GlucoseValue.TrendArrow.NONE) calculateDirection().symbol
+        else data.trendArrow.symbol
 
     fun date(date: Long): BgReading {
         data.timestamp = date
@@ -130,11 +128,11 @@ class BgReading : DataPointWithLabelInterface {
         get() = isaCOBPrediction || isCOBPrediction || isIOBPrediction || isUAMPrediction || isZTPrediction
 
     // Copied from xDrip+
-    fun calculateDirection(): String {
+    fun calculateDirection(): GlucoseValue.TrendArrow {
         // Rework to get bgreaings from internal DB and calculate on that base
         val bgReadingsList = repository.compatGetAllBgreadingsDataFromTime(data.timestamp - T.mins(10).msecs(), false)
             .blockingGet()
-        if (bgReadingsList == null || bgReadingsList.size < 2) return "NONE"
+        if (bgReadingsList == null || bgReadingsList.size < 2) return GlucoseValue.TrendArrow.NONE
         var current = bgReadingsList[1]
         var previous = bgReadingsList[0]
         if (bgReadingsList[1].timestamp < bgReadingsList[0].timestamp) {
@@ -147,21 +145,21 @@ class BgReading : DataPointWithLabelInterface {
         slope = if (current.timestamp == previous.timestamp) 0.0 else (previous.value - current.value) / (previous.timestamp - current.timestamp)
         aapsLogger.error(LTag.GLUCOSE, "Slope is :" + slope + " delta " + (previous.value - current.value) + " date difference " + (current.timestamp - previous.timestamp))
         val slope_by_minute = slope * 60000
-        var arrow = "NONE"
+        var arrow = GlucoseValue.TrendArrow.NONE
         if (slope_by_minute <= -3.5) {
-            arrow = "DoubleDown"
+            arrow = GlucoseValue.TrendArrow.DOUBLE_DOWN
         } else if (slope_by_minute <= -2) {
-            arrow = "SingleDown"
+            arrow = GlucoseValue.TrendArrow.SINGLE_DOWN
         } else if (slope_by_minute <= -1) {
-            arrow = "FortyFiveDown"
+            arrow = GlucoseValue.TrendArrow.FORTY_FIVE_DOWN
         } else if (slope_by_minute <= 1) {
-            arrow = "Flat"
+            arrow = GlucoseValue.TrendArrow.FLAT
         } else if (slope_by_minute <= 2) {
-            arrow = "FortyFiveUp"
+            arrow = GlucoseValue.TrendArrow.FORTY_FIVE_UP
         } else if (slope_by_minute <= 3.5) {
-            arrow = "SingleUp"
+            arrow = GlucoseValue.TrendArrow.SINGLE_UP
         } else if (slope_by_minute <= 40) {
-            arrow = "DoubleUp"
+            arrow = GlucoseValue.TrendArrow.DOUBLE_UP
         }
         aapsLogger.error(LTag.GLUCOSE, "Direction set to: $arrow")
         return arrow

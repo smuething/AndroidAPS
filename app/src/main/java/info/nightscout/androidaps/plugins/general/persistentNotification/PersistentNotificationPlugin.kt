@@ -29,7 +29,6 @@ import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutos
 import info.nightscout.androidaps.utils.DecimalFormatter
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.resources.ResourceHelper
-import info.nightscout.androidaps.utils.toSymbol
 import info.nightscout.androidaps.utils.valueToUnitsString
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -147,7 +146,7 @@ class PersistentNotificationPlugin @Inject constructor(
                 if (glucoseStatus != null) {
                     line1 += ("  Δ" + Profile.toSignedUnitsString(glucoseStatus.delta, glucoseStatus.delta * Constants.MGDL_TO_MMOLL, units)
                         + " avgΔ" + Profile.toSignedUnitsString(glucoseStatus.avgdelta, glucoseStatus.avgdelta * Constants.MGDL_TO_MMOLL, units))
-                    line1_aa += "  " + lastBG.trendArrow.toSymbol()
+                    line1_aa += "  " + lastBG.trendArrow.symbol
                 } else {
                     line1 += " " +
                         resourceHelper.gs(R.string.old_data) +
