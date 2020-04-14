@@ -292,12 +292,12 @@ class NSClient2Plugin @Inject constructor(
                                         it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
                                         addToLog(EventNSClientNewLog("EXISTING entries:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
                                     } else {
-                                        repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv))
+                                        disposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
                                         it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
                                         addToLog(EventNSClientNewLog("UPDATED entries:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
                                     }
                                 } else {
-                                    repository.runTransactionForResult(InsertGlucoseValueTransaction(gv))
+                                    disposable += repository.runTransactionForResult(InsertGlucoseValueTransaction(gv)).subscribe()
                                     it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
                                     addToLog(EventNSClientNewLog("NEW entries:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
                                 }
@@ -328,7 +328,7 @@ class NSClient2Plugin @Inject constructor(
                 when (httpResult.code) {
                     ResponseCode.RECORD_CREATED -> {
                         lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.id)
-                        repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv))
+                        disposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
                         addToLog(EventNSClientNewLog("UPLOADED NEW entries:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
                     }
 
