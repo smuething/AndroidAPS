@@ -24,6 +24,8 @@ class NetworkChangeReceiver : DaggerBroadcastReceiver() {
         rxBus.send(grabNetworkStatus(context, aapsLogger))
     }
 
+
+    // TODO refactor this to a separate handler. It is triggered not only by the system.
     fun grabNetworkStatus(context: Context, aapsLogger: AAPSLogger): EventNetworkChange {
         val event = EventNetworkChange()
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

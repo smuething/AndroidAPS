@@ -54,6 +54,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.subscribeBy
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -101,46 +102,30 @@ class NSClient2Plugin @Inject constructor(
 
     override fun onStart() {
         super.onStart()
+
+
         disposable += rxBus
             .toObservable(EventPreferenceChange::class.java)
-            .observeOn(aapsSchedulers.io)
-            .subscribe({ event ->
-                if (event.isChanged(resourceHelper, R.string.key_ns_wifionly) ||
-                    event.isChanged(resourceHelper, R.string.key_ns_wifi_ssids) ||
-                    event.isChanged(resourceHelper, R.string.key_ns_allowroaming)) {
-                    receiverStatusStore.updateNetworkStatus()
-                    commAllowed()
-                } else if (event.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
-                    receiverStatusStore.broadcastChargingState()
-                    commAllowed()
-                }
-                for (c in arrayOf(R.string.key_ns_cgm,
-                    R.string.key_ns_food,
-                    R.string.key_ns_profile,
-                    R.string.key_ns_insulin,
-                    R.string.key_ns_carbs,
-                    R.string.key_ns_careportal,
-                    R.string.key_ns_settings)) {
-                    if (event.isChanged(resourceHelper, c))
-                        permissions = null // force new permissions read
-                }
-            }, { fabricPrivacy.logException(it) })
+            .subscribeBy(
+                onNext = ::handlePreferenceChange,
+                onError = fabricPrivacy::logException
+            )
+
         disposable += rxBus
-            .toObservable(EventChargingState::class.java)
-            .observeOn(aapsSchedulers.io)
-            .subscribe({ rateLimit.rateLimit(RATE_IDENT, RATE_SEC, Runnable { sync("ChargingState") }) }, { fabricPrivacy.logException(it) })
-        disposable += rxBus
-            .toObservable(EventNetworkChange::class.java)
-            .observeOn(aapsSchedulers.io)
-            .subscribe({ rateLimit.rateLimit(RATE_IDENT, RATE_SEC, Runnable { sync("NetworkChange") }) }, { fabricPrivacy.logException(it) })
-        disposable += rxBus
-            .toObservable(EventNewBG::class.java)
-            .observeOn(aapsSchedulers.io)
-            .subscribe({ rateLimit.rateLimit(RATE_IDENT, RATE_SEC, Runnable { sync("NewBG") }) }, { fabricPrivacy.logException(it) })
+            .toObservable(EventChargingState::class.java).map { "ChargingState" }
+            .mergeWith(rxBus.toObservable(EventNetworkChange::class.java).map { "NetworkChange" })
+            .mergeWith(rxBus.toObservable(EventNewBG::class.java).map { "NewBG" })
+            .throttleLast(RATE_SEC.toLong(), TimeUnit.SECONDS)
+            .subscribeBy(
+                onNext = ::sync,
+                onError = fabricPrivacy::logException
+            )
+
         disposable += rxBus
             .toObservable(EventNSClientSync::class.java)
             .observeOn(aapsSchedulers.io)
             .subscribe({ sync("GUI") }, { fabricPrivacy.logException(it) })
+
         disposable += rxBus
             .toObservable(EventNSClientFullSync::class.java)
             .observeOn(aapsSchedulers.io)
@@ -174,6 +159,36 @@ class NSClient2Plugin @Inject constructor(
         testLogin?.setOnPreferenceClickListener {
             preferenceFragment.context?.let { context -> testConnection(context) }
             false
+        }
+    }
+
+    private fun handlePreferenceChange(event: EventPreferenceChange) {
+
+        val nsFeatureKeys: Array<Int> = arrayOf(R.string.key_ns_cgm,
+            R.string.key_ns_food,
+            R.string.key_ns_profile,
+            R.string.key_ns_insulin,
+            R.string.key_ns_carbs,
+            R.string.key_ns_careportal,
+            R.string.key_ns_settings)
+
+        val nsWifiKeys = listOf(R.string.key_ns_wifionly, R.string.key_ns_wifi_ssids, R.string.key_ns_allowroaming)
+
+        if (nsWifiKeys.any { event.isChanged(resourceHelper, it) }) {
+            // receiverStatusStore.updateNetworkStatus()
+            // TODO: why is this needed if store keeps itself up-to-date?
+            //  If it doesn't, we need a blocking/functional solution that is called before commAllowed().
+            //  Store could listen to those events and?
+
+            commAllowed()
+        } else if (event.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
+            // receiverStatusStore.broadcastChargingState()
+            // TODO: if this is NSClient specific, don't use receiverStore. If it isn't, don't use NSClient
+
+            commAllowed()
+        }
+        if (nsFeatureKeys.any { event.isChanged(resourceHelper, it) }) {
+            permissions = null // force new permissions read
         }
     }
 

@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -163,10 +165,12 @@ public class LoopPlugin extends PluginBase {
         super.onStart();
         disposable.add(rxBus
                 .toObservable(EventTempTargetChange.class)
+                .debounce(1L, TimeUnit.SECONDS)
                 .observeOn(Schedulers.io())
                 .subscribe(event -> invoke("EventTempTargetChange", true), exception -> FabricPrivacy.getInstance().logException(exception))
         );
-        /**
+
+        /*
          * This method is triggered once autosens calculation has completed, so the LoopPlugin
          * has current data to work with. However, autosens calculation can be triggered by multiple
          * sources and currently only a new BG should trigger a loop run. Hence we return early if
