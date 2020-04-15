@@ -8,6 +8,7 @@ import info.nightscout.androidaps.database.embedments.InsulinConfiguration
 import info.nightscout.androidaps.database.embedments.InterfaceIDs
 import info.nightscout.androidaps.database.interfaces.DBEntryWithTimeAndDuration
 import info.nightscout.androidaps.database.interfaces.TraceableDBEntry
+import java.util.*
 
 @Entity(tableName = TABLE_PROFILE_SWITCHES,
         foreignKeys = [ForeignKey(
@@ -25,7 +26,7 @@ data class ProfileSwitch(
     @Embedded
         override var interfaceIDs_backing: InterfaceIDs? = InterfaceIDs(),
     override var timestamp: Long,
-    override var utcOffset: Long,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     var profileName: String,
     var glucoseUnit: GlucoseUnit,
     var basalBlocks: List<Block>,

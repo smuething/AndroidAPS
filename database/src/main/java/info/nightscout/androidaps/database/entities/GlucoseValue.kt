@@ -6,6 +6,7 @@ import info.nightscout.androidaps.database.TABLE_GLUCOSE_VALUES
 import info.nightscout.androidaps.database.embedments.InterfaceIDs
 import info.nightscout.androidaps.database.interfaces.DBEntryWithTime
 import info.nightscout.androidaps.database.interfaces.TraceableDBEntry
+import java.util.*
 
 @Entity(tableName = TABLE_GLUCOSE_VALUES,
     foreignKeys = [ForeignKey(
@@ -23,7 +24,7 @@ data class GlucoseValue(
     @Embedded
     override var interfaceIDs_backing: InterfaceIDs? = InterfaceIDs(),
     override var timestamp: Long,
-    override var utcOffset: Long,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     var raw: Double?,
     var value: Double,
     var trendArrow: TrendArrow,

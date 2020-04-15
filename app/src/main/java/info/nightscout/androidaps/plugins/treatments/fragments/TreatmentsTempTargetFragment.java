@@ -13,12 +13,16 @@ import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.inject.Inject;
 
 import dagger.android.support.DaggerFragment;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.Intervals;
+import info.nightscout.androidaps.database.AppRepository;
+import info.nightscout.androidaps.database.transactions.InvalidateTemporaryTargetTransaction;
 import info.nightscout.androidaps.db.Source;
 import info.nightscout.androidaps.db.TempTarget;
 import info.nightscout.androidaps.events.EventTempTargetChange;
@@ -48,6 +52,7 @@ public class TreatmentsTempTargetFragment extends DaggerFragment {
     @Inject ProfileFunction profileFunction;
     @Inject ResourceHelper resourceHelper;
     @Inject AapsSchedulers aapsSchedulers;
+    @Inject AppRepository repository;
 
 
     private CompositeDisposable disposable = new CompositeDisposable();
@@ -75,16 +80,16 @@ public class TreatmentsTempTargetFragment extends DaggerFragment {
         public void onBindViewHolder(TempTargetsViewHolder holder, int position) {
             String units = profileFunction.getUnits();
             TempTarget tempTarget = tempTargetList.getReversed(position);
-            holder.ph.setVisibility(tempTarget.source == Source.PUMP ? View.VISIBLE : View.GONE);
-            holder.ns.setVisibility(NSUpload.isIdValid(tempTarget._id) ? View.VISIBLE : View.GONE);
+            holder.ph.setVisibility(tempTarget.getData().getInterfaceIDs().getPumpType() != null ? View.VISIBLE : View.GONE);
+            holder.ns.setVisibility(NSUpload.isIdValid(tempTarget.getData().getInterfaceIDs().getNightscoutId()) ? View.VISIBLE : View.GONE);
             if (!tempTarget.isEndingEvent()) {
-                holder.date.setText(DateUtil.dateAndTimeString(tempTarget.date) + " - " + DateUtil.timeString(tempTarget.originalEnd()));
-                holder.duration.setText(DecimalFormatter.to0Decimal(tempTarget.durationInMinutes) + " min");
+                holder.date.setText(DateUtil.dateAndTimeString(tempTarget.getData().getTimestamp()) + " - " + DateUtil.timeString(tempTarget.originalEnd()));
+                holder.duration.setText(DecimalFormatter.to0Decimal(TimeUnit.MILLISECONDS.toMinutes(tempTarget.getData().getDuration())) + " min");
                 holder.low.setText(tempTarget.lowValueToUnitsToString(units));
                 holder.high.setText(tempTarget.highValueToUnitsToString(units));
-                holder.reason.setText(tempTarget.reason);
+                holder.reason.setText(tempTarget.getReason());
             } else {
-                holder.date.setText(DateUtil.dateAndTimeString(tempTarget.date));
+                holder.date.setText(DateUtil.dateAndTimeString(tempTarget.getData().getTimestamp()));
                 holder.duration.setText(R.string.cancel);
                 holder.low.setText("");
                 holder.high.setText("");
@@ -94,7 +99,7 @@ public class TreatmentsTempTargetFragment extends DaggerFragment {
             }
             if (tempTarget.isInProgress() && tempTarget == currentlyActiveTarget) {
                 holder.date.setTextColor(resourceHelper.gc(R.color.colorActive));
-            } else if (tempTarget.date > DateUtil.now()) {
+            } else if (tempTarget.getData().getTimestamp() > DateUtil.now()) {
                 holder.date.setTextColor(resourceHelper.gc(R.color.colorScheduled));
             } else {
                 holder.date.setTextColor(holder.reasonColon.getCurrentTextColor());
@@ -142,15 +147,15 @@ public class TreatmentsTempTargetFragment extends DaggerFragment {
                     final TempTarget tempTarget = (TempTarget) v.getTag();
                     OKDialog.showConfirmation(getContext(), resourceHelper.gs(R.string.removerecord),
                             resourceHelper.gs(R.string.careportal_temporarytarget) + ": " + tempTarget.friendlyDescription(profileFunction.getUnits()) +
-                                    "\n" + DateUtil.dateAndTimeString(tempTarget.date),
+                                    "\n" + DateUtil.dateAndTimeString(tempTarget.getData().getTimestamp()),
                             (dialog, id) -> {
-                                final String _id = tempTarget._id;
+                                final String _id = tempTarget.getData().getInterfaceIDs().getNightscoutId();
                                 if (NSUpload.isIdValid(_id)) {
                                     NSUpload.removeCareportalEntryFromNS(_id);
                                 } else {
                                     UploadQueue.removeID("dbAdd", _id);
                                 }
-                                MainApp.getDbHelper().delete(tempTarget);
+                                disposable.add(repository.runTransaction(new InvalidateTemporaryTargetTransaction(tempTarget.getData().getId())).subscribe());
                             }, null);
                 });
                 remove.setPaintFlags(remove.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
@@ -174,7 +179,7 @@ public class TreatmentsTempTargetFragment extends DaggerFragment {
         Button refreshFromNS = view.findViewById(R.id.temptargetrange_refreshfromnightscout);
         refreshFromNS.setOnClickListener(v ->
                 OKDialog.showConfirmation(getContext(), resourceHelper.gs(R.string.refresheventsfromnightscout) + " ?", () -> {
-                    MainApp.getDbHelper().resetTempTargets();
+                    //MainApp.getDbHelper().resetTempTargets();
                     rxBus.send(new EventNSClientRestart());
                 }));
 

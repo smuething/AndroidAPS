@@ -1,24 +1,18 @@
 package info.nightscout.androidaps.plugins.general.nsclient;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.ResolveInfo;
 import android.os.Build;
-import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.preference.PreferenceManager;
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
@@ -27,7 +21,6 @@ import info.nightscout.androidaps.data.IobTotal;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
 import info.nightscout.androidaps.database.entities.GlucoseValue;
-import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.CareportalEvent;
 import info.nightscout.androidaps.db.DbRequest;
 import info.nightscout.androidaps.db.ExtendedBolus;
@@ -41,12 +34,10 @@ import info.nightscout.androidaps.plugins.aps.loop.APSResult;
 import info.nightscout.androidaps.plugins.aps.loop.DeviceStatus;
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin;
 import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin;
-import info.nightscout.androidaps.plugins.configBuilder.PluginStore;
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin;
 import info.nightscout.androidaps.utils.BatteryLevel;
 import info.nightscout.androidaps.utils.DateUtil;
-import info.nightscout.androidaps.utils.GlucoseValueUtilsKt;
 import info.nightscout.androidaps.utils.JsonHelper;
 import info.nightscout.androidaps.utils.SP;
 
@@ -270,14 +261,14 @@ public class NSUpload {
         try {
             JSONObject data = new JSONObject();
             data.put("eventType", CareportalEvent.TEMPORARYTARGET);
-            data.put("duration", tempTarget.durationInMinutes);
-            if (tempTarget.low > 0) {
-                data.put("reason", tempTarget.reason);
-                data.put("targetBottom", Profile.fromMgdlToUnits(tempTarget.low, ConfigBuilderPlugin.getPlugin().getProfileFunction().getUnits()));
-                data.put("targetTop", Profile.fromMgdlToUnits(tempTarget.high, ConfigBuilderPlugin.getPlugin().getProfileFunction().getUnits()));
+            data.put("duration", TimeUnit.MILLISECONDS.toMillis(tempTarget.getData().getDuration()));
+            if (tempTarget.getData().getLowTarget() > 0) {
+                data.put("reason", tempTarget.getReason());
+                data.put("targetBottom", Profile.fromMgdlToUnits(tempTarget.getData().getLowTarget(), ConfigBuilderPlugin.getPlugin().getProfileFunction().getUnits()));
+                data.put("targetTop", Profile.fromMgdlToUnits(tempTarget.getData().getHighTarget(), ConfigBuilderPlugin.getPlugin().getProfileFunction().getUnits()));
                 data.put("units", ConfigBuilderPlugin.getPlugin().getProfileFunction().getUnits());
             }
-            data.put("created_at", DateUtil.toISOString(tempTarget.date));
+            data.put("created_at", DateUtil.toISOString(tempTarget.getData().getTimestamp()));
             data.put("enteredBy", MainApp.gs(R.string.app_name));
             uploadCareportalEntryToNS(data);
         } catch (JSONException e) {

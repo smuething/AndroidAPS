@@ -31,6 +31,8 @@ import info.nightscout.androidaps.data.OverlappingIntervals;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileIntervals;
 import info.nightscout.androidaps.data.ProfileStore;
+import info.nightscout.androidaps.database.AppRepository;
+import info.nightscout.androidaps.database.entities.TemporaryTarget;
 import info.nightscout.androidaps.db.ExtendedBolus;
 import info.nightscout.androidaps.db.ProfileSwitch;
 import info.nightscout.androidaps.db.Source;
@@ -74,6 +76,7 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
     private final ProfileFunction profileFunction;
     private final ActivePluginProvider activePlugin;
     private final FabricPrivacy fabricPrivacy;
+    private final AppRepository repository;
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -98,7 +101,8 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
             SP sp,
             ProfileFunction profileFunction,
             ActivePluginProvider activePlugin,
-            FabricPrivacy fabricPrivacy
+            FabricPrivacy fabricPrivacy,
+            AppRepository repository
     ) {
         super(new PluginDescription()
                         .mainType(PluginType.TREATMENT)
@@ -117,6 +121,7 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
         this.profileFunction = profileFunction;
         this.activePlugin = activePlugin;
         this.fabricPrivacy = fabricPrivacy;
+        this.repository = repository;
     }
 
     @Override
@@ -212,7 +217,11 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
     private void initializeTempTargetData(long range) {
         getAapsLogger().debug(LTag.DATATREATMENTS, "initializeTempTargetData");
         synchronized (tempTargets) {
-            tempTargets.reset().add(MainApp.getDbHelper().getTemptargetsDataFromTime(DateUtil.now() - range, false));
+            List<TemporaryTarget> temporaryTargets = repository.compatGetTemporaryTargetDataFromTime(DateUtil.now() - range, false).blockingGet();
+            tempTargets.reset();
+            for (TemporaryTarget temporaryTarget : temporaryTargets) {
+                tempTargets.add(new TempTarget(temporaryTarget));
+            }
         }
     }
 
@@ -678,13 +687,6 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
         synchronized (tempTargets) {
             return new OverlappingIntervals<>(tempTargets);
         }
-    }
-
-    @Override
-    public void addToHistoryTempTarget(TempTarget tempTarget) {
-        //log.debug("Adding new TemporaryBasal record" + profileSwitch.log());
-        MainApp.getDbHelper().createOrUpdate(tempTarget);
-        NSUpload.uploadTempTarget(tempTarget);
     }
 
     @Override

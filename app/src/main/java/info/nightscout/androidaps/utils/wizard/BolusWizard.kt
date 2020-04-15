@@ -157,8 +157,8 @@ class BolusWizard @Inject constructor(
         targetBGLow = Profile.fromMgdlToUnits(profile.targetLowMgdl, profileFunction.getUnits())
         targetBGHigh = Profile.fromMgdlToUnits(profile.targetHighMgdl, profileFunction.getUnits())
         if (useTT && tempTarget != null) {
-            targetBGLow = Profile.fromMgdlToUnits(tempTarget.low, profileFunction.getUnits())
-            targetBGHigh = Profile.fromMgdlToUnits(tempTarget.high, profileFunction.getUnits())
+            targetBGLow = Profile.fromMgdlToUnits(tempTarget.data.lowTarget, profileFunction.getUnits())
+            targetBGHigh = Profile.fromMgdlToUnits(tempTarget.data.highTarget, profileFunction.getUnits())
         }
         if (useBg && bg > 0) {
             bgDiff = when {

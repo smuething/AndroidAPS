@@ -10,6 +10,7 @@ import org.json.JSONArray;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -160,6 +161,7 @@ public class IobCobCalculatorPlugin extends PluginBase {
         disposable.add(rxBus
                 .toObservable(EventNewBG.class)
                 .observeOn(Schedulers.io())
+                .debounce(1L, TimeUnit.SECONDS)
                 .subscribe(event -> {
                     stopCalculation("onEventNewBG");
                     runCalculation("onEventNewBG", System.currentTimeMillis(), true, true, event);

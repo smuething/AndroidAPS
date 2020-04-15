@@ -19,7 +19,6 @@ class VersionChangeTransaction(
             val currentTime = System.currentTimeMillis()
             database.versionChangeDao.insert(VersionChange(
                 timestamp = System.currentTimeMillis(),
-                utcOffset = TimeZone.getDefault().getOffset(currentTime).toLong(),
                 versionCode = versionCode,
                 versionName = versionName,
                 gitRemote = gitRemote,
