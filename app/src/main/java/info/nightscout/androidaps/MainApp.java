@@ -113,7 +113,7 @@ public class MainApp extends DaggerApplication {
         }
         disposable.add(repository.runTransaction(new VersionChangeTransaction(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, gitRemote, commitHash)).subscribe());
 
-        compatDBHelper.triggerStart();
+        disposable.add(compatDBHelper.triggerStart());
 
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
             if (ex instanceof InternalError) {

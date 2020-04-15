@@ -1,6 +1,5 @@
 package info.nightscout.androidaps.database
 
-import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.interfaces.DBEntry
 import info.nightscout.androidaps.database.transactions.Transaction
 import io.reactivex.Completable
@@ -19,7 +18,7 @@ class AppRepository @Inject internal constructor(
 
     private val changeSubject = PublishSubject.create<List<DBEntry>>()
 
-    val changeObservable: Observable<List<DBEntry>> = changeSubject
+    fun changeObservable(): Observable<List<DBEntry>> = changeSubject.subscribeOn(Schedulers.io())
 
     val databaseVersion = DATABASE_VERSION
 
