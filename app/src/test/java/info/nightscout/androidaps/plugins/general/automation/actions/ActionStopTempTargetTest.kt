@@ -44,7 +44,9 @@ class ActionStopTempTargetTest : ActionsTestBase() {
                 Assert.assertTrue(result.success)
             }
         })
-        Mockito.verify(treatmentsPlugin, Mockito.times(1)).addToHistoryTempTarget(anyObject())
+        //TODO: Fix
+        //Mockito.verify(treatmentsPlugin, Mockito.times(1)).addToHistoryTempTarget(anyObject())
+        Assert.assertTrue(false)
     }
 
     @Test fun hasDialogTest() {

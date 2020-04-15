@@ -11,6 +11,10 @@ import com.google.common.collect.Lists
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.Profile
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.TemporaryTarget
+import info.nightscout.androidaps.database.transactions.CancelCurrentTemporaryTargetIfAnyTransaction
+import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
 import info.nightscout.androidaps.db.Source
 import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
@@ -21,10 +25,13 @@ import info.nightscout.androidaps.utils.DefaultValueHelper
 import info.nightscout.androidaps.utils.HtmlHelper
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.dialog_temptarget.*
 import kotlinx.android.synthetic.main.okcancel.*
 import java.text.DecimalFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TempTargetDialog : DialogFragmentWithDate() {
@@ -33,6 +40,9 @@ class TempTargetDialog : DialogFragmentWithDate() {
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var defaultValueHelper: DefaultValueHelper
     @Inject lateinit var treatmentsPlugin: TreatmentsPlugin
+    @Inject lateinit var repository: AppRepository
+
+    private val compositeDisposable = CompositeDisposable()
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -135,21 +145,20 @@ class TempTargetDialog : DialogFragmentWithDate() {
             OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.careportal_temporarytarget), HtmlHelper.fromHtml(Joiner.on("<br/>").join(actions)), Runnable {
                 aapsLogger.debug("USER ENTRY: TEMP TARGET $target duration: $duration")
                 if (target == 0.0 || duration == 0) {
-                    val tempTarget = TempTarget()
-                        .date(eventTime)
-                        .duration(0)
-                        .low(0.0).high(0.0)
-                        .source(Source.USER)
-                    treatmentsPlugin.addToHistoryTempTarget(tempTarget)
+                    compositeDisposable += repository.runTransaction(CancelCurrentTemporaryTargetIfAnyTransaction(eventTime)).subscribe()
                 } else {
-                    val tempTarget = TempTarget()
-                        .date(eventTime)
-                        .duration(duration)
-                        .reason(reason)
-                        .source(Source.USER)
-                        .low(Profile.toMgdl(target, profileFunction.getUnits()))
-                        .high(Profile.toMgdl(target, profileFunction.getUnits()))
-                    treatmentsPlugin.addToHistoryTempTarget(tempTarget)
+                    compositeDisposable += repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(
+                        timestamp = eventTime,
+                        duration = TimeUnit.MINUTES.toMillis(duration.toLong()),
+                        reason = when (reason) {
+                            "Eating Soon" -> TemporaryTarget.Reason.EATING_SOON
+                            "Activity"    -> TemporaryTarget.Reason.ACTIVITY
+                            "Hypo"        -> TemporaryTarget.Reason.HYPOGLYCEMIA
+                            else          -> TemporaryTarget.Reason.CUSTOM
+                        },
+                        lowTarget = Profile.toMgdl(target, profileFunction.getUnits()),
+                        highTarget = Profile.toMgdl(target, profileFunction.getUnits())
+                    )).subscribe()
                 }
                 if (duration == 10) sp.putBoolean(R.string.key_objectiveusetemptarget, true)
             })

@@ -72,6 +72,11 @@ class AppRepository @Inject internal constructor(
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
 
+    fun compatGetTemporaryTargetDataFromTime(timestamp: Long, ascending: Boolean) =
+        database.temporaryTargetDao.compatGetTemporaryTargetDataFromTime(timestamp)
+            .map { if (!ascending) it.reversed() else it }
+            .subscribeOn(Schedulers.io())
+
     fun findBgReadingByNSId(nsId: String) =
         database.glucoseValueDao.findByNSId(nsId)
 

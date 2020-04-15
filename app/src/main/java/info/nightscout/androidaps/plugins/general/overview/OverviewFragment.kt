@@ -221,6 +221,7 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
     override fun onPause() {
         super.onPause()
         disposable.clear()
+        overviewMenus.compositeDisposable.clear()
         loopHandler.removeCallbacksAndMessages(null)
         overview_apsmode?.let { unregisterForContextMenu(it) }
         overview_activeprofile?.let { unregisterForContextMenu(it) }
@@ -633,7 +634,7 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
         if (tempTarget != null) {
             overview_temptarget?.setTextColor(resourceHelper.gc(R.color.ribbonTextWarning))
             overview_temptarget?.setBackgroundColor(resourceHelper.gc(R.color.ribbonWarning))
-            overview_temptarget?.text = Profile.toTargetRangeString(tempTarget.low, tempTarget.high, Constants.MGDL, units) + " " + DateUtil.untilString(tempTarget.end(), resourceHelper)
+            overview_temptarget?.text = Profile.toTargetRangeString(tempTarget.data.lowTarget, tempTarget.data.highTarget, Constants.MGDL, units) + " " + DateUtil.untilString(tempTarget.end(), resourceHelper)
         } else {
             overview_temptarget?.setTextColor(resourceHelper.gc(R.color.ribbonTextDefault))
             overview_temptarget?.setBackgroundColor(resourceHelper.gc(R.color.ribbonDefault))

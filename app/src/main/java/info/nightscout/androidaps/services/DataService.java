@@ -177,7 +177,7 @@ public class DataService extends DaggerIntentService {
         rxBus.send(evtTreatment);
         // old DB model
         String _id = JsonHelper.safeGetString(json, "_id");
-        MainApp.getDbHelper().deleteTempTargetById(_id);
+        //MainApp.getDbHelper().deleteTempTargetById(_id);
         MainApp.getDbHelper().deleteTempBasalById(_id);
         MainApp.getDbHelper().deleteExtendedBolusById(_id);
         MainApp.getDbHelper().deleteCareportalEventById(_id);
@@ -198,7 +198,7 @@ public class DataService extends DaggerIntentService {
             EventNsTreatment evtTreatment = new EventNsTreatment(mode, json);
             rxBus.send(evtTreatment);
         } else if (eventType.equals(CareportalEvent.TEMPORARYTARGET)) {
-            MainApp.getDbHelper().createTemptargetFromJsonIfNotExists(json);
+            //MainApp.getDbHelper().createTemptargetFromJsonIfNotExists(json);
         } else if (eventType.equals(CareportalEvent.TEMPBASAL)) {
             MainApp.getDbHelper().createTempBasalFromJsonIfNotExists(json);
         } else if (eventType.equals(CareportalEvent.COMBOBOLUS)) {

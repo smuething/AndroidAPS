@@ -7,6 +7,9 @@ import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.Profile
 import info.nightscout.androidaps.data.PumpEnactResult
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.TemporaryTarget
+import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
 import info.nightscout.androidaps.db.Source
 import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
@@ -22,11 +25,13 @@ import info.nightscout.androidaps.utils.JsonHelper
 import info.nightscout.androidaps.utils.JsonHelper.safeGetDouble
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class ActionStartTempTarget(injector: HasAndroidInjector) : Action(injector) {
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var activePlugin: ActivePluginProvider
+    @Inject lateinit var repository: AppRepository
 
     var value = InputTempTarget(injector)
     var duration = InputDuration(injector, 0, InputDuration.TimeUnit.MINUTES)
@@ -36,11 +41,11 @@ class ActionStartTempTarget(injector: HasAndroidInjector) : Action(injector) {
     }
 
     override fun friendlyName(): Int = R.string.starttemptarget
-    override fun shortDescription(): String = resourceHelper.gs(R.string.starttemptarget) + ": " + tt().friendlyDescription(value.units)
+    override fun shortDescription(): String = resourceHelper.gs(R.string.starttemptarget) + ": " + TempTarget(tt()).friendlyDescription(value.units)
     @DrawableRes override fun icon(): Int = R.drawable.icon_cp_cgm_target
 
     override fun doAction(callback: Callback) {
-        activePlugin.activeTreatments.addToHistoryTempTarget(tt())
+        repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(tt())).blockingAwait()
         callback.result(PumpEnactResult(injector).success(true).comment(R.string.ok))?.run()
     }
 
@@ -75,12 +80,11 @@ class ActionStartTempTarget(injector: HasAndroidInjector) : Action(injector) {
         return this
     }
 
-    fun tt(): TempTarget =
-        TempTarget()
-            .date(DateUtil.now())
-            .duration(duration.getMinutes())
-            .reason("Automation")
-            .source(Source.USER)
-            .low(Profile.toMgdl(value.value, value.units))
-            .high(Profile.toMgdl(value.value, value.units))
+    fun tt() = TemporaryTarget(
+        timestamp = DateUtil.now(),
+        duration = TimeUnit.MINUTES.toMillis(duration.getMinutes().toLong()),
+        reason = TemporaryTarget.Reason.AUTOMATION,
+        lowTarget = Profile.toMgdl(value.value, value.units),
+        highTarget = Profile.toMgdl(value.value, value.units)
+    )
 }

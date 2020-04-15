@@ -11,6 +11,9 @@ import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.Profile
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.TemporaryTarget
+import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
 import info.nightscout.androidaps.db.CareportalEvent
 import info.nightscout.androidaps.db.Source
 import info.nightscout.androidaps.db.TempTarget
@@ -24,11 +27,14 @@ import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin
 import info.nightscout.androidaps.utils.*
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.dialog_carbs.*
 import kotlinx.android.synthetic.main.notes.*
 import kotlinx.android.synthetic.main.okcancel.*
 import java.text.DecimalFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.math.max
 
@@ -41,6 +47,9 @@ class CarbsDialog : DialogFragmentWithDate() {
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var iobCobCalculatorPlugin: IobCobCalculatorPlugin
     @Inject lateinit var carbsGenerator: CarbsGenerator
+    @Inject lateinit var repository: AppRepository
+
+    private val compositeDisposable = CompositeDisposable()
 
     companion object {
         private const val FAV1_DEFAULT = 5
@@ -192,38 +201,35 @@ class CarbsDialog : DialogFragmentWithDate() {
                     when {
                         activitySelected   -> {
                             aapsLogger.debug("USER ENTRY: TEMPTARGET ACTIVITY $activityTT duration: $activityTTDuration")
-                            val tempTarget = TempTarget()
-                                .date(System.currentTimeMillis())
-                                .duration(activityTTDuration)
-                                .reason(resourceHelper.gs(R.string.activity))
-                                .source(Source.USER)
-                                .low(Profile.toMgdl(activityTT, profileFunction.getUnits()))
-                                .high(Profile.toMgdl(activityTT, profileFunction.getUnits()))
-                            treatmentsPlugin.addToHistoryTempTarget(tempTarget)
+                            compositeDisposable += repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(
+                                timestamp = System.currentTimeMillis(),
+                                duration = TimeUnit.MINUTES.toMillis(activityTTDuration.toLong()),
+                                reason = TemporaryTarget.Reason.ACTIVITY,
+                                lowTarget = Profile.toMgdl(activityTT, profileFunction.getUnits()),
+                                highTarget = Profile.toMgdl(activityTT, profileFunction.getUnits())
+                            )).subscribe()
                         }
 
                         eatingSoonSelected -> {
                             aapsLogger.debug("USER ENTRY: TEMPTARGET EATING SOON $eatingSoonTT duration: $eatingSoonTTDuration")
-                            val tempTarget = TempTarget()
-                                .date(System.currentTimeMillis())
-                                .duration(eatingSoonTTDuration)
-                                .reason(resourceHelper.gs(R.string.eatingsoon))
-                                .source(Source.USER)
-                                .low(Profile.toMgdl(eatingSoonTT, profileFunction.getUnits()))
-                                .high(Profile.toMgdl(eatingSoonTT, profileFunction.getUnits()))
-                            treatmentsPlugin.addToHistoryTempTarget(tempTarget)
+                            compositeDisposable += repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(
+                                timestamp = System.currentTimeMillis(),
+                                duration = TimeUnit.MINUTES.toMillis(eatingSoonTTDuration.toLong()),
+                                reason = TemporaryTarget.Reason.EATING_SOON,
+                                lowTarget = Profile.toMgdl(eatingSoonTT, profileFunction.getUnits()),
+                                highTarget = Profile.toMgdl(eatingSoonTT, profileFunction.getUnits())
+                            )).subscribe()
                         }
 
                         hypoSelected       -> {
                             aapsLogger.debug("USER ENTRY: TEMPTARGET HYPO $hypoTT duration: $hypoTTDuration")
-                            val tempTarget = TempTarget()
-                                .date(System.currentTimeMillis())
-                                .duration(hypoTTDuration)
-                                .reason(resourceHelper.gs(R.string.hypo))
-                                .source(Source.USER)
-                                .low(Profile.toMgdl(hypoTT, profileFunction.getUnits()))
-                                .high(Profile.toMgdl(hypoTT, profileFunction.getUnits()))
-                            treatmentsPlugin.addToHistoryTempTarget(tempTarget)
+                            compositeDisposable += repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(
+                                timestamp = System.currentTimeMillis(),
+                                duration = TimeUnit.MINUTES.toMillis(hypoTTDuration.toLong()),
+                                reason = TemporaryTarget.Reason.HYPOGLYCEMIA,
+                                lowTarget = Profile.toMgdl(hypoTT, profileFunction.getUnits()),
+                                highTarget = Profile.toMgdl(hypoTT, profileFunction.getUnits())
+                            )).subscribe()
                         }
                     }
                     if (carbsAfterConstraints > 0) {

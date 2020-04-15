@@ -20,6 +20,10 @@ import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.activities.ErrorHelperActivity
 import info.nightscout.androidaps.data.Profile
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.TemporaryTarget
+import info.nightscout.androidaps.database.transactions.CancelCurrentTemporaryTargetIfAnyTransaction
+import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
 import info.nightscout.androidaps.db.Source
 import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.dialogs.ProfileSwitchDialog
@@ -42,7 +46,10 @@ import info.nightscout.androidaps.utils.ToastUtils
 import info.nightscout.androidaps.utils.buildHelper.BuildHelper
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import java.lang.reflect.Type
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -59,8 +66,11 @@ class OverviewMenus @Inject constructor(
     private val profileFunction: ProfileFunction,
     private val commandQueue: CommandQueueProvider,
     private val configBuilderPlugin: ConfigBuilderPlugin,
-    private val loopPlugin: LoopPlugin
+    private val loopPlugin: LoopPlugin,
+    private val repository: AppRepository
 ) {
+
+    val compositeDisposable = CompositeDisposable()
 
     enum class CharType(@StringRes val nameId: Int, @ColorRes val colorId: Int, val primary: Boolean, val secondary: Boolean) {
         PRE(R.string.overview_show_predictions, R.color.prediction, primary = true, secondary = false),
@@ -348,40 +358,37 @@ class OverviewMenus @Inject constructor(
             resourceHelper.gs(R.string.eatingsoon)                                    -> {
                 aapsLogger.debug("USER ENTRY: TEMP TARGET EATING SOON")
                 val target = Profile.toMgdl(defaultValueHelper.determineEatingSoonTT(), profileFunction.getUnits())
-                val tempTarget = TempTarget()
-                    .date(System.currentTimeMillis())
-                    .duration(defaultValueHelper.determineEatingSoonTTDuration())
-                    .reason(resourceHelper.gs(R.string.eatingsoon))
-                    .source(Source.USER)
-                    .low(target)
-                    .high(target)
-                activePlugin.activeTreatments.addToHistoryTempTarget(tempTarget)
+                compositeDisposable += repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(
+                    timestamp = System.currentTimeMillis(),
+                    duration = TimeUnit.MINUTES.toMillis(defaultValueHelper.determineEatingSoonTTDuration().toLong()),
+                    reason = TemporaryTarget.Reason.EATING_SOON,
+                    lowTarget = target,
+                    highTarget = target
+                )).subscribe()
             }
 
             resourceHelper.gs(R.string.activity)                                      -> {
                 aapsLogger.debug("USER ENTRY: TEMP TARGET ACTIVITY")
                 val target = Profile.toMgdl(defaultValueHelper.determineActivityTT(), profileFunction.getUnits())
-                val tempTarget = TempTarget()
-                    .date(DateUtil.now())
-                    .duration(defaultValueHelper.determineActivityTTDuration())
-                    .reason(resourceHelper.gs(R.string.activity))
-                    .source(Source.USER)
-                    .low(target)
-                    .high(target)
-                activePlugin.activeTreatments.addToHistoryTempTarget(tempTarget)
+                compositeDisposable += repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(
+                    timestamp = System.currentTimeMillis(),
+                    duration = TimeUnit.MINUTES.toMillis(defaultValueHelper.determineActivityTTDuration().toLong()),
+                    reason = TemporaryTarget.Reason.ACTIVITY,
+                    lowTarget = target,
+                    highTarget = target
+                )).subscribe()
             }
 
             resourceHelper.gs(R.string.hypo)                                          -> {
                 aapsLogger.debug("USER ENTRY: TEMP TARGET HYPO")
                 val target = Profile.toMgdl(defaultValueHelper.determineHypoTT(), profileFunction.getUnits())
-                val tempTarget = TempTarget()
-                    .date(DateUtil.now())
-                    .duration(defaultValueHelper.determineHypoTTDuration())
-                    .reason(resourceHelper.gs(R.string.hypo))
-                    .source(Source.USER)
-                    .low(target)
-                    .high(target)
-                activePlugin.activeTreatments.addToHistoryTempTarget(tempTarget)
+                compositeDisposable += repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(
+                    timestamp = System.currentTimeMillis(),
+                    duration = TimeUnit.MINUTES.toMillis(defaultValueHelper.determineHypoTTDuration().toLong()),
+                    reason = TemporaryTarget.Reason.HYPOGLYCEMIA,
+                    lowTarget = target,
+                    highTarget = target
+                )).subscribe()
             }
 
             resourceHelper.gs(R.string.custom)                                        -> {
@@ -390,13 +397,7 @@ class OverviewMenus @Inject constructor(
 
             resourceHelper.gs(R.string.cancel)                                        -> {
                 aapsLogger.debug("USER ENTRY: TEMP TARGET CANCEL")
-                val tempTarget = TempTarget()
-                    .source(Source.USER)
-                    .date(DateUtil.now())
-                    .duration(0)
-                    .low(0.0)
-                    .high(0.0)
-                activePlugin.activeTreatments.addToHistoryTempTarget(tempTarget)
+                compositeDisposable += repository.runTransaction(CancelCurrentTemporaryTargetIfAnyTransaction(System.currentTimeMillis())).subscribe()
             }
         }
         return false

@@ -14,6 +14,9 @@ import info.nightscout.androidaps.R
 import info.nightscout.androidaps.activities.ErrorHelperActivity
 import info.nightscout.androidaps.data.DetailedBolusInfo
 import info.nightscout.androidaps.data.Profile
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.TemporaryTarget
+import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
 import info.nightscout.androidaps.db.CareportalEvent
 import info.nightscout.androidaps.db.Source
 import info.nightscout.androidaps.db.TempTarget
@@ -28,11 +31,14 @@ import info.nightscout.androidaps.utils.alertDialogs.OKDialog
 import info.nightscout.androidaps.utils.extensions.toSignedString
 import info.nightscout.androidaps.utils.extensions.toVisibility
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.dialog_insulin.*
 import kotlinx.android.synthetic.main.notes.*
 import kotlinx.android.synthetic.main.okcancel.*
 import java.text.DecimalFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.math.abs
 import kotlin.math.max
@@ -45,6 +51,9 @@ class InsulinDialog : DialogFragmentWithDate() {
     @Inject lateinit var commandQueue: CommandQueueProvider
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var ctx: Context
+    @Inject lateinit var repository: AppRepository
+
+    private val compositeDisposable = CompositeDisposable()
 
     companion object {
         private const val PLUS1_DEFAULT = 0.5
@@ -156,14 +165,13 @@ class InsulinDialog : DialogFragmentWithDate() {
                 OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.bolus), HtmlHelper.fromHtml(Joiner.on("<br/>").join(actions)), Runnable {
                     if (eatingSoonChecked) {
                         aapsLogger.debug("USER ENTRY: TEMPTARGET EATING SOON $eatingSoonTT duration: $eatingSoonTTDuration")
-                        val tempTarget = TempTarget()
-                            .date(System.currentTimeMillis())
-                            .duration(eatingSoonTTDuration)
-                            .reason(resourceHelper.gs(R.string.eatingsoon))
-                            .source(Source.USER)
-                            .low(Profile.toMgdl(eatingSoonTT, profileFunction.getUnits()))
-                            .high(Profile.toMgdl(eatingSoonTT, profileFunction.getUnits()))
-                        activePlugin.activeTreatments.addToHistoryTempTarget(tempTarget)
+                        compositeDisposable += repository.runTransaction(InsertTemporaryTargetAndCancelCurrentTransaction(
+                            timestamp = System.currentTimeMillis(),
+                            duration = TimeUnit.MINUTES.toMillis(eatingSoonTTDuration.toLong()),
+                            reason = TemporaryTarget.Reason.EATING_SOON,
+                            lowTarget = Profile.toMgdl(eatingSoonTT, profileFunction.getUnits()),
+                            highTarget = Profile.toMgdl(eatingSoonTT, profileFunction.getUnits())
+                        )).subscribe()
                     }
                     if (insulinAfterConstraints > 0) {
                         val detailedBolusInfo = DetailedBolusInfo()

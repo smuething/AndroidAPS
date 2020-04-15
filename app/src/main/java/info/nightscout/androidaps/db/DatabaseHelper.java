@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -30,26 +29,22 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.data.NonOverlappingIntervals;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
 import info.nightscout.androidaps.events.EventCareportalEventChange;
 import info.nightscout.androidaps.events.EventExtendedBolusChange;
-import info.nightscout.androidaps.events.EventNewBG;
 import info.nightscout.androidaps.events.EventProfileNeedsUpdate;
 import info.nightscout.androidaps.events.EventRefreshOverview;
 import info.nightscout.androidaps.events.EventReloadProfileSwitchData;
 import info.nightscout.androidaps.events.EventReloadTempBasalData;
 import info.nightscout.androidaps.events.EventReloadTreatmentData;
 import info.nightscout.androidaps.events.EventTempBasalChange;
-import info.nightscout.androidaps.events.EventTempTargetChange;
 import info.nightscout.androidaps.interfaces.ProfileInterface;
 import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.logging.StacktraceLoggerWrapper;
 import info.nightscout.androidaps.plugins.bus.RxBus;
-import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin;
 import info.nightscout.androidaps.plugins.configBuilder.PluginStore;
 import info.nightscout.androidaps.plugins.general.nsclient.NSUpload;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventNewHistoryData;
@@ -58,8 +53,6 @@ import info.nightscout.androidaps.plugins.pump.insight.database.InsightBolusID;
 import info.nightscout.androidaps.plugins.pump.insight.database.InsightHistoryOffset;
 import info.nightscout.androidaps.plugins.pump.insight.database.InsightPumpID;
 import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin;
-import info.nightscout.androidaps.utils.GlucoseValueUtilsKt;
-import info.nightscout.androidaps.utils.JsonHelper;
 import info.nightscout.androidaps.utils.PercentageSplitter;
 import info.nightscout.androidaps.utils.ToastUtils;
 
@@ -77,7 +70,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     public static final String DATABASE_NAME = "AndroidAPSDb";
     public static final String DATABASE_TEMPORARYBASALS = "TemporaryBasals";
     public static final String DATABASE_EXTENDEDBOLUSES = "ExtendedBoluses";
-    public static final String DATABASE_TEMPTARGETS = "TempTargets";
     public static final String DATABASE_DANARHISTORY = "DanaRHistory";
     public static final String DATABASE_DBREQUESTS = "DBRequests";
     public static final String DATABASE_CAREPORTALEVENTS = "CareportalEvents";
@@ -93,9 +85,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
     private static final ScheduledExecutorService tempBasalsWorker = Executors.newSingleThreadScheduledExecutor();
     private static ScheduledFuture<?> scheduledTemBasalsPost = null;
-
-    private static final ScheduledExecutorService tempTargetWorker = Executors.newSingleThreadScheduledExecutor();
-    private static ScheduledFuture<?> scheduledTemTargetPost = null;
 
     private static final ScheduledExecutorService extendedBolusWorker = Executors.newSingleThreadScheduledExecutor();
     private static ScheduledFuture<?> scheduledExtendedBolusPost = null;
@@ -120,7 +109,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         try {
             if (L.isEnabled(L.DATABASE))
                 log.info("onCreate");
-            TableUtils.createTableIfNotExists(connectionSource, TempTarget.class);
             TableUtils.createTableIfNotExists(connectionSource, DanaRHistoryRecord.class);
             TableUtils.createTableIfNotExists(connectionSource, DbRequest.class);
             TableUtils.createTableIfNotExists(connectionSource, TemporaryBasal.class);
@@ -149,7 +137,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
             if (oldVersion < 7) {
                 log.info(DatabaseHelper.class.getName(), "onUpgrade");
-                TableUtils.dropTable(connectionSource, TempTarget.class, true);
                 TableUtils.dropTable(connectionSource, DanaRHistoryRecord.class, true);
                 TableUtils.dropTable(connectionSource, DbRequest.class, true);
                 TableUtils.dropTable(connectionSource, TemporaryBasal.class, true);
@@ -197,7 +184,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
     public void resetDatabases() {
         try {
-            TableUtils.dropTable(connectionSource, TempTarget.class, true);
             // TODO: Clear BGReading
             //TableUtils.dropTable(connectionSource, BgReading.class, true);
             TableUtils.dropTable(connectionSource, DanaRHistoryRecord.class, true);
@@ -207,7 +193,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             TableUtils.dropTable(connectionSource, CareportalEvent.class, true);
             TableUtils.dropTable(connectionSource, ProfileSwitch.class, true);
             TableUtils.dropTable(connectionSource, TDD.class, true);
-            TableUtils.createTableIfNotExists(connectionSource, TempTarget.class);
             TableUtils.createTableIfNotExists(connectionSource, DanaRHistoryRecord.class);
             TableUtils.createTableIfNotExists(connectionSource, DbRequest.class);
             TableUtils.createTableIfNotExists(connectionSource, TemporaryBasal.class);
@@ -222,7 +207,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         VirtualPumpPlugin.Companion.getPlugin().setFakingStatus(true);
         scheduleTemporaryBasalChange();
         scheduleExtendedBolusChange();
-        scheduleTemporaryTargetChange();
         scheduleCareportalEventChange();
         scheduleProfileSwitchChange();
         new java.util.Timer().schedule(
@@ -234,16 +218,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
                 },
                 3000
         );
-    }
-
-    public void resetTempTargets() {
-        try {
-            TableUtils.dropTable(connectionSource, TempTarget.class, true);
-            TableUtils.createTableIfNotExists(connectionSource, TempTarget.class);
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        scheduleTemporaryTargetChange();
     }
 
     public void resetTemporaryBasals() {
@@ -299,10 +273,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     }
 
     // ------------------ getDao -------------------------------------------
-
-    private Dao<TempTarget, Long> getDaoTempTargets() throws SQLException {
-        return getDao(TempTarget.class);
-    }
 
     private Dao<BgReading, Long> getDaoBgReadings() throws SQLException {
         return getDao(BgReading.class);
@@ -458,8 +428,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         }
     }
 
-    //  -------------------- TEMPTARGET HANDLING -------------------
-
     public static void updateEarliestDataChange(long newDate) {
         if (earliestDataChange == null) {
             earliestDataChange = newDate;
@@ -468,188 +436,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         if (newDate < earliestDataChange) {
             earliestDataChange = newDate;
         }
-    }
-
-    // ---------------- TempTargets handling ---------------
-
-    public List<TempTarget> getTemptargetsDataFromTime(long mills, boolean ascending) {
-        try {
-            Dao<TempTarget, Long> daoTempTargets = getDaoTempTargets();
-            List<TempTarget> tempTargets;
-            QueryBuilder<TempTarget, Long> queryBuilder = daoTempTargets.queryBuilder();
-            queryBuilder.orderBy("date", ascending);
-            Where where = queryBuilder.where();
-            where.ge("date", mills);
-            PreparedQuery<TempTarget> preparedQuery = queryBuilder.prepare();
-            tempTargets = daoTempTargets.query(preparedQuery);
-            return tempTargets;
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        return new ArrayList<TempTarget>();
-    }
-
-    public List<TempTarget> getTemptargetsDataFromTime(long from, long to, boolean ascending) {
-        try {
-            Dao<TempTarget, Long> daoTempTargets = getDaoTempTargets();
-            List<TempTarget> tempTargets;
-            QueryBuilder<TempTarget, Long> queryBuilder = daoTempTargets.queryBuilder();
-            queryBuilder.orderBy("date", ascending);
-            Where where = queryBuilder.where();
-            where.between("date", from, to);
-            PreparedQuery<TempTarget> preparedQuery = queryBuilder.prepare();
-            tempTargets = daoTempTargets.query(preparedQuery);
-            return tempTargets;
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        return new ArrayList<TempTarget>();
-    }
-
-    public boolean createOrUpdate(TempTarget tempTarget) {
-        try {
-            TempTarget old;
-            tempTarget.date = roundDateToSec(tempTarget.date);
-
-            if (tempTarget.source == Source.NIGHTSCOUT) {
-                old = getDaoTempTargets().queryForId(tempTarget.date);
-                if (old != null) {
-                    if (!old.isEqual(tempTarget)) {
-                        getDaoTempTargets().delete(old); // need to delete/create because date may change too
-                        old.copyFrom(tempTarget);
-                        getDaoTempTargets().create(old);
-                        if (L.isEnabled(L.DATABASE))
-                            log.debug("TEMPTARGET: Updating record by date from: " + Source.getString(tempTarget.source) + " " + old.toString());
-                        scheduleTemporaryTargetChange();
-                        return true;
-                    }
-                    return false;
-                }
-                // find by NS _id
-                if (tempTarget._id != null) {
-                    QueryBuilder<TempTarget, Long> queryBuilder = getDaoTempTargets().queryBuilder();
-                    Where where = queryBuilder.where();
-                    where.eq("_id", tempTarget._id);
-                    PreparedQuery<TempTarget> preparedQuery = queryBuilder.prepare();
-                    List<TempTarget> trList = getDaoTempTargets().query(preparedQuery);
-                    if (trList.size() > 0) {
-                        old = trList.get(0);
-                        if (!old.isEqual(tempTarget)) {
-                            getDaoTempTargets().delete(old); // need to delete/create because date may change too
-                            old.copyFrom(tempTarget);
-                            getDaoTempTargets().create(old);
-                            if (L.isEnabled(L.DATABASE))
-                                log.debug("TEMPTARGET: Updating record by _id from: " + Source.getString(tempTarget.source) + " " + old.toString());
-                            scheduleTemporaryTargetChange();
-                            return true;
-                        }
-                    }
-                }
-                getDaoTempTargets().create(tempTarget);
-                if (L.isEnabled(L.DATABASE))
-                    log.debug("TEMPTARGET: New record from: " + Source.getString(tempTarget.source) + " " + tempTarget.toString());
-                scheduleTemporaryTargetChange();
-                return true;
-            }
-            if (tempTarget.source == Source.USER) {
-                getDaoTempTargets().create(tempTarget);
-                if (L.isEnabled(L.DATABASE))
-                    log.debug("TEMPTARGET: New record from: " + Source.getString(tempTarget.source) + " " + tempTarget.toString());
-                scheduleTemporaryTargetChange();
-                return true;
-            }
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        return false;
-    }
-
-    public void delete(TempTarget tempTarget) {
-        try {
-            getDaoTempTargets().delete(tempTarget);
-            scheduleTemporaryTargetChange();
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-    }
-
-    private static void scheduleTemporaryTargetChange() {
-        class PostRunnable implements Runnable {
-            public void run() {
-                if (L.isEnabled(L.DATABASE))
-                    log.debug("Firing EventTempTargetChange");
-                RxBus.Companion.getINSTANCE().send(new EventTempTargetChange());
-                scheduledTemTargetPost = null;
-            }
-        }
-        // prepare task for execution in 1 sec
-        // cancel waiting task to prevent sending multiple posts
-        if (scheduledTemTargetPost != null)
-            scheduledTemTargetPost.cancel(false);
-        Runnable task = new PostRunnable();
-        final int sec = 1;
-        scheduledTemTargetPost = tempTargetWorker.schedule(task, sec, TimeUnit.SECONDS);
-
-    }
-
- /*
- {
-    "_id": "58795998aa86647ba4d68ce7",
-    "enteredBy": "",
-    "eventType": "Temporary Target",
-    "reason": "Eating Soon",
-    "targetTop": 80,
-    "targetBottom": 80,
-    "duration": 120,
-    "created_at": "2017-01-13T22:50:00.782Z",
-    "carbs": null,
-    "insulin": null
-}
-  */
-
-    public void createTemptargetFromJsonIfNotExists(JSONObject trJson) {
-        try {
-            String units = JsonHelper.safeGetString(trJson, "units", Constants.MGDL);
-            TempTarget tempTarget = new TempTarget()
-                    .date(trJson.getLong("mills"))
-                    .duration(JsonHelper.safeGetInt(trJson, "duration"))
-                    .low(Profile.toMgdl(JsonHelper.safeGetDouble(trJson, "targetBottom"), units))
-                    .high(Profile.toMgdl(JsonHelper.safeGetDouble(trJson, "targetTop"), units))
-                    .reason(JsonHelper.safeGetString(trJson, "reason", ""))
-                    ._id(trJson.getString("_id"))
-                    .source(Source.NIGHTSCOUT);
-            createOrUpdate(tempTarget);
-        } catch (JSONException e) {
-            log.error("Unhandled exception: " + trJson.toString(), e);
-        }
-    }
-
-    public void deleteTempTargetById(String _id) {
-        TempTarget stored = findTempTargetById(_id);
-        if (stored != null) {
-            log.debug("TEMPTARGET: Removing TempTarget record from database: " + stored.toString());
-            delete(stored);
-            scheduleTemporaryTargetChange();
-        }
-    }
-
-    public TempTarget findTempTargetById(String _id) {
-        try {
-            QueryBuilder<TempTarget, Long> queryBuilder = getDaoTempTargets().queryBuilder();
-            Where where = queryBuilder.where();
-            where.eq("_id", _id);
-            PreparedQuery<TempTarget> preparedQuery = queryBuilder.prepare();
-            List<TempTarget> list = getDaoTempTargets().query(preparedQuery);
-
-            if (list.size() == 1) {
-                return list.get(0);
-            } else {
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error("Unhandled exception", e);
-        }
-        return null;
     }
 
     // ----------------- DanaRHistory handling --------------------
@@ -1648,7 +1434,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             if (L.isEnabled(L.DATABASE))
                 log.debug("PROFILESWITCH: Removing ProfileSwitch record from database: " + stored.toString());
             delete(stored);
-            scheduleTemporaryTargetChange();
+            scheduleProfileSwitchChange();
         }
     }
 

@@ -13,7 +13,7 @@ class RxBus {
         var INSTANCE: RxBus = RxBus()//TODO: remove as soon as Dagger is fully set up
     }
 
-    private val publisher = PublishSubject.create<Event>()
+    private val publisher = PublishSubject.create<Event>().toSerialized()
 
     fun send(event: Event) {
         publisher.onNext(event)

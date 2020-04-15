@@ -5,13 +5,14 @@ import androidx.room.PrimaryKey
 import info.nightscout.androidaps.database.TABLE_PREFERENCE_CHANGES
 import info.nightscout.androidaps.database.interfaces.DBEntry
 import info.nightscout.androidaps.database.interfaces.DBEntryWithTime
+import java.util.*
 
 @Entity(tableName = TABLE_PREFERENCE_CHANGES)
 data class PreferenceChange(
-        @PrimaryKey(autoGenerate = true)
+    @PrimaryKey(autoGenerate = true)
         override var id: Long = 0L,
-        override var timestamp: Long,
-        override var utcOffset: Long,
-        var key: String,
-        var value: Any?
+    override var timestamp: Long,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
+    var key: String,
+    var value: Any?
 ) : DBEntry, DBEntryWithTime
