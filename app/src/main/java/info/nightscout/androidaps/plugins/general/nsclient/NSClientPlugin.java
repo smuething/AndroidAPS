@@ -153,7 +153,7 @@ public class NSClientPlugin extends PluginBase {
                     ) {
                         receiverStatusStore.updateNetworkStatus();
                     } else if (event.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
-                        // receiverStatusStore.broadcastChargingState(); // TODO: why this side effect
+                        receiverStatusStore.broadcastChargingState();
                     }
                 }, exception -> FabricPrivacy.getInstance().logException(exception))
         );

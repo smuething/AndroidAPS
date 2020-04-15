@@ -172,23 +172,17 @@ class NSClient2Plugin @Inject constructor(
             R.string.key_ns_careportal,
             R.string.key_ns_settings)
 
-        val nsWifiKeys = listOf(R.string.key_ns_wifionly, R.string.key_ns_wifi_ssids, R.string.key_ns_allowroaming)
-
-        if (nsWifiKeys.any { event.isChanged(resourceHelper, it) }) {
-            // receiverStatusStore.updateNetworkStatus()
-            // TODO: why is this needed if store keeps itself up-to-date?
-            //  If it doesn't, we need a blocking/functional solution that is called before commAllowed().
-            //  Store could listen to those events and?
-
-            commAllowed()
-        } else if (event.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
-            // receiverStatusStore.broadcastChargingState()
-            // TODO: if this is NSClient specific, don't use receiverStore. If it isn't, don't use NSClient
-
-            commAllowed()
-        }
         if (nsFeatureKeys.any { event.isChanged(resourceHelper, it) }) {
             permissions = null // force new permissions read
+        }
+
+        val nsWifiKeys = listOf(R.string.key_ns_wifionly,
+            R.string.key_ns_wifi_ssids,
+            R.string.key_ns_allowroaming)
+
+        if (nsWifiKeys.any { event.isChanged(resourceHelper, it) } ||
+            event.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
+            commAllowed()
         }
     }
 
