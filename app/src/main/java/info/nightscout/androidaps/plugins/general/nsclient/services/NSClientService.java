@@ -54,7 +54,6 @@ import info.nightscout.androidaps.plugins.general.nsclient.data.AlarmAck;
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSAlarm;
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSDeviceStatus;
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSSettingsStatus;
-import info.nightscout.androidaps.plugins.general.nsclient.data.NSSgv;
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSTreatment;
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientNewLog;
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientRestart;
@@ -64,7 +63,6 @@ import info.nightscout.androidaps.plugins.general.overview.events.EventDismissNo
 import info.nightscout.androidaps.plugins.general.overview.events.EventNewNotification;
 import info.nightscout.androidaps.plugins.general.overview.notifications.Notification;
 import info.nightscout.androidaps.plugins.general.overview.notifications.NotificationWithAction;
-import info.nightscout.androidaps.services.DataExchangeStore;
 import info.nightscout.androidaps.services.Intents;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.FabricPrivacy;
@@ -698,6 +696,7 @@ public class NSClientService extends DaggerService {
                             }
                             handleNewCal(cals, isDelta);
                         }
+/*
                         if (data.has("sgvs")) {
                             JSONArray sgvs = data.getJSONArray("sgvs");
                             if (sgvs.length() > 0)
@@ -732,6 +731,7 @@ public class NSClientService extends DaggerService {
                             // broadcast to xDrip
                             broadcastNewSgv(sgvs, isDelta);
                         }
+ */
                         rxBus.send(new EventNSClientNewLog("LAST", DateUtil.dateAndTimeString(latestDateInReceivedData)));
                     } catch (JSONException e) {
                         log.error("Unhandled exception", e);
@@ -930,21 +930,22 @@ public class NSClientService extends DaggerService {
         }
     }
 
-    public void broadcastNewSgv(JSONArray sgvs, boolean isDelta) {
-        List<JSONArray> splitted = splitArray(sgvs);
-        if (sp.getBoolean(R.string.key_nsclient_localbroadcasts, false)) {
-            for (JSONArray part : splitted) {
-                Bundle bundle = new Bundle();
-                bundle.putString("sgvs", part.toString());
-                bundle.putBoolean("delta", isDelta);
-                Intent intent = new Intent(Intents.ACTION_NEW_SGV);
-                intent.putExtras(bundle);
-                intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-                mainApp.sendBroadcast(intent);
+    /*
+        public void broadcastNewSgv(JSONArray sgvs, boolean isDelta) {
+            List<JSONArray> splitted = splitArray(sgvs);
+            if (sp.getBoolean(R.string.key_nsclient_localbroadcasts, false)) {
+                for (JSONArray part : splitted) {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("sgvs", part.toString());
+                    bundle.putBoolean("delta", isDelta);
+                    Intent intent = new Intent(Intents.ACTION_NEW_SGV);
+                    intent.putExtras(bundle);
+                    intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+                    mainApp.sendBroadcast(intent);
+                }
             }
         }
-    }
-
+    */
     public void handleNewTreatment(JSONArray treatments, boolean isDelta) {
         List<JSONArray> splitted = splitArray(treatments);
         for (JSONArray part : splitted) {

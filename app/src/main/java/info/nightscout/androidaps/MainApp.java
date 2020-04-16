@@ -113,7 +113,7 @@ public class MainApp extends DaggerApplication {
         }
         disposable.add(repository.runTransaction(new VersionChangeTransaction(BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, gitRemote, commitHash)).subscribe());
 
-        disposable.add(compatDBHelper.triggerStart());
+        disposable.add(compatDBHelper.dbChangeDisposable());
 
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
             if (ex instanceof InternalError) {
@@ -195,7 +195,7 @@ public class MainApp extends DaggerApplication {
         filter.addAction(Intents.ACTION_NEW_TREATMENT);
         filter.addAction(Intents.ACTION_CHANGED_TREATMENT);
         filter.addAction(Intents.ACTION_REMOVED_TREATMENT);
-        filter.addAction(Intents.ACTION_NEW_SGV);
+ //       filter.addAction(Intents.ACTION_NEW_SGV);
         filter.addAction(Intents.ACTION_NEW_PROFILE);
         filter.addAction(Intents.ACTION_NEW_MBG);
         filter.addAction(Intents.ACTION_NEW_CAL);

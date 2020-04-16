@@ -10,6 +10,7 @@ import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.requests.EntryRequestBody
 import info.nightscout.androidaps.networking.nightscout.requests.fromGlucoseValue
 import info.nightscout.androidaps.networking.nightscout.responses.*
+import info.nightscout.androidaps.plugins.source.NSClientSourcePlugin
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
@@ -25,7 +26,8 @@ import java.net.UnknownHostException
 class NightscoutService(
     private val nsRetrofitFactory: NSRetrofitFactory,
     private val resourceHelper: ResourceHelper,
-    private val sp: SP
+    private val sp: SP,
+    private val nsClientSourcePlugin: NSClientSourcePlugin
 ) {
 
     fun testConnection(): Single<SetupState> = nsRetrofitFactory.getNSService().statusVerbose().map {
@@ -63,9 +65,14 @@ class NightscoutService(
                     statusResponse.mapRequiredPermissionToError(R.string.key_ns_insulin, collection, errors)
                     statusResponse.mapRequiredPermissionToError(R.string.key_ns_carbs, collection, errors)
                     statusResponse.mapRequiredPermissionToError(R.string.key_ns_careportal, collection, errors)
+                    statusResponse.mapRequiredPermissionToError(R.string.key_ns_temptargets, collection, errors)
                 }
 
-                NightscoutCollection.ENTRIES      -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_cgm, collection, errors)
+                NightscoutCollection.ENTRIES      -> {
+                    statusResponse.mapRequiredPermissionToError(R.string.key_ns_cgm, collection, errors)
+                    if (nsClientSourcePlugin.isEnabled() && !statusResponse.apiPermissions.entries.read) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
+                }
+
                 NightscoutCollection.SETTINGS     -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_settings, collection, errors)
             }
         return if (errors.isEmpty()) {
@@ -76,10 +83,10 @@ class NightscoutService(
     }
 
     fun StatusResponse.mapRequiredPermissionToError(@StringRes spVal: Int, collection: NightscoutCollection, errors: MutableList<String>) {
-        when (sp.getString(R.string.key_ns_cgm, "PULL")) {
-            "PULL" -> if (!apiPermissions.entries.read) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
-            "PUSH" -> if (!apiPermissions.entries.createUpdate) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
-            "SYNC" -> if (!apiPermissions.entries.full) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
+        when (sp.getString(spVal, "PULL")) {
+            "PULL" -> if (!apiPermissions.of(collection).read) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
+            "PUSH" -> if (!apiPermissions.of(collection).createUpdate) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
+            "SYNC" -> if (!apiPermissions.of(collection).full) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
         }
     }
 

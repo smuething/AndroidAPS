@@ -13,6 +13,7 @@ import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.InvalidateGlucoseValueTransaction
+import info.nightscout.androidaps.events.EventNewBG
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
@@ -63,7 +64,7 @@ class BGSourceFragment : DaggerFragment() {
     override fun onResume() {
         super.onResume()
         disposable.add(rxBus
-            .toObservable(EventAutosensCalculationFinished::class.java)
+            .toObservable(EventNewBG::class.java)
             .observeOn(Schedulers.io())
             .subscribe({
                 val now = System.currentTimeMillis()
@@ -89,7 +90,7 @@ class BGSourceFragment : DaggerFragment() {
 
         override fun onBindViewHolder(holder: GlucoseValuesViewHolder, position: Int) {
             val glucoseValue = glucoseValues[position]
-            holder.ns.visibility = NSUpload.isIdValid(glucoseValue.interfaceIDs.nightscoutId).toVisibility()
+            holder.ns.visibility = (glucoseValue.interfaceIDs.nightscoutId != null).toVisibility()
             holder.invalid.visibility = (!glucoseValue.isValid).toVisibility()
             holder.date.text = DateUtil.dateAndTimeString(glucoseValue.timestamp)
             holder.value.text = glucoseValue.valueToUnitsString(profileFunction.getUnits())

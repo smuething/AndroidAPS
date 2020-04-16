@@ -6,7 +6,7 @@ public interface Intents {
     String ACTION_CHANGED_TREATMENT = "info.nightscout.client.CHANGED_TREATMENT";
     String ACTION_REMOVED_TREATMENT = "info.nightscout.client.REMOVED_TREATMENT";
     String ACTION_NEW_PROFILE = "info.nightscout.client.NEW_PROFILE";
-    String ACTION_NEW_SGV = "info.nightscout.client.NEW_SGV";
+//    String ACTION_NEW_SGV = "info.nightscout.client.NEW_SGV";
     String ACTION_NEW_MBG = "info.nightscout.client.NEW_MBG";
     String ACTION_NEW_CAL = "info.nightscout.client.NEW_CAL";
 

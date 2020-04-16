@@ -15,7 +15,6 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin
 import info.nightscout.androidaps.utils.DateUtil
-import info.nightscout.androidaps.utils.GlucoseValueUploader
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.buildHelper.BuildHelper
 import info.nightscout.androidaps.utils.extensions.isRunningTest
@@ -35,7 +34,6 @@ class RandomBgPlugin @Inject constructor(
     aapsLogger: AAPSLogger,
     private val virtualPumpPlugin: VirtualPumpPlugin,
     private val buildHelper: BuildHelper,
-    private val uploadToNS: GlucoseValueUploader,
     private val repository: AppRepository
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.BGSOURCE)
@@ -97,12 +95,6 @@ class RandomBgPlugin @Inject constructor(
             trendArrow = GlucoseValue.TrendArrow.NONE,
             sourceSensor = GlucoseValue.SourceSensor.RANDOM
         )
-        disposable += repository.runTransactionForResult(CgmSourceTransaction(mutableListOf(glucoseValue), emptyList(), null)).subscribe({
-            it.forEach {
-                uploadToNS(it, "AndroidAPS-RandomBG")
-            }
-        }, {
-            aapsLogger.error(LTag.BGSOURCE, "Error while saving random values", it)
-        })
+        disposable += repository.runTransactionForResult(CgmSourceTransaction(mutableListOf(glucoseValue), emptyList(), null)).subscribe()
     }
 }

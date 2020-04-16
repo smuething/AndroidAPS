@@ -20,7 +20,6 @@ import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.utils.DateUtil
-import info.nightscout.androidaps.utils.GlucoseValueUploader
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.XDripBroadcast
 import io.reactivex.rxkotlin.plusAssign
@@ -38,8 +37,7 @@ class DexcomPlugin @Inject constructor(
     aapsLogger: AAPSLogger,
     private val repository: AppRepository,
     private val dexcomMediator: DexcomMediator,
-    private val broadcastToXDrip: XDripBroadcast,
-    private val uploadtoNS: GlucoseValueUploader
+    private val broadcastToXDrip: XDripBroadcast
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.BGSOURCE)
     .fragmentClass(BGSourceFragment::class.java.name)
@@ -107,7 +105,6 @@ class DexcomPlugin @Inject constructor(
         }
         disposable += repository.runTransactionForResult(CgmSourceTransaction(glucoseValues, calibrations, sensorStartTime)).subscribe({ savedValues ->
             savedValues.forEach {
-                uploadtoNS(it, "AndroidAPS-$sensorType")
                 broadcastToXDrip(it)
             }
         }, {

@@ -35,7 +35,9 @@ import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientNewLog
 import info.nightscout.androidaps.plugins.general.nsclient2.events.EventNSClientFullSync
 import info.nightscout.androidaps.plugins.general.nsclient2.events.EventNSClientSync
-import info.nightscout.androidaps.plugins.general.tidepool.utils.RateLimit
+import info.nightscout.androidaps.plugins.general.overview.events.EventDismissNotification
+import info.nightscout.androidaps.plugins.general.overview.notifications.Notification
+import info.nightscout.androidaps.plugins.source.NSClientSourcePlugin
 import info.nightscout.androidaps.receivers.ReceiverStatusStore
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
@@ -71,7 +73,7 @@ class NSClient2Plugin @Inject constructor(
     private val fabricPrivacy: FabricPrivacy,
     private val aapsSchedulers: AapsSchedulers,
     private val repository: AppRepository,
-    private val rateLimit: RateLimit
+    private val nsClientSourcePlugin: NSClientSourcePlugin
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .fragmentClass(NSClient2Fragment::class.java.name)
@@ -296,8 +298,18 @@ class NSClient2Plugin @Inject constructor(
                             val entries = response.body()
                             addToLog(EventNSClientNewLog("entries SYNC:", "${entries?.size ?: 0} records", EventNSClientNewLog.Direction.IN))
                             entries?.forEach {
+                                // Objectives 0
+                                sp.putBoolean(R.string.key_ObjectivesbgIsAvailableInNS, true)
                                 try {
                                     val gv = it.toGlucoseValue()
+                                    // stale data alarm
+                                    if ((System.currentTimeMillis() - gv.timestamp) / (60 * 1000L) < 5L) {
+                                        rxBus.send(EventDismissNotification(Notification.NSALARM))
+                                        rxBus.send(EventDismissNotification(Notification.NSURGENTALARM))
+                                    }
+                                    // detect source
+                                    nsClientSourcePlugin.detectSource(gv)
+
                                     val existing = repository.findBgReadingByNSId(it.identifier!!)
                                     if (existing != null) {
                                         if (gv.contentEqualsTo(existing)) {
@@ -386,7 +398,6 @@ class NSClient2Plugin @Inject constructor(
         }
         _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ready)))
         addToLog(EventNSClientNewLog("SYNC FINISHED", "From: $from"))
-        disposable.clear()
         aapsLogger.debug(LTag.NSCLIENT, "Finished sync from $from")
     }
 

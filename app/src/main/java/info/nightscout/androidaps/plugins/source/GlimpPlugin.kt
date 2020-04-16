@@ -13,7 +13,6 @@ import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.BundleLogger
 import info.nightscout.androidaps.logging.LTag
-import info.nightscout.androidaps.utils.GlucoseValueUploader
 import info.nightscout.androidaps.utils.XDripBroadcast
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.disposables.CompositeDisposable
@@ -27,8 +26,7 @@ class GlimpPlugin @Inject constructor(
     resourceHelper: ResourceHelper,
     aapsLogger: AAPSLogger,
     private val repository: AppRepository,
-    private val broadcastToXDrip: XDripBroadcast,
-    private val uploadToNS: GlucoseValueUploader
+    private val broadcastToXDrip: XDripBroadcast
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.BGSOURCE)
     .fragmentClass(BGSourceFragment::class.java.name)
@@ -64,7 +62,6 @@ class GlimpPlugin @Inject constructor(
         disposable += repository.runTransactionForResult(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({
             it.forEach {
                 broadcastToXDrip(it)
-                uploadToNS(it, "AndroidAPS-Glimp")
             }
         }, {
             aapsLogger.error(LTag.BGSOURCE, "Error while saving values from Tomato App", it)

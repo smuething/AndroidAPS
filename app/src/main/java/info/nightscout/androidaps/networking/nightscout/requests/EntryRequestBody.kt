@@ -3,6 +3,7 @@ package info.nightscout.androidaps.networking.nightscout.requests
 import com.google.gson.annotations.SerializedName
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.embedments.InterfaceIDs
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.networking.nightscout.exceptions.BadInputDataException
 import info.nightscout.androidaps.utils.resources.ResourceHelper
@@ -15,7 +16,13 @@ data class EntryRequestBody(
     // response only
     @SerializedName("srvModified") val srvModified: Long? = null,
     @SerializedName("identifier") val identifier: String? = null,
+
     // post & response
+
+    // core TraceableDBEntry
+    @SerializedName("version") val version: Int,
+    @SerializedName("interfaceIDs_backing") val interfaceIDs_backing: InterfaceIDs? = null,
+    // user data
     @SerializedName("date") val date: Long,
     @SerializedName("utcOffset") val utcOffset: Long,
     @SerializedName("carbs") val carbs: Int? = null, // TODO: add `? = null` to the types that can be not present
@@ -70,11 +77,14 @@ fun EntryRequestBody.toGlucoseValue(): GlucoseValue =
         noise = noise,
         sourceSensor = GlucoseValue.SourceSensor.valueOf(device
             ?: GlucoseValue.SourceSensor.UNKNOWN.toString()),
+        interfaceIDs_backing = interfaceIDs_backing,
         isValid = isValid ?: true
-    )
+    ).also { it.interfaceIDs.nightscoutId = identifier }
 
 fun fromGlucoseValue(glucoseValue: GlucoseValue, resourceHelper: ResourceHelper): EntryRequestBody =
     EntryRequestBody(
+        version = glucoseValue.version,
+        interfaceIDs_backing = glucoseValue.interfaceIDs_backing,
         date = glucoseValue.timestamp,
         utcOffset = glucoseValue.utcOffset,
         app = resourceHelper.gs(R.string.app_name),
@@ -85,5 +95,6 @@ fun fromGlucoseValue(glucoseValue: GlucoseValue, resourceHelper: ResourceHelper)
         isValid = glucoseValue.isValid,
         noise = glucoseValue.noise,
         units = Units.MGDL,
-        type = EntriesType.SGV
+        type = EntriesType.SGV,
+        identifier = glucoseValue.interfaceIDs.nightscoutId
     )

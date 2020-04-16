@@ -87,6 +87,7 @@ public class LoopPlugin extends PluginBase {
     private final VirtualPumpPlugin virtualPumpPlugin;
     private final Lazy<ActionStringHandler> actionStringHandler;
     private final IobCobCalculatorPlugin iobCobCalculatorPlugin;
+    private final FabricPrivacy fabricPrivacy;
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -129,7 +130,8 @@ public class LoopPlugin extends PluginBase {
             TreatmentsPlugin treatmentsPlugin,
             VirtualPumpPlugin virtualPumpPlugin,
             Lazy<ActionStringHandler> actionStringHandler, // TODO Adrian use RxBus instead of Lazy
-            IobCobCalculatorPlugin iobCobCalculatorPlugin
+            IobCobCalculatorPlugin iobCobCalculatorPlugin,
+            FabricPrivacy fabricPrivacy
     ) {
         super(new PluginDescription()
                         .mainType(PluginType.LOOP)
@@ -153,6 +155,7 @@ public class LoopPlugin extends PluginBase {
         this.virtualPumpPlugin = virtualPumpPlugin;
         this.actionStringHandler = actionStringHandler;
         this.iobCobCalculatorPlugin = iobCobCalculatorPlugin;
+        this.fabricPrivacy = fabricPrivacy;
 
         loopSuspendedTill = sp.getLong("loopSuspendedTill", 0L);
         isSuperBolus = sp.getBoolean("isSuperBolus", false);
@@ -167,7 +170,7 @@ public class LoopPlugin extends PluginBase {
                 .toObservable(EventTempTargetChange.class)
                 .debounce(1L, TimeUnit.SECONDS)
                 .observeOn(Schedulers.io())
-                .subscribe(event -> invoke("EventTempTargetChange", true), exception -> FabricPrivacy.getInstance().logException(exception))
+                .subscribe(event -> invoke("EventTempTargetChange", true), fabricPrivacy::logException)
         );
 
         /*
@@ -192,7 +195,7 @@ public class LoopPlugin extends PluginBase {
 
                     lastBgTriggeredRun = bgReading.getTimestamp();
                     invoke("AutosenseCalculation for " + bgReading, true);
-                }, exception -> FabricPrivacy.getInstance().logException(exception))
+                }, fabricPrivacy::logException)
         );
     }
 

@@ -27,7 +27,6 @@ import info.nightscout.androidaps.plugins.profile.ns.NSProfilePlugin;
 import info.nightscout.androidaps.plugins.source.DexcomPlugin;
 import info.nightscout.androidaps.plugins.source.GlimpPlugin;
 import info.nightscout.androidaps.plugins.source.MM640gPlugin;
-import info.nightscout.androidaps.plugins.source.NSClientSourcePlugin;
 import info.nightscout.androidaps.plugins.source.PoctechPlugin;
 import info.nightscout.androidaps.plugins.source.TomatoPlugin;
 import info.nightscout.androidaps.plugins.source.XdripPlugin;
@@ -44,7 +43,6 @@ public class DataService extends DaggerIntentService {
     @Inject DexcomPlugin dexcomPlugin;
     @Inject GlimpPlugin glimpPlugin;
     @Inject MM640gPlugin mm640GPlugin;
-    @Inject NSClientSourcePlugin nsClientSourcePlugin;
     @Inject PoctechPlugin poctechPlugin;
     @Inject TomatoPlugin tomatoPlugin;
     @Inject XdripPlugin xdripPlugin;
@@ -77,8 +75,8 @@ public class DataService extends DaggerIntentService {
             poctechPlugin.handleNewData(intent);
         } else if (Intents.TOMATO_BG.equals(action)) {
             tomatoPlugin.handleNewData(intent);
-        } else if (Intents.ACTION_NEW_SGV.equals(action)) {
-            nsClientSourcePlugin.handleNewData();
+//        } else if (Intents.ACTION_NEW_SGV.equals(action)) {
+//            nsClientSourcePlugin.handleNewData();
         } else if (Intents.ACTION_NEW_PROFILE.equals(action)) {
             // always handle Profile if NSProfile is enabled without looking at nsUploadOnly
             nsProfilePlugin.handleNewData(intent);

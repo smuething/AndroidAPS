@@ -361,21 +361,6 @@ public class NSUpload {
         UploadQueue.add(new DbRequest("dbAdd", "treatments", data));
     }
 
-    public static void uploadGlucoseValue(GlucoseValue glucoseValue, String source) {
-        JSONObject data = new JSONObject();
-        try {
-            data.put("device", source);
-            data.put("date", glucoseValue.getTimestamp());
-            data.put("dateString", DateUtil.toISOString(glucoseValue.getTimestamp()));
-            data.put("sgv", glucoseValue.getValue());
-            data.put("direction", glucoseValue.getTrendArrow().getText());
-            data.put("type", "sgv");
-        } catch (JSONException e) {
-            log.error("Unhandled exception", e);
-        }
-        UploadQueue.add(new DbRequest("dbAdd", "entries", data));
-    }
-
     public static void uploadAppStart() {
         if (SP.getBoolean(R.string.key_ns_logappstartedevent, true)) {
             JSONObject data = new JSONObject();
