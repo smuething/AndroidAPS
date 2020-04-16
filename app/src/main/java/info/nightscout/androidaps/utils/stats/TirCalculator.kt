@@ -28,7 +28,7 @@ class TirCalculator @Inject constructor(
         val startTime = MidnightTime.calc(DateUtil.now() - T.days(days).msecs())
         val endTime = MidnightTime.calc(DateUtil.now())
 
-        val bgReadings = repository.compatGetBgreadingsDataFromTime(startTime, endTime, true).blockingGet()
+        val bgReadings = repository.compatGetBgReadingsDataFromTime(startTime, endTime, true).blockingGet()
 
         val result = LongSparseArray<TIR>()
         for (bg in bgReadings) {

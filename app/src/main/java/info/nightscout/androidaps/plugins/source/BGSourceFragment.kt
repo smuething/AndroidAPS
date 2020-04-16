@@ -54,7 +54,7 @@ class BGSourceFragment : DaggerFragment() {
         bgsource_recyclerview.layoutManager = LinearLayoutManager(view.context)
         val now = System.currentTimeMillis()
         disposable += repository
-            .compatGetBgreadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
+            .compatGetBgReadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
             .observeOn(aapsSchedlulers.main)
             .subscribe { list -> bgsource_recyclerview.adapter = RecyclerViewAdapter(list) }
     }
@@ -68,7 +68,7 @@ class BGSourceFragment : DaggerFragment() {
             .subscribe({
                 val now = System.currentTimeMillis()
                 disposable += repository
-                    .compatGetBgreadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
+                    .compatGetBgReadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
                     .observeOn(aapsSchedlulers.main)
                     .subscribe { list -> bgsource_recyclerview?.swapAdapter(RecyclerViewAdapter(list), true) }
             }) { fabricPrivacy.logException(it) }

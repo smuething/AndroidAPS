@@ -99,12 +99,32 @@ class NightscoutService(
 
     fun lastModified() = nsRetrofitFactory.getNSService().lastModified()
 
-    fun postGlucoseStatus(glucoseValue: GlucoseValue) = postEntry(
-        fromGlucoseValue(glucoseValue, resourceHelper)
-    )
+    // BG READINGS
+    fun insert(glucoseValue: GlucoseValue) =
+        insertEntry(NightscoutCollection.ENTRIES, fromGlucoseValue(glucoseValue, resourceHelper))
 
-    private fun postEntry(entryRequestBody: EntryRequestBody): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
-        .postEntry(entryRequestBody)
+    fun delete(glucoseValue: GlucoseValue) =
+        glucoseValue.interfaceIDs.nightscoutId?.let {
+            deleteEntry(NightscoutCollection.ENTRIES, it)
+        }
+
+    fun update(glucoseValue: GlucoseValue) =
+        glucoseValue.interfaceIDs.nightscoutId?.let {
+            updateEntry(NightscoutCollection.ENTRIES, it, fromGlucoseValue(glucoseValue, resourceHelper))
+        }
+            ?: insertEntry(NightscoutCollection.ENTRIES, fromGlucoseValue(glucoseValue, resourceHelper))
+
+    // GENERAL
+    private fun insertEntry(collection: NightscoutCollection, entryRequestBody: EntryRequestBody): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
+        .insertEntry(collection, entryRequestBody)
+        .map { it.toResponseType() }
+
+    private fun updateEntry(collection: NightscoutCollection, nsId: String, entryRequestBody: EntryRequestBody): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
+        .updateEntry(collection, nsId, entryRequestBody)
+        .map { it.toResponseType() }
+
+    private fun deleteEntry(collection: NightscoutCollection, nsId: String): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
+        .deleteEntry(collection, nsId)
         .map { it.toResponseType() }
 
     private fun Response<DummyResponse>.toResponseType(): PostEntryResponseType {

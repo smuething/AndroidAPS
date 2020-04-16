@@ -130,7 +130,7 @@ class BgReading : DataPointWithLabelInterface {
     // Copied from xDrip+
     fun calculateDirection(): GlucoseValue.TrendArrow {
         // Rework to get bgreaings from internal DB and calculate on that base
-        val bgReadingsList = repository.compatGetAllBgreadingsDataFromTime(data.timestamp - T.mins(10).msecs(), false)
+        val bgReadingsList = repository.compatGetBgReadingsDataFromTime(data.timestamp - T.mins(10).msecs(), false)
             .blockingGet()
         if (bgReadingsList == null || bgReadingsList.size < 2) return GlucoseValue.TrendArrow.NONE
         var current = bgReadingsList[1]

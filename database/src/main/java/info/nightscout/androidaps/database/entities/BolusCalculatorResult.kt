@@ -23,7 +23,7 @@ data class BolusCalculatorResult(
     @Embedded
         override var interfaceIDs_backing: InterfaceIDs? = null,
     override var timestamp: Long,
-    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong() / 60000,
     var targetBGLow: Double,
     var targetBGHigh: Double,
     var isf: Double,

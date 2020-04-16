@@ -462,7 +462,7 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
 
     private void updateBGforDateTime() {
         long millis = eventTime.getTime() - (150 * 1000L); // 2,5 * 60 * 1000
-        List<GlucoseValue> data = repository.compatGetBgreadingsDataFromTime(millis, true).blockingGet();
+        List<GlucoseValue> data = repository.compatGetBgReadingsDataFromTime(millis, true).blockingGet();
         if ((data.size() > 0) &&
                 (data.get(0).getTimestamp() > millis - 7 * 60 * 1000L) &&
                 (data.get(0).getTimestamp() < millis + 7 * 60 * 1000L)) {

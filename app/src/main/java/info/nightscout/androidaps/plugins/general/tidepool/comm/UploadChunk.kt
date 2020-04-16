@@ -107,7 +107,7 @@ class UploadChunk @Inject constructor(
         val start: Long = 0
         val end = DateUtil.now()
 
-        val bgReadingList = repository.compatGetBgreadingsDataFromTime(start, end, true)
+        val bgReadingList = repository.compatGetBgReadingsDataFromTime(start, end, true)
             .blockingGet()
             .convertToBGReadings(injector)
         return if (bgReadingList.isNotEmpty())
@@ -138,7 +138,7 @@ class UploadChunk @Inject constructor(
     }
 
     private fun getBgReadings(start: Long, end: Long): List<SensorGlucoseElement> {
-        val readings = repository.compatGetBgreadingsDataFromTime(start, end, true)
+        val readings = repository.compatGetBgReadingsDataFromTime(start, end, true)
             .blockingGet()
             .convertToBGReadings(injector)
         val selection = SensorGlucoseElement.fromBgReadings(readings)

@@ -289,73 +289,104 @@ class NSClient2Plugin @Inject constructor(
         if (cgmSync.download) {
             //CGM download
             disposable.add(
-                nightscoutService.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].get()).subscribeBy(
-                    onSuccess = { response ->
-                        val entries = response.body()
-                        entries?.forEach {
-                            try {
-                                val gv = it.toGlucoseValue()
-                                val existing = repository.findBgReadingByNSId(it.identifier!!)
-                                if (existing != null) {
-                                    if (gv.contentEqualsTo(existing)) {
-                                        it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
-                                        addToLog(EventNSClientNewLog("EXISTING entries:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
+                nightscoutService.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].get())
+                    .doFinally {}
+                    .subscribeBy(
+                        onSuccess = { response ->
+                            val entries = response.body()
+                            addToLog(EventNSClientNewLog("entries SYNC:", "${entries?.size ?: 0} records", EventNSClientNewLog.Direction.IN))
+                            entries?.forEach {
+                                try {
+                                    val gv = it.toGlucoseValue()
+                                    val existing = repository.findBgReadingByNSId(it.identifier!!)
+                                    if (existing != null) {
+                                        if (gv.contentEqualsTo(existing)) {
+                                            it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
+                                            addToLog(EventNSClientNewLog("entries EXISTING:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
+                                        } else {
+                                            disposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
+                                            it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
+                                            addToLog(EventNSClientNewLog("entries UPDATED:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
+                                        }
                                     } else {
-                                        disposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
+                                        disposable += repository.runTransactionForResult(InsertGlucoseValueTransaction(gv)).subscribe()
                                         it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
-                                        addToLog(EventNSClientNewLog("UPDATED entries:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
+                                        addToLog(EventNSClientNewLog("entries NEW:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
                                     }
-                                } else {
-                                    disposable += repository.runTransactionForResult(InsertGlucoseValueTransaction(gv)).subscribe()
-                                    it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
-                                    addToLog(EventNSClientNewLog("NEW entries:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
+                                } catch (e: BadInputDataException) {
+                                    // TODO wrong NS data
+                                    addToLog(EventNSClientNewLog("entries BAD DATA:", "${it}", EventNSClientNewLog.Direction.IN))
+                                    aapsLogger.error("Bad input data")
                                 }
-                            } catch (e: BadInputDataException) {
-                                // TODO wrong NS data
-                                addToLog(EventNSClientNewLog("BAD DATA entries:", "${it}", EventNSClientNewLog.Direction.IN))
-                                aapsLogger.error("Bad input data")
                             }
-                        }
 
-                    }, onError = { addToLog(EventNSClientNewLog("ERROR", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) }
-                )
+                        }, onError = { addToLog(EventNSClientNewLog("entries ERROR", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) }
+                    )
             )
         }
 
         if (cgmSync.upload) {
             // CGM upload
             val list = repository
-                .getDataFromId(lastProcessedId[NightscoutCollection.ENTRIES.ordinal].get())
+                .getModifiedBgReadingsDataFromId(lastProcessedId[NightscoutCollection.ENTRIES.ordinal].get())
                 .blockingGet()
 
-            addToLog(EventNSClientNewLog("SYNC entries:", "${list.size} records", EventNSClientNewLog.Direction.OUT))
+            addToLog(EventNSClientNewLog("entries SYNC:", "${list.size} records", EventNSClientNewLog.Direction.OUT))
             for (gv in list) {
                 aapsLogger.debug(LTag.NSCLIENT, "Uploading $gv")
 
-                val httpResult = nightscoutService.postGlucoseStatus(gv).blockingGet()
-                gv.interfaceIDs.nightscoutId = httpResult.location?.id
-                when (httpResult.code) {
-                    ResponseCode.RECORD_CREATED -> {
-                        lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.id)
-                        disposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
-                        addToLog(EventNSClientNewLog("UPLOADED NEW entries:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
-                    }
+                // determine id of changed record we are processing
+                // for new records it's directly gv.id
+                // for modified records gv is in list because of existing new history record
+                val lastHistory = repository.getBgReadingsCorrespondingLastHistoryRecord(gv.id)
+                val processingId = lastHistory?.id ?: gv.id
 
-                    ResponseCode.RECORD_EXISTS  -> {
-                        lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(gv.id)
-                        addToLog(EventNSClientNewLog("UPLOADED EXISTING entries:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
-                    }
+                if (lastHistory?.contentEqualsTo(gv) == true) {
+                    // expecting only NS identifier change
+                    lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                } else if (lastHistory?.isRecordDeleted(gv) == true) {
+                    // expecting only invalidated record
+                    nightscoutService.delete(gv)?.blockingGet()?.let { httpResult ->
+                        when (httpResult.code) {
+                            ResponseCode.RECORD_EXISTS -> {
+                                lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                                addToLog(EventNSClientNewLog("entries DELETE:", "${lastHistory.interfaceIDs.nightscoutId}", EventNSClientNewLog.Direction.OUT))
+                            }
 
-                    else                        -> {
-                        // exit from loop, next try in next round
-                        addToLog(EventNSClientNewLog("UPLOADED ERROR entries:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
-                        return
+                            else                       -> {
+                                // exit from loop, next try in next round
+                                addToLog(EventNSClientNewLog("entries DELETE ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
+                                return
+                            }
+                        }
+                    } ?: lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                } else {
+                    val httpResult = nightscoutService.update(gv).blockingGet()
+                    gv.interfaceIDs.nightscoutId = httpResult.location?.id
+                    when (httpResult.code) {
+                        ResponseCode.RECORD_CREATED -> {
+                            lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                            disposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
+                            addToLog(EventNSClientNewLog("entries UPLOAD NEW:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
+                        }
+
+                        ResponseCode.RECORD_EXISTS  -> {
+                            lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                            addToLog(EventNSClientNewLog("entries UPLOAD EXISTING:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
+                        }
+
+                        else                        -> {
+                            // exit from loop, next try in next round
+                            addToLog(EventNSClientNewLog("entries UPLOAD ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
+                            return
+                        }
                     }
                 }
             }
         }
         _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ready)))
         addToLog(EventNSClientNewLog("SYNC FINISHED", "From: $from"))
+        disposable.clear()
         aapsLogger.debug(LTag.NSCLIENT, "Finished sync from $from")
     }
 

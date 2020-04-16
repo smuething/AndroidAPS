@@ -248,10 +248,10 @@ public class IobCobCalculatorPlugin extends PluginBase {
         if (DateUtil.isCloseToNow(to)) {
             // if close to now expect there can be some readings with time in close future (caused by wrong time setting)
             // so read all records
-            bgReadings = repository.compatGetBgreadingsDataFromTime(start, false).blockingGet();
+            bgReadings = repository.compatGetBgReadingsDataFromTime(start, false).blockingGet();
             getAapsLogger().debug(LTag.AUTOSENS, "BG data loaded. Size: " + bgReadings.size() + " Start date: " + DateUtil.dateAndTimeString(start));
         } else {
-            bgReadings = repository.compatGetBgreadingsDataFromTime(start, to, false).blockingGet();
+            bgReadings = repository.compatGetBgReadingsDataFromTime(start, to, false).blockingGet();
             getAapsLogger().debug(LTag.AUTOSENS, "BG data loaded. Size: " + bgReadings.size() + " Start date: " + DateUtil.dateAndTimeString(start) + " End date: " + DateUtil.dateAndTimeString(to));
         }
     }

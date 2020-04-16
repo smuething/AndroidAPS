@@ -8,11 +8,7 @@ import info.nightscout.androidaps.networking.nightscout.responses.LastModifiedRe
 import info.nightscout.androidaps.networking.nightscout.responses.StatusResponse
 import io.reactivex.Single
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
-import retrofit2.http.Query
+import retrofit2.http.*
 
 /**
  * Created by adrian on 2019-12-23.
@@ -30,8 +26,22 @@ interface INightscoutService {
     @GET("/api/v3/lastModified")
     fun lastModified(): Single<LastModifiedResponse>
 
-    @POST("/api/v3/entries")
-    fun postEntry(
+    @POST("/api/v3/{collection}")
+    fun insertEntry(
+        @Path("collection") collection: NightscoutCollection,
+        @Body entryRequestBody: EntryRequestBody
+    ): Single<Response<DummyResponse>>
+
+    @DELETE("/api/v3/{collection}/{identifier}")
+    fun deleteEntry(
+        @Path("collection") collection: NightscoutCollection,
+        @Path("identifier") identifier: String
+    ): Single<Response<DummyResponse>>
+
+    @PUT("/api/v3/{collection}/{identifier}")
+    fun updateEntry(
+        @Path("collection") collection: NightscoutCollection,
+        @Path("identifier") identifier: String,
         @Body entryRequestBody: EntryRequestBody
     ): Single<Response<DummyResponse>>
 

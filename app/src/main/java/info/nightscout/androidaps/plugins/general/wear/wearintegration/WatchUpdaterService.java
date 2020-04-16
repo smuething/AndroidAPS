@@ -383,7 +383,7 @@ public class WatchUpdaterService extends WearableListenerService implements Goog
 
         if (last_bg == null) return;
 
-        List<GlucoseValue> graph_bgs = repository.compatGetBgreadingsDataFromTime(startTime, true).blockingGet();
+        List<GlucoseValue> graph_bgs = repository.compatGetBgReadingsDataFromTime(startTime, true).blockingGet();
         GlucoseStatus glucoseStatus = new GlucoseStatus(injector).getGlucoseStatusData(true);
 
         if (!graph_bgs.isEmpty()) {

@@ -23,7 +23,7 @@ data class APSResult(
     @Embedded
         override var interfaceIDs_backing: InterfaceIDs? = null,
     override var timestamp: Long,
-    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong() / 60000,
     var algorithm: Algorithm,
     var glucoseStatusJson: String,
     var currentTempJson: String,

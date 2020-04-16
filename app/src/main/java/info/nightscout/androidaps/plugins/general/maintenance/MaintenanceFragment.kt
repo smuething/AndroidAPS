@@ -43,7 +43,7 @@ class MaintenanceFragment : DaggerFragment() {
                     // additional service interface and plugin registry
                     foodPlugin.service?.resetFood()
                     treatmentsPlugin.service.resetTreatments()
-                    repository.clearDatabases()
+                    Thread { repository.clearDatabases() } .start()
                 })
             }
         }

@@ -56,30 +56,37 @@ class AppRepository @Inject internal constructor(
 
     fun clearDatabases() = database.clearAllTables()
 
-    fun compatGetBgreadingsDataFromTime(timestamp: Long, ascending: Boolean) =
-        database.glucoseValueDao.compatGetBgreadingsDataFromTime(timestamp)
+    //BG READINGS -- only valid records
+    fun compatGetBgReadingsDataFromTime(timestamp: Long, ascending: Boolean) =
+        database.glucoseValueDao.compatGetBgReadingsDataFromTime(timestamp)
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
 
-    fun compatGetBgreadingsDataFromTime(start: Long, end: Long, ascending: Boolean) =
-        database.glucoseValueDao.compatGetBgreadingsDataFromTime(start, end)
+    fun compatGetBgReadingsDataFromTime(start: Long, end: Long, ascending: Boolean) =
+        database.glucoseValueDao.compatGetBgReadingsDataFromTime(start, end)
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
 
-    fun compatGetAllBgreadingsDataFromTime(timestamp: Long, ascending: Boolean) =
-        database.glucoseValueDao.compatGetAllBgreadingsDataFromTime(timestamp)
-            .map { if (!ascending) it.reversed() else it }
+    //BG READINGS -- including invalid/history records
+    fun findBgReadingByNSId(nsId: String) =
+        database.glucoseValueDao.findByNSId(nsId)
+
+    fun getModifiedBgReadingsDataFromId(lastId: Long) =
+        database.glucoseValueDao.getModifiedFrom(lastId)
             .subscribeOn(Schedulers.io())
 
+    fun getBgReadingsCorrespondingLastHistoryRecord(lastId: Long) =
+        database.glucoseValueDao.getLastHistoryRecord(lastId)
+
+    @Suppress("unused") // debug purpose only
+    fun getAllBgReadingsStartingFrom(lastId: Long) =
+        database.glucoseValueDao.getAllStartingFrom(lastId)
+            .subscribeOn(Schedulers.io())
+
+    // TEMP TARGETS
     fun compatGetTemporaryTargetDataFromTime(timestamp: Long, ascending: Boolean) =
         database.temporaryTargetDao.compatGetTemporaryTargetDataFromTime(timestamp)
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
 
-    fun findBgReadingByNSId(nsId: String) =
-        database.glucoseValueDao.findByNSId(nsId)
-
-    fun getDataFromId(lastId: Long) =
-        database.glucoseValueDao.getDataFromId(lastId)
-            .subscribeOn(Schedulers.io())
 }
