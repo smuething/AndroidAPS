@@ -6,7 +6,7 @@ import info.nightscout.androidaps.database.TABLE_EFFECTIVE_PROFILE_SWITCHES
 import info.nightscout.androidaps.database.embedments.InterfaceIDs
 import info.nightscout.androidaps.database.interfaces.DBEntryWithTimeAndDuration
 import info.nightscout.androidaps.database.interfaces.TraceableDBEntry
-import java.util.*
+import java.util.TimeZone
 
 @Entity(tableName = TABLE_EFFECTIVE_PROFILE_SWITCHES,
         foreignKeys = [ForeignKey(

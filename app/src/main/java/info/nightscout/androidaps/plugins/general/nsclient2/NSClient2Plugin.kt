@@ -12,6 +12,8 @@ import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.ValueWrapper
+import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.InsertGlucoseValueTransaction
 import info.nightscout.androidaps.database.transactions.UpdateGlucoseValueTransaction
 import info.nightscout.androidaps.events.EventChargingState
@@ -27,6 +29,7 @@ import info.nightscout.androidaps.networking.nightscout.NightscoutService
 import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.exceptions.BadInputDataException
+import info.nightscout.androidaps.networking.nightscout.requests.EntryResponseBody
 import info.nightscout.androidaps.networking.nightscout.requests.toGlucoseValue
 import info.nightscout.androidaps.networking.nightscout.responses.ApiPermissions
 import info.nightscout.androidaps.networking.nightscout.responses.ResponseCode
@@ -52,6 +55,7 @@ import info.nightscout.androidaps.utils.sharedPreferences.PreferenceBoolean
 import info.nightscout.androidaps.utils.sharedPreferences.PreferenceLong
 import info.nightscout.androidaps.utils.sharedPreferences.PreferenceString
 import info.nightscout.androidaps.utils.sharedPreferences.SP
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.subscribeBy
@@ -80,40 +84,35 @@ class NSClient2Plugin @Inject constructor(
     .pluginName(R.string.nsclientinternal2)
     .shortName(R.string.nsclientinternal2_shortname)
     .preferencesId(R.xml.pref_nsclient2)
-    .description(R.string.description_ns_client)
-    , aapsLogger, resourceHelper, injector
+    .description(R.string.description_ns_client),
+    aapsLogger, resourceHelper, injector
 ) {
 
     private val listLog: MutableList<EventNSClientNewLog> = ArrayList()
     private val keyNSClientPaused = PreferenceBoolean(R.string.key_nsclient_paused, false, sp, resourceHelper, rxBus)
 
-    val lastProcessedId = Array(NightscoutCollection.values().size) { i -> PreferenceLong("lastProcessedId_" + NightscoutCollection.values()[i].collection, 0L, sp, rxBus) }
-    val receiveTimestamp = Array(NightscoutCollection.values().size) { i -> PreferenceLong("receiveTimestamp_" + NightscoutCollection.values()[i].collection, 0L, sp, rxBus) }
+    private val lastProcessedId = NightscoutCollection.values().map { it to PreferenceLong("lastProcessedId_${it.collection}", 0L, sp, rxBus) }.toMap()
+    private val receiveTimestamp = NightscoutCollection.values().map { it to PreferenceLong("receiveTimestamp_${it.collection}", 0L, sp, rxBus) }.toMap()
 
     var permissions: ApiPermissions? = null // grabbed permissions
 
     private val _liveData: MutableLiveData<NSClient2LiveData> = MutableLiveData(NSClient2LiveData.Log(HtmlHelper.fromHtml("")))
     val liveData: LiveData<NSClient2LiveData> = _liveData // Expose non-mutable form (avoid post from other classes)
 
-    private val disposable = CompositeDisposable() //TODO: once transformed to VM, clear! (atm plugins live forever)
-
-    companion object {
-        const val RATE_IDENT = "NSCLIENT2SYNC"
-        const val RATE_SEC = 30
-    }
+    private val compositeDisposable = CompositeDisposable() //TODO: once transformed to VM, clear! (atm plugins live forever)
 
     override fun onStart() {
         super.onStart()
 
 
-        disposable += rxBus
+        compositeDisposable += rxBus
             .toObservable(EventPreferenceChange::class.java)
             .subscribeBy(
                 onNext = ::handlePreferenceChange,
                 onError = fabricPrivacy::logException
             )
 
-        disposable += rxBus
+        compositeDisposable += rxBus
             .toObservable(EventChargingState::class.java).map { "ChargingState" }
             .mergeWith(rxBus.toObservable(EventNetworkChange::class.java).map { "NetworkChange" })
             .mergeWith(rxBus.toObservable(EventNewBG::class.java).map { "NewBG" })
@@ -123,12 +122,12 @@ class NSClient2Plugin @Inject constructor(
                 onError = fabricPrivacy::logException
             )
 
-        disposable += rxBus
+        compositeDisposable += rxBus
             .toObservable(EventNSClientSync::class.java)
             .observeOn(aapsSchedulers.io)
             .subscribe({ sync("GUI") }, { fabricPrivacy.logException(it) })
 
-        disposable += rxBus
+        compositeDisposable += rxBus
             .toObservable(EventNSClientFullSync::class.java)
             .observeOn(aapsSchedulers.io)
             .subscribe({ fullSync("GUI FULL") }, { fabricPrivacy.logException(it) })
@@ -138,7 +137,7 @@ class NSClient2Plugin @Inject constructor(
 
     override fun onStop() {
         super.onStop()
-        disposable.clear()
+        compositeDisposable.clear()
     }
 
     override fun preprocessPreferences(preferenceFragment: PreferenceFragmentCompat) {
@@ -188,7 +187,7 @@ class NSClient2Plugin @Inject constructor(
         }
     }
 
-    private fun readPermissions(ok: Runnable) = disposable.add(
+    private fun readPermissions(ok: Runnable) = compositeDisposable.add(
         nightscoutService
             .testConnection()
             .observeOn(aapsSchedulers.io)
@@ -206,7 +205,7 @@ class NSClient2Plugin @Inject constructor(
                 onError = { permissions = null })
     )
 
-    private fun testConnection(context: Context) = disposable.add(
+    private fun testConnection(context: Context) = compositeDisposable.add(
         nightscoutService
             .testConnection()
             .observeOn(aapsSchedulers.main)
@@ -226,14 +225,14 @@ class NSClient2Plugin @Inject constructor(
                 })
     )
 
-    fun lastModifiedCall() = disposable.add(
+    fun lastModifiedCall() = compositeDisposable.add(
         nightscoutService.lastModified().subscribeBy(
             onSuccess = { addToLog(EventNSClientNewLog("RESULT", "success: $it", EventNSClientNewLog.Direction.IN)) },
             onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) })
     )
 
     fun getEntriesCall() {
-        disposable.add(
+        compositeDisposable.add(
             nightscoutService.getByDate(NightscoutCollection.ENTRIES, DateUtil.now() - T.mins(20).msecs()).subscribeBy(
                 onSuccess = { addToLog(EventNSClientNewLog("RESULT", "success: ${it.body()}", EventNSClientNewLog.Direction.IN)) },
                 onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) })
@@ -290,49 +289,43 @@ class NSClient2Plugin @Inject constructor(
 
         if (cgmSync.download) {
             //CGM download
-            disposable.add(
-                nightscoutService.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].get())
+            compositeDisposable.add(
+                nightscoutService.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES]!!.get())
                     .doFinally {}
                     .subscribeBy(
                         onSuccess = { response ->
                             val entries = response.body()
                             addToLog(EventNSClientNewLog("entries SYNC:", "${entries?.size ?: 0} records", EventNSClientNewLog.Direction.IN))
-                            entries?.forEach {
+                            entries?.forEach { it ->
                                 // Objectives 0
-                                sp.putBoolean(R.string.key_ObjectivesbgIsAvailableInNS, true)
-                                try {
-                                    val gv = it.toGlucoseValue()
-                                    // stale data alarm
-                                    if ((System.currentTimeMillis() - gv.timestamp) / (60 * 1000L) < 5L) {
-                                        rxBus.send(EventDismissNotification(Notification.NSALARM))
-                                        rxBus.send(EventDismissNotification(Notification.NSURGENTALARM))
-                                    }
-                                    // detect source
-                                    nsClientSourcePlugin.detectSource(gv)
 
-                                    val existing = repository.findBgReadingByNSId(it.identifier!!)
-                                    if (existing != null) {
-                                        if (gv.contentEqualsTo(existing)) {
-                                            it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
-                                            addToLog(EventNSClientNewLog("entries EXISTING:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
-                                        } else {
-                                            disposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
-                                            it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
-                                            addToLog(EventNSClientNewLog("entries UPDATED:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
-                                        }
-                                    } else {
-                                        disposable += repository.runTransactionForResult(InsertGlucoseValueTransaction(gv)).subscribe()
-                                        it.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES.ordinal].store(srvModified) }
-                                        addToLog(EventNSClientNewLog("entries NEW:", "${it.identifier}", EventNSClientNewLog.Direction.IN))
+                                Single.just(it) // Todo: bubble this up with e.g. `flatMap { Observable::fromIterable }`
+                                    .doOnSuccess (::handleNewGlucoseValuesSideEffects)
+                                    .flatMap { entryResponseBody ->
+                                        repository.findBgReadingByNSIdSingle(entryResponseBody.identifier!!)
+                                            .map { Pair(it, entryResponseBody) }
                                     }
-                                } catch (e: BadInputDataException) {
-                                    // TODO wrong NS data
-                                    addToLog(EventNSClientNewLog("entries BAD DATA:", "${it}", EventNSClientNewLog.Direction.IN))
-                                    aapsLogger.error("Bad input data")
-                                }
+                                    .flatMap { (glucoseValueWrapper: ValueWrapper<GlucoseValue>, entryResponseBody: EntryResponseBody) ->
+                                        handleCgmDBStorage(glucoseValueWrapper, entryResponseBody)
+                                    }
+                                    .subscribeBy(
+                                        onSuccess = { /* yay!!! */ },
+                                        onError = { // TODO: put in onErrorReturn to not fail all if one fails.
+                                            when (it) {
+                                                is BadInputDataException -> {
+                                                    // TODO wrong NS data
+                                                    addToLog(EventNSClientNewLog("entries BAD DATA:", "${it.badData}", EventNSClientNewLog.Direction.IN))
+                                                    aapsLogger.error("Bad input data")
+                                                }
+
+                                                else                     -> aapsLogger.error("Something bad happened: $it")
+                                            }
+                                        }
+                                    )
                             }
 
-                        }, onError = { addToLog(EventNSClientNewLog("entries ERROR", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) }
+                        },
+                        onError = { addToLog(EventNSClientNewLog("entries ERROR", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) }
                     )
             )
         }
@@ -340,7 +333,7 @@ class NSClient2Plugin @Inject constructor(
         if (cgmSync.upload) {
             // CGM upload
             val list = repository
-                .getModifiedBgReadingsDataFromId(lastProcessedId[NightscoutCollection.ENTRIES.ordinal].get())
+                .getModifiedBgReadingsDataFromId(lastProcessedId[NightscoutCollection.ENTRIES]!!.get())
                 .blockingGet()
 
             addToLog(EventNSClientNewLog("entries SYNC:", "${list.size} records", EventNSClientNewLog.Direction.OUT))
@@ -355,13 +348,13 @@ class NSClient2Plugin @Inject constructor(
 
                 if (lastHistory?.contentEqualsTo(gv) == true) {
                     // expecting only NS identifier change
-                    lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                    lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
                 } else if (lastHistory?.isRecordDeleted(gv) == true) {
                     // expecting only invalidated record
                     nightscoutService.delete(gv)?.blockingGet()?.let { httpResult ->
                         when (httpResult.code) {
                             ResponseCode.RECORD_EXISTS -> {
-                                lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                                lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
                                 addToLog(EventNSClientNewLog("entries DELETE:", "${lastHistory.interfaceIDs.nightscoutId}", EventNSClientNewLog.Direction.OUT))
                             }
 
@@ -371,19 +364,19 @@ class NSClient2Plugin @Inject constructor(
                                 return
                             }
                         }
-                    } ?: lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                    } ?: lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
                 } else {
                     val httpResult = nightscoutService.update(gv).blockingGet()
                     gv.interfaceIDs.nightscoutId = httpResult.location?.id
                     when (httpResult.code) {
                         ResponseCode.RECORD_CREATED -> {
-                            lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
-                            disposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
+                            lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
+                            compositeDisposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
                             addToLog(EventNSClientNewLog("entries UPLOAD NEW:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
                         }
 
                         ResponseCode.RECORD_EXISTS  -> {
-                            lastProcessedId[NightscoutCollection.ENTRIES.ordinal].store(processingId)
+                            lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
                             addToLog(EventNSClientNewLog("entries UPLOAD EXISTING:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
                         }
 
@@ -401,13 +394,52 @@ class NSClient2Plugin @Inject constructor(
         aapsLogger.debug(LTag.NSCLIENT, "Finished sync from $from")
     }
 
+    private fun handleNewGlucoseValuesSideEffects(it: EntryResponseBody) {
+        val gv = it.toGlucoseValue()
+        // stale data alarm
+        if ((System.currentTimeMillis() - gv.timestamp) / (60 * 1000L) < 5L) {
+            rxBus.send(EventDismissNotification(Notification.NSALARM))
+            rxBus.send(EventDismissNotification(Notification.NSURGENTALARM))
+        }
+        // detect source
+        nsClientSourcePlugin.detectSource(gv)
+        // objectives
+        sp.putBoolean(R.string.key_ObjectivesbgIsAvailableInNS, true)
+    }
+
+    private fun handleCgmDBStorage(glucoseValueWrapper: ValueWrapper<GlucoseValue>, entryResponseBody: EntryResponseBody): Single<Unit> {
+        val gv = entryResponseBody.toGlucoseValue()
+        return when (glucoseValueWrapper) {
+            is ValueWrapper.Existing -> {
+                entryResponseBody.srvModified?.let { srvModified -> receiveTimestamp[NightscoutCollection.ENTRIES]?.store(srvModified) }
+
+                if (gv.contentEqualsTo(glucoseValueWrapper.value)) {
+                    Single.just(Unit)
+                        .doOnSuccess {
+                            addToLog(EventNSClientNewLog("entries EXISTING:", "${entryResponseBody.identifier}", EventNSClientNewLog.Direction.IN))
+                        }
+                } else {
+                    repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv))
+                        .doOnSuccess {
+                            addToLog(EventNSClientNewLog("entries UPDATED:", "${entryResponseBody.identifier}", EventNSClientNewLog.Direction.IN))
+                        }
+                }
+            }
+
+            is ValueWrapper.Absent   -> {
+                repository.runTransactionForResult(InsertGlucoseValueTransaction(gv))
+                    .doOnSuccess { addToLog(EventNSClientNewLog("entries NEW:", "${entryResponseBody.identifier}", EventNSClientNewLog.Direction.IN)) }
+            }
+        }
+    }
+
     @Suppress("SameParameterValue")
     private fun fullSync(from: String) {
         aapsLogger.debug(LTag.NSCLIENT, "Running FULL sync from $from")
         // reset timestamps
         for (c in NightscoutCollection.values()) {
-            lastProcessedId[c.ordinal].store(0)
-            receiveTimestamp[c.ordinal].store(0)
+            lastProcessedId[c]?.store(0)
+            receiveTimestamp[c]?.store(0)
         }
         sync(from)
     }
@@ -456,5 +488,10 @@ class NSClient2Plugin @Inject constructor(
 
         _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ready)))
         return true
+    }
+
+    companion object {
+        const val RATE_IDENT = "NSCLIENT2SYNC"
+        const val RATE_SEC = 30
     }
 }
