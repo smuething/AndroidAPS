@@ -34,7 +34,7 @@ class AutomationEventTest : TestBase() {
                 it.loopPlugin = loopPlugin
                 it.resourceHelper = resourceHelper
                 it.configBuilderPlugin = configBuilderPlugin
-                it.rxBus = RxBusWrapper()
+                it.rxBus = RxBusWrapper(aapsSchedulers)
             }
         }
     }

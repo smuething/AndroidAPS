@@ -1,30 +1,32 @@
 package info.nightscout.androidaps.plugins.general.automation.actions
 
 import info.nightscout.androidaps.Constants
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.transactions.Transaction
 import info.nightscout.androidaps.plugins.general.automation.elements.InputDuration
 import info.nightscout.androidaps.plugins.general.automation.elements.InputTempTarget
 import info.nightscout.androidaps.queue.Callback
+import io.reactivex.Completable
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
-import org.powermock.api.mockito.PowerMockito
 import org.powermock.core.classloader.annotations.PrepareForTest
 import org.powermock.modules.junit4.PowerMockRunner
 
 @RunWith(PowerMockRunner::class)
-@PrepareForTest(MainApp::class)
 class ActionStartTempTargetTest : ActionsTestBase() {
 
     private lateinit var sut: ActionStartTempTarget
 
     @Before
     fun setup() {
-        PowerMockito.mockStatic(MainApp::class.java)
+        val tResult = Completable.fromAction({})
+        `when`(repository.runTransaction(anyObject(Transaction::class.java))).thenReturn(tResult)
+
         `when`(resourceHelper.gs(R.string.starttemptarget)).thenReturn("Start temp target")
 
         sut = ActionStartTempTarget(injector)
@@ -52,9 +54,7 @@ class ActionStartTempTargetTest : ActionsTestBase() {
                 Assert.assertTrue(result.success)
             }
         })
-        //TODO: Fix
-        //Mockito.verify(treatmentsPlugin, Mockito.times(1)).addToHistoryTempTarget(anyObject())
-        Assert.assertTrue(false)
+        Mockito.verify(repository, Mockito.times(1)).runTransaction(anyObject(Transaction::class.java))
     }
 
     @Test fun hasDialogTest() {

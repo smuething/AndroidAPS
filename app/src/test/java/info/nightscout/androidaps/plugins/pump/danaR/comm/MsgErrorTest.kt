@@ -16,7 +16,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 class MsgErrorTest : DanaRTestBase() {
 
     @Mock lateinit var resourceHelper: ResourceHelper
-    val rxBus = RxBusWrapper()
+    val rxBus = RxBusWrapper(aapsSchedulers)
 
     @Test fun runTest() {
         PowerMockito.mockStatic(NSUpload::class.java)

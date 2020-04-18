@@ -5,6 +5,7 @@ import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.TestBase
 import info.nightscout.androidaps.TestBaseWithProfile
 import info.nightscout.androidaps.data.PumpEnactResult
+import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.interfaces.CommandQueueProvider
 import info.nightscout.androidaps.logging.AAPSLogger
@@ -21,7 +22,7 @@ import info.nightscout.androidaps.utils.sharedPreferences.SP
 import org.mockito.Mock
 import org.powermock.core.classloader.annotations.PrepareForTest
 
-@PrepareForTest(VirtualPumpPlugin::class, RxBusWrapper::class, LocalProfilePlugin::class, SmsCommunicatorPlugin::class)
+@PrepareForTest(VirtualPumpPlugin::class, RxBusWrapper::class, LocalProfilePlugin::class, SmsCommunicatorPlugin::class, AppRepository::class)
 open class ActionsTestBase : TestBaseWithProfile() {
 
     @Mock lateinit var sp: SP
@@ -33,6 +34,7 @@ open class ActionsTestBase : TestBaseWithProfile() {
     @Mock lateinit var profileFunction: ProfileFunction
     @Mock lateinit var localProfilePlugin : LocalProfilePlugin
     @Mock lateinit var smsCommunicatorPlugin : SmsCommunicatorPlugin
+    @Mock lateinit var repository: AppRepository
 
     var injector: HasAndroidInjector = HasAndroidInjector {
         AndroidInjector {
@@ -40,11 +42,13 @@ open class ActionsTestBase : TestBaseWithProfile() {
                 it.aapsLogger = aapsLogger
                 it.resourceHelper = resourceHelper
                 it.activePlugin = activePlugin
+                it.repository = repository
             }
             if (it is ActionStartTempTarget) {
                 it.aapsLogger = aapsLogger
                 it.resourceHelper = resourceHelper
                 it.activePlugin = activePlugin
+                it.repository = repository
             }
             if (it is ActionSendSMS) {
                 it.aapsLogger = aapsLogger

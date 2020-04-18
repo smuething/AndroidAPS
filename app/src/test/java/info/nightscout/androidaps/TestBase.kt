@@ -5,6 +5,8 @@ import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.data.Profile
 import info.nightscout.androidaps.data.ProfileStore
 import info.nightscout.androidaps.logging.AAPSLoggerTest
+import info.nightscout.androidaps.utils.rx.AapsSchedulers
+import info.nightscout.androidaps.utils.rx.TestAapsSchedulers
 import org.json.JSONObject
 import org.junit.Before
 import org.junit.Rule
@@ -16,6 +18,7 @@ import java.util.*
 open class TestBase {
 
     val aapsLogger = AAPSLoggerTest()
+    val aapsSchedulers = TestAapsSchedulers()
 
     // Add a JUnit rule that will setup the @Mock annotated vars and log.
     // Another possibility would be to add `MockitoAnnotations.initMocks(this) to the setup method.
@@ -38,4 +41,10 @@ open class TestBase {
 
     @Suppress("Unchecked_Cast")
     fun <T> uninitialized(): T = null as T
+
+    @Suppress("Unchecked_Cast")
+    fun <T> anyObject(type : Class<T>): T {
+        Mockito.any(type)
+        return null as T
+    }
 }

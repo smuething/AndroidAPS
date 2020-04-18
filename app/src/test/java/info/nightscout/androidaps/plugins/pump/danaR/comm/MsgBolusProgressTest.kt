@@ -18,7 +18,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 class MsgBolusProgressTest : DanaRTestBase() {
 
     @Mock lateinit var resourceHelper: ResourceHelper
-    val rxBus = RxBusWrapper()
+    val rxBus = RxBusWrapper(aapsSchedulers)
 
     @Test fun runTest() {
         `when`(resourceHelper.gs(ArgumentMatchers.eq(R.string.bolusdelivering), ArgumentMatchers.anyDouble())).thenReturn("Delivering %1\$.2fU")

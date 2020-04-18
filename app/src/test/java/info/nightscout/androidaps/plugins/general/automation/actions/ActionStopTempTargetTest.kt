@@ -2,7 +2,9 @@ package info.nightscout.androidaps.plugins.general.automation.actions
 
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.database.transactions.Transaction
 import info.nightscout.androidaps.queue.Callback
+import io.reactivex.Completable
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -20,6 +22,9 @@ class ActionStopTempTargetTest : ActionsTestBase() {
 
     @Before
     fun setup() {
+        val tResult = Completable.fromAction({})
+        `when`(repository.runTransaction(anyObject(Transaction::class.java))).thenReturn(tResult)
+
         `when`(resourceHelper.gs(R.string.stoptemptarget)).thenReturn("Stop temp target")
 
         sut = ActionStopTempTarget(injector)
@@ -44,9 +49,7 @@ class ActionStopTempTargetTest : ActionsTestBase() {
                 Assert.assertTrue(result.success)
             }
         })
-        //TODO: Fix
-        //Mockito.verify(treatmentsPlugin, Mockito.times(1)).addToHistoryTempTarget(anyObject())
-        Assert.assertTrue(false)
+        Mockito.verify(repository, Mockito.times(1)).runTransaction(anyObject(Transaction::class.java))
     }
 
     @Test fun hasDialogTest() {

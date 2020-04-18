@@ -33,7 +33,7 @@ class DstHelperPluginTest : TestBase() {
 
     @Before
     fun mock() {
-        plugin = DstHelperPlugin(injector, aapsLogger, RxBusWrapper(), resourceHelper, sp, activePlugin, loopPlugin)
+        plugin = DstHelperPlugin(injector, aapsLogger, RxBusWrapper(aapsSchedulers), resourceHelper, sp, activePlugin, loopPlugin)
     }
 
     @Test

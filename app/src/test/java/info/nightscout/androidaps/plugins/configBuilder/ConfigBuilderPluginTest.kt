@@ -45,6 +45,6 @@ class ConfigBuilderPluginTest : TestBase() {
 
     @Before
     fun prepareMock() {
-        configBuilderPlugin = ConfigBuilderPlugin(activePlugin, injector, sp, RxBusWrapper(), aapsLogger, resourceHelper, profileFunction)
+        configBuilderPlugin = ConfigBuilderPlugin(activePlugin, injector, sp, RxBusWrapper(aapsSchedulers), aapsLogger, resourceHelper, profileFunction)
     }
 }

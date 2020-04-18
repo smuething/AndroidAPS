@@ -17,7 +17,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 class MsgBolusStopTest : DanaRTestBase() {
 
     @Mock lateinit var resourceHelper: ResourceHelper
-    val rxBus = RxBusWrapper()
+    val rxBus = RxBusWrapper(aapsSchedulers)
 
     @Test fun runTest() {
         `when`(resourceHelper.gs(R.string.overview_bolusprogress_delivered)).thenReturn("Delivered")

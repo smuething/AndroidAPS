@@ -20,7 +20,7 @@ class MsgSettingMealTest : DanaRTestBase() {
     @Mock lateinit var danaRKoreanPlugin: DanaRKoreanPlugin
 
     @Test fun runTest() {
-        val packet = MsgSettingMeal(aapsLogger, RxBusWrapper(), resourceHelper, danaRPump, danaRKoreanPlugin)
+        val packet = MsgSettingMeal(aapsLogger, RxBusWrapper(aapsSchedulers), resourceHelper, danaRPump, danaRKoreanPlugin)
 
         // test message decoding
         packet.handleMessage(createArray(34, 1.toByte()))

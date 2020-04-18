@@ -20,7 +20,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 @PrepareForTest(DanaRKoreanPlugin::class, DanaRPlugin::class, DanaRv2Plugin::class)
 class MsgCheckValue_v2Test : DanaRTestBase() {
 
-    val rxBus = RxBusWrapper()
+    val rxBus = RxBusWrapper(aapsSchedulers)
     @Mock lateinit var resourceHelper: ResourceHelper
     @Mock lateinit var danaRPlugin: DanaRPlugin
     @Mock lateinit var danaRKoreanPlugin: DanaRKoreanPlugin

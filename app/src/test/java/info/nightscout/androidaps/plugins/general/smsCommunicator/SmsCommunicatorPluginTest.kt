@@ -8,6 +8,9 @@ import info.nightscout.androidaps.R
 import info.nightscout.androidaps.TestBaseWithProfile
 import info.nightscout.androidaps.data.IobTotal
 import info.nightscout.androidaps.data.PumpEnactResult
+import info.nightscout.androidaps.database.AppRepository
+import info.nightscout.androidaps.database.entities.GlucoseValue
+import info.nightscout.androidaps.database.transactions.Transaction
 import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.interfaces.CommandQueueProvider
@@ -26,8 +29,13 @@ import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin
 import info.nightscout.androidaps.plugins.treatments.TreatmentService
 import info.nightscout.androidaps.queue.Callback
 import info.nightscout.androidaps.queue.CommandQueue
-import info.nightscout.androidaps.utils.*
+import info.nightscout.androidaps.utils.DateUtil
+import info.nightscout.androidaps.utils.DefaultValueHelper
+import info.nightscout.androidaps.utils.FabricPrivacy
+import info.nightscout.androidaps.utils.T
+import info.nightscout.androidaps.utils.XdripCalibrations
 import info.nightscout.androidaps.utils.sharedPreferences.SP
+import io.reactivex.Completable
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -36,7 +44,6 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
-import org.mockito.Mockito.anyDouble
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.powermock.api.mockito.PowerMockito
@@ -45,7 +52,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 import java.util.*
 
 @RunWith(PowerMockRunner::class)
-@PrepareForTest(ConstraintChecker::class, FabricPrivacy::class, VirtualPumpPlugin::class, XdripCalibrations::class, SmsManager::class, CommandQueue::class, LocalProfilePlugin::class, DateUtil::class, IobCobCalculatorPlugin::class, OneTimePassword::class)
+@PrepareForTest(ConstraintChecker::class, FabricPrivacy::class, VirtualPumpPlugin::class, XdripCalibrations::class, SmsManager::class, CommandQueue::class, LocalProfilePlugin::class, DateUtil::class, IobCobCalculatorPlugin::class, OneTimePassword::class, AppRepository::class)
 class SmsCommunicatorPluginTest : TestBaseWithProfile() {
 
     @Mock lateinit var sp: SP
@@ -61,6 +68,7 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
     @Mock lateinit var treatmentService: TreatmentService
     @Mock lateinit var otp: OneTimePassword
     @Mock lateinit var xdripCalibrations: XdripCalibrations
+    @Mock lateinit var repository: AppRepository
 
     var injector: HasAndroidInjector = HasAndroidInjector {
         AndroidInjector {
@@ -91,9 +99,8 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
     private var hasBeenRun = false
 
     @Before fun prepareTests() {
-        val reading = BgReading(injector)
-        reading.value = 100.0
-        val bgList: MutableList<BgReading> = ArrayList()
+        val bgList: MutableList<GlucoseValue> = ArrayList()
+        val reading = GlucoseValue(timestamp = System.currentTimeMillis(), value = 100.0, noise = 0.0, raw = 0.0, trendArrow = GlucoseValue.TrendArrow.NONE, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN)
         bgList.add(reading)
 
         `when`(iobCobCalculatorPlugin.dataLock).thenReturn(Unit)
@@ -101,13 +108,16 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         `when`(iobCobCalculatorPlugin.getCobInfo(false, "SMS COB")).thenReturn(CobInfo(10.0, 2.0))
         `when`(iobCobCalculatorPlugin.lastBg()).thenReturn(reading)
 
+        val tResult = Completable.fromAction({})
+        `when`(repository.runTransaction(anyObject(Transaction::class.java))).thenReturn(tResult)
+
         PowerMockito.spy(DateUtil::class.java)
         PowerMockito.mockStatic(SmsManager::class.java)
         val smsManager = PowerMockito.mock(SmsManager::class.java)
         `when`(SmsManager.getDefault()).thenReturn(smsManager)
         `when`(sp.getString(R.string.key_smscommunicator_allowednumbers, "")).thenReturn("1234;5678")
 
-        smsCommunicatorPlugin = SmsCommunicatorPlugin(injector, aapsLogger, resourceHelper, sp, constraintChecker, rxBus, profileFunction, fabricPrivacy, activePlugin, commandQueue, loopPlugin, iobCobCalculatorPlugin, xdripCalibrations, otp)
+        smsCommunicatorPlugin = SmsCommunicatorPlugin(injector, aapsLogger, resourceHelper, sp, constraintChecker, rxBus, profileFunction, fabricPrivacy, activePlugin, commandQueue, loopPlugin, iobCobCalculatorPlugin, xdripCalibrations, otp, repository)
         smsCommunicatorPlugin.setPluginEnabled(PluginType.GENERAL, true)
         Mockito.doAnswer { invocation: InvocationOnMock ->
             val callback = invocation.getArgument<Callback>(1)

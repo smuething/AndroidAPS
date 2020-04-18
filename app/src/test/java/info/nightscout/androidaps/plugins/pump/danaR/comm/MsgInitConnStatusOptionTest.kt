@@ -22,7 +22,7 @@ class MsgInitConnStatusOptionTest : DanaRTestBase() {
 
     @Test fun runTest() {
         `when`(activePlugin.activePump).thenReturn(PowerMockito.mock(VirtualPumpPlugin::class.java))
-        val packet = MsgInitConnStatusOption(aapsLogger, RxBusWrapper(), resourceHelper, danaRPump, activePlugin)
+        val packet = MsgInitConnStatusOption(aapsLogger, RxBusWrapper(aapsSchedulers), resourceHelper, danaRPump, activePlugin)
 
         // test message decoding
         packet.handleMessage(createArray(20, 1.toByte()))

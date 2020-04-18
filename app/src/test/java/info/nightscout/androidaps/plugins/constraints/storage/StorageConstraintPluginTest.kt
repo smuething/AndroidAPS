@@ -21,7 +21,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 class StorageConstraintPluginTest : TestBase() {
 
     @Mock lateinit var resourceHelper: ResourceHelper
-    private val rxBusWrapper = RxBusWrapper()
+    private val rxBusWrapper = RxBusWrapper(aapsSchedulers)
 
     lateinit var storageConstraintPlugin: StorageConstraintPlugin
 

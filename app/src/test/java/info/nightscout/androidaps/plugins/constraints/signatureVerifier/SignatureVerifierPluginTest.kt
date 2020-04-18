@@ -16,7 +16,7 @@ class SignatureVerifierPluginTest : TestBase() {
     @Mock lateinit var resourceHelper: ResourceHelper
     @Mock lateinit var sp: SP
     @Mock lateinit var context: Context
-    private val rxBus = RxBusWrapper()
+    private val rxBus = RxBusWrapper(aapsSchedulers)
 
     val injector = HasAndroidInjector { AndroidInjector { } }
 

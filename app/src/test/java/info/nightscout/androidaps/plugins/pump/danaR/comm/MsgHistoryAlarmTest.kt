@@ -8,7 +8,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 @RunWith(PowerMockRunner::class)
 class MsgHistoryAlarmTest : DanaRTestBase() {
 
-    val rxBus = RxBusWrapper()
+    val rxBus = RxBusWrapper(aapsSchedulers)
 
     @Test fun runTest() {
         val packet = MsgHistoryAlarm(aapsLogger, rxBus)

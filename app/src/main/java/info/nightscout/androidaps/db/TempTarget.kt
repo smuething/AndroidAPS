@@ -41,7 +41,7 @@ class TempTarget(
     override fun before(time: Long): Boolean = end() < time
     override fun after(time: Long): Boolean = start() > time
     override fun isInProgress(): Boolean = match(System.currentTimeMillis())
-    override fun isEndingEvent(): Boolean = false
+    override fun isEndingEvent(): Boolean = data.duration == 0L
     override fun isValid(): Boolean = true
 
     // -------- Interval interface end ---------
@@ -59,5 +59,5 @@ class TempTarget(
     fun friendlyDescription(units: String, resourceHelper: ResourceHelper): String =
         Profile.toTargetRangeString(data.lowTarget, data.highTarget, Constants.MGDL, units) +
             units +
-            "@" + resourceHelper.gs(R.string.format_mins, TimeUnit.MILLISECONDS.toMinutes(data.duration)) + "(" + data.reason + ")"
+            "@" + resourceHelper.gs(R.string.format_mins, TimeUnit.MILLISECONDS.toMinutes(data.duration)) + "(" + data.reason.text + ")"
 }

@@ -14,7 +14,7 @@ class MsgSetBasalProfileTest : DanaRTestBase() {
     @Mock lateinit var resourceHelper: ResourceHelper
 
     @Test fun runTest() {
-        val packet = MsgSetBasalProfile(aapsLogger, RxBusWrapper(), resourceHelper, 1.toByte(), Array(24) { 1.0 })
+        val packet = MsgSetBasalProfile(aapsLogger, RxBusWrapper(aapsSchedulers), resourceHelper, 1.toByte(), Array(24) { 1.0 })
 
         // test message decoding
         packet.handleMessage(createArray(34, 2.toByte()))

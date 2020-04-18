@@ -24,7 +24,7 @@ open class TestBaseWithProfile : TestBase() {
     @Mock lateinit var treatmentsPlugin: TreatmentsPlugin
     @Mock lateinit var fabricPrivacy: FabricPrivacy
 
-    val rxBus = RxBusWrapper()
+    val rxBus = RxBusWrapper(aapsSchedulers)
 
     val profileInjector = HasAndroidInjector {
         AndroidInjector {

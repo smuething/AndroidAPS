@@ -3,15 +3,11 @@ package info.nightscout.androidaps.plugins.iob.iobCobCalculatorPlugin
 import dagger.android.AndroidInjector
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.TestBase
-import info.nightscout.androidaps.db.BgReading
-import info.nightscout.androidaps.logging.AAPSLogger
-import info.nightscout.androidaps.plugins.general.nsclient.data.NSSgv
+import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.T
-import org.json.JSONException
-import org.json.JSONObject
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -125,78 +121,57 @@ class GlucoseStatusTest : TestBase() {
         `when`(iobCobCalculatorPlugin.dataLock).thenReturn(Unit)
     }
 
-    // [{"mgdl":214,"mills":1521895773113,"device":"xDrip-DexcomG5","direction":"Flat","filtered":191040,"unfiltered":205024,"noise":1,"rssi":100},{"mgdl":219,"mills":1521896073352,"device":"xDrip-DexcomG5","direction":"Flat","filtered":200160,"unfiltered":209760,"noise":1,"rssi":100},{"mgdl":222,"mills":1521896372890,"device":"xDrip-DexcomG5","direction":"Flat","filtered":207360,"unfiltered":212512,"noise":1,"rssi":100},{"mgdl":220,"mills":1521896673062,"device":"xDrip-DexcomG5","direction":"Flat","filtered":211488,"unfiltered":210688,"noise":1,"rssi":100},{"mgdl":193,"mills":1521896972933,"device":"xDrip-DexcomG5","direction":"Flat","filtered":212384,"unfiltered":208960,"noise":1,"rssi":100},{"mgdl":181,"mills":1521897273336,"device":"xDrip-DexcomG5","direction":"SingleDown","filtered":210592,"unfiltered":204320,"noise":1,"rssi":100},{"mgdl":176,"mills":1521897572875,"device":"xDrip-DexcomG5","direction":"FortyFiveDown","filtered":206720,"unfiltered":197440,"noise":1,"rssi":100},{"mgdl":168,"mills":1521897872929,"device":"xDrip-DexcomG5","direction":"FortyFiveDown","filtered":201024,"unfiltered":187904,"noise":1,"rssi":100},{"mgdl":161,"mills":1521898172814,"device":"xDrip-DexcomG5","direction":"FortyFiveDown","filtered":193376,"unfiltered":178144,"noise":1,"rssi":100},{"mgdl":148,"mills":1521898472879,"device":"xDrip-DexcomG5","direction":"SingleDown","filtered":183264,"unfiltered":161216,"noise":1,"rssi":100},{"mgdl":139,"mills":1521898772862,"device":"xDrip-DexcomG5","direction":"FortyFiveDown","filtered":170784,"unfiltered":148928,"noise":1,"rssi":100},{"mgdl":132,"mills":1521899072896,"device":"xDrip-DexcomG5","direction":"FortyFiveDown","filtered":157248,"unfiltered":139552,"noise":1,"rssi":100},{"mgdl":125,"mills":1521899372834,"device":"xDrip-DexcomG5","direction":"FortyFiveDown","filtered":144416,"unfiltered":129616.00000000001,"noise":1,"rssi":100},{"mgdl":128,"mills":1521899973456,"device":"xDrip-DexcomG5","direction":"Flat","filtered":130240.00000000001,"unfiltered":133536,"noise":1,"rssi":100},{"mgdl":132,"mills":1521900573287,"device":"xDrip-DexcomG5","direction":"Flat","filtered":133504,"unfiltered":138720,"noise":1,"rssi":100},{"mgdl":127,"mills":1521900873711,"device":"xDrip-DexcomG5","direction":"Flat","filtered":136480,"unfiltered":132992,"noise":1,"rssi":100},{"mgdl":127,"mills":1521901180151,"device":"xDrip-DexcomG5","direction":"Flat","filtered":136896,"unfiltered":132128,"noise":1,"rssi":100},{"mgdl":125,"mills":1521901473582,"device":"xDrip-DexcomG5","direction":"Flat","filtered":134624,"unfiltered":129696,"noise":1,"rssi":100},{"mgdl":120,"mills":1521901773597,"device":"xDrip-DexcomG5","direction":"Flat","filtered":130704.00000000001,"unfiltered":123376,"noise":1,"rssi":100},{"mgdl":116,"mills":1521902075855,"device":"xDrip-DexcomG5","direction":"Flat","filtered":126272,"unfiltered":118448,"noise":1,"rssi":100}]
-    private fun generateValidBgData(): List<BgReading> {
-        val list: MutableList<BgReading> = ArrayList()
-        try {
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":214,\"mills\":1514766900000,\"direction\":\"Flat\"}"))))
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":216,\"mills\":1514766600000,\"direction\":\"Flat\"}")))) // +2
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":219,\"mills\":1514766300000,\"direction\":\"Flat\"}")))) // +3
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":223,\"mills\":1514766000000,\"direction\":\"Flat\"}")))) // +4
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":222,\"mills\":1514765700000,\"direction\":\"Flat\"}"))))
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":224,\"mills\":1514765400000,\"direction\":\"Flat\"}"))))
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":226,\"mills\":1514765100000,\"direction\":\"Flat\"}"))))
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":228,\"mills\":1514764800000,\"direction\":\"Flat\"}"))))
-        } catch (e: JSONException) {
-            throw RuntimeException(e)
-        }
+    private fun generateValidBgData(): List<GlucoseValue> {
+        val list: MutableList<GlucoseValue> = ArrayList()
+        list.add(GlucoseValue(value = 214.0, timestamp = 1514766900000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 216.0, timestamp = 1514766600000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 219.0, timestamp = 1514766300000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 223.0, timestamp = 1514766000000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 222.0, timestamp = 1514765700000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 224.0, timestamp = 1514765400000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 226.0, timestamp = 1514765100000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 228.0, timestamp = 1514764800000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
         return list
     }
 
-    private fun generateMostRecentBgData(): List<BgReading> {
-        val list: MutableList<BgReading> = ArrayList()
-        try {
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":214,\"mills\":1514766900000,\"direction\":\"Flat\"}"))))
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":216,\"mills\":1514766800000,\"direction\":\"Flat\"}")))) // +2
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":216,\"mills\":1514766600000,\"direction\":\"Flat\"}"))))
-        } catch (e: JSONException) {
-            throw RuntimeException(e)
-        }
+    private fun generateMostRecentBgData(): List<GlucoseValue> {
+        val list: MutableList<GlucoseValue> = ArrayList()
+        list.add(GlucoseValue(value = 214.0, timestamp = 1514766900000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 216.0, timestamp = 1514766800000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        list.add(GlucoseValue(value = 216.0, timestamp = 1514766600000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
         return list
     }
 
-    private fun generateInsufficientBgData(): List<BgReading> {
+    private fun generateInsufficientBgData(): List<GlucoseValue> {
         return ArrayList()
     }
 
-    private fun generateOldBgData(): List<BgReading> {
-        val list: MutableList<BgReading> = ArrayList()
-        try {
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":228,\"mills\":1514764800000,\"direction\":\"Flat\"}"))))
-        } catch (e: JSONException) {
-            throw RuntimeException(e)
-        }
+    private fun generateOldBgData(): List<GlucoseValue> {
+        val list: MutableList<GlucoseValue> = ArrayList()
+        list.add(GlucoseValue(value = 228.0, timestamp = 1514764800000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
         return list
     }
 
-    private fun generateOneCurrentRecordBgData(): List<BgReading> {
-        val list: MutableList<BgReading> = ArrayList()
-        try {
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":214,\"mills\":1514766900000,\"direction\":\"Flat\"}"))))
-        } catch (e: JSONException) {
-            throw RuntimeException(e)
-        }
+    private fun generateOneCurrentRecordBgData(): List<GlucoseValue> {
+        val list: MutableList<GlucoseValue> = ArrayList()
+        list.add(GlucoseValue(value = 214.0, timestamp = 1514766900000, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
         return list
     }
 
-    private fun generateLibreTestData(): List<BgReading> {
-        val list: MutableList<BgReading> = ArrayList()
-        try {
-            val endTime = 1514766900000L
-            val latestReading = 100.0
-            // Now
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":$latestReading,\"mills\":$endTime,\"direction\":\"Flat\"}"))))
-            // One minute ago
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":" + latestReading + ",\"mills\":" + (endTime - 1000 * 60 * 1) + ",\"direction\":\"Flat\"}"))))
-            // Two minutes ago
-            list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":" + latestReading + ",\"mills\":" + (endTime - 1000 * 60 * 2) + ",\"direction\":\"Flat\"}"))))
+    private fun generateLibreTestData(): List<GlucoseValue> {
+        val list: MutableList<GlucoseValue> = ArrayList()
+        val endTime = 1514766900000L
+        val latestReading = 100.0
+        // Now
+        list.add(GlucoseValue(value = latestReading, timestamp = endTime, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        // One minute ago
+        list.add(GlucoseValue(value = latestReading, timestamp = endTime - 1000 * 60 * 1, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
+        // Two minutes ago
+        list.add(GlucoseValue(value = latestReading, timestamp = endTime - 1000 * 60 * 1, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
 
-            // Three minutes and beyond at constant rate
-            for (i in 3..49) {
-                list.add(BgReading(NSSgv(JSONObject("{\"mgdl\":" + (latestReading + i * 2) + ",\"mills\":" + (endTime - 1000 * 60 * i) + ",\"direction\":\"Flat\"}"))))
-            }
-        } catch (e: JSONException) {
-            throw RuntimeException(e)
+        // Three minutes and beyond at constant rate
+        for (i in 3..49) {
+            list.add(GlucoseValue(value = latestReading + i * 2, timestamp = endTime - 1000 * 60 * i, trendArrow = GlucoseValue.TrendArrow.FLAT, noise = 0.0, raw = 0.0, sourceSensor = GlucoseValue.SourceSensor.UNKNOWN))
         }
         return list
     }

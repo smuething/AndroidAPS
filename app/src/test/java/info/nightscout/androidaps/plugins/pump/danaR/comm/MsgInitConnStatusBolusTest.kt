@@ -14,7 +14,7 @@ class MsgInitConnStatusBolusTest : DanaRTestBase() {
     @Mock lateinit var resourceHelper: ResourceHelper
 
     @Test fun runTest() {
-        val packet = MsgInitConnStatusBolus(aapsLogger, RxBusWrapper(), resourceHelper, danaRPump)
+        val packet = MsgInitConnStatusBolus(aapsLogger, RxBusWrapper(aapsSchedulers), resourceHelper, danaRPump)
 
         // test message decoding
         var array = ByteArray(100)

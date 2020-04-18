@@ -19,7 +19,7 @@ class VersionCheckerUtilsKtTest : TestBase() {
     @Mock lateinit var resourceHelper: ResourceHelper
     @Mock lateinit var context: Context
 
-    val rxBus = RxBusWrapper()
+    val rxBus = RxBusWrapper(aapsSchedulers)
 
     @Before fun setup() {
         versionCheckerUtils = VersionCheckerUtils(aapsLogger, sp, resourceHelper, rxBus, context)
