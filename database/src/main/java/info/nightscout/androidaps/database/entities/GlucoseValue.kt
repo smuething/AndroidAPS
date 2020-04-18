@@ -24,7 +24,7 @@ data class GlucoseValue(
     @Embedded
     override var interfaceIDs_backing: InterfaceIDs? = InterfaceIDs(),
     override var timestamp: Long,
-    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong() / 60000,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     var raw: Double?,
     var value: Double,
     var trendArrow: TrendArrow,
@@ -43,13 +43,6 @@ data class GlucoseValue(
         isValid == other.isValid
 
     fun isRecordDeleted(other: GlucoseValue): Boolean =
-        timestamp == other.timestamp &&
-        utcOffset == other.utcOffset &&
-        raw == other.raw &&
-        value == other.value &&
-       trendArrow == other.trendArrow &&
-        noise == other.noise &&
-        sourceSensor == other.sourceSensor &&
         isValid && !other.isValid
 
     enum class TrendArrow (val text:String, val symbol:String){

@@ -285,9 +285,10 @@ class NSClient2Plugin @Inject constructor(
         addToLog(EventNSClientNewLog("SYNC START", "From: $from"))
         _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.combo_pump_state_running)))
 
-        val cgmSync = PreferenceString(R.string.key_ns_cgm, "PULL", sp, resourceHelper, rxBus)
+        val cgmSync = PreferenceString(R.string.key_ns_cgm, "PUSH", sp, resourceHelper, rxBus)
+        val ttSync = PreferenceString(R.string.key_ns_temptargets, "PUSH", sp, resourceHelper, rxBus)
 
-        if (cgmSync.download) {
+        if (cgmSync.download || nsClientSourcePlugin.isEnabled()) {
             //CGM download
             compositeDisposable.add(
                 nightscoutService.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES]!!.get())
@@ -366,7 +367,7 @@ class NSClient2Plugin @Inject constructor(
                         }
                     } ?: lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
                 } else {
-                    val httpResult = nightscoutService.update(gv).blockingGet()
+                    val httpResult = nightscoutService.updateFromNS(gv).blockingGet()
                     gv.interfaceIDs.nightscoutId = httpResult.location?.id
                     when (httpResult.code) {
                         ResponseCode.RECORD_CREATED -> {

@@ -56,7 +56,6 @@ class CareportalFragment : DaggerFragment(), View.OnClickListener {
         careportal_tempbasalend.setOnClickListener(this)
         careportal_tempbasalstart.setOnClickListener(this)
         careportal_openapsoffline.setOnClickListener(this)
-        careportal_temporarytarget.setOnClickListener(this)
 
         val profileStore = activePlugin.activeProfileInterface.profile
         if (profileStore == null) {
@@ -103,7 +102,6 @@ class CareportalFragment : DaggerFragment(), View.OnClickListener {
         val TEMPBASALEND = OptionsToShow(R.id.careportal_tempbasalend, R.string.careportal_tempbasalend).date().bg()
         val PROFILESWITCH = OptionsToShow(R.id.careportal_profileswitch, R.string.careportal_profileswitch).date().duration().profile()
         val OPENAPSOFFLINE = OptionsToShow(R.id.careportal_openapsoffline, R.string.careportal_openapsoffline).date().duration()
-        val TEMPTARGET = OptionsToShow(R.id.careportal_temporarytarget, R.string.careportal_temporarytarget).date().duration().tempTarget()
 
         val newDialog = NewNSTreatmentDialog()
         when (view.id) {
@@ -126,7 +124,6 @@ class CareportalFragment : DaggerFragment(), View.OnClickListener {
             R.id.careportal_tempbasalstart         -> newDialog.setOptions(TEMPBASALSTART, R.string.careportal_tempbasalstart)
             R.id.careportal_tempbasalend           -> newDialog.setOptions(TEMPBASALEND, R.string.careportal_tempbasalend)
             R.id.careportal_openapsoffline         -> newDialog.setOptions(OPENAPSOFFLINE, R.string.careportal_openapsoffline)
-            R.id.careportal_temporarytarget        -> newDialog.setOptions(TEMPTARGET, R.string.careportal_temporarytarget)
         }
         fragmentManager?.let {
             NewNSTreatmentDialog().show(it, "CareportalFragment")

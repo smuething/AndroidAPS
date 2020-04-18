@@ -24,7 +24,7 @@ data class Bolus(
     @Embedded
         override var interfaceIDs_backing: InterfaceIDs? = null,
     override var timestamp: Long,
-    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong() / 60000,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     var amount: Double,
     var type: Type,
     var isBasalInsulin: Boolean,

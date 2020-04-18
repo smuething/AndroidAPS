@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Query
 import info.nightscout.androidaps.database.TABLE_GLUCOSE_VALUES
 import info.nightscout.androidaps.database.entities.GlucoseValue
-import io.reactivex.Flowable
 import io.reactivex.Maybe
 import io.reactivex.Single
 

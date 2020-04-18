@@ -10,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,7 +22,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.fragment.app.DialogFragment;
 
-import com.google.common.collect.Lists;
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog;
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog;
 
@@ -61,9 +59,9 @@ import info.nightscout.androidaps.utils.DefaultValueHelper;
 import info.nightscout.androidaps.utils.HardLimits;
 import info.nightscout.androidaps.utils.JsonHelper;
 import info.nightscout.androidaps.utils.NumberPicker;
-import info.nightscout.androidaps.utils.alertDialogs.OKDialog;
 import info.nightscout.androidaps.utils.SafeParse;
 import info.nightscout.androidaps.utils.Translator;
+import info.nightscout.androidaps.utils.alertDialogs.OKDialog;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
 
@@ -101,7 +99,6 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
     RadioButton otherRadioButton;
     EditText notesEdit;
     Spinner profileSpinner;
-    Spinner reasonSpinner;
     Button reuseButton;
 
     NumberPicker editBg;
@@ -162,8 +159,6 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
 
         notesEdit = view.findViewById(R.id.careportal_newnstreatment_notes);
 
-        reasonSpinner = view.findViewById(R.id.careportal_newnstreatment_temptarget_reason);
-
         eventTime = new Date();
         dateButton = view.findViewById(R.id.careportal_newnstreatment_eventdate);
         timeButton = view.findViewById(R.id.careportal_newnstreatment_eventtime);
@@ -195,60 +190,6 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
             }
         }
         final Double bg = Profile.fromMgdlToUnits(new GlucoseStatus(injector).getGlucoseStatusData() != null ? new GlucoseStatus(injector).getGlucoseStatusData().glucose : 0d, profileFunction.getUnits());
-
-        // temp target
-        final List<String> reasonList = Lists.newArrayList(
-                resourceHelper.gs(R.string.manual),
-                resourceHelper.gs(R.string.eatingsoon),
-                resourceHelper.gs(R.string.activity),
-                resourceHelper.gs(R.string.hypo));
-        ArrayAdapter<String> adapterReason = new ArrayAdapter<>(getContext(),
-                R.layout.spinner_centered, reasonList);
-        reasonSpinner.setAdapter(adapterReason);
-        reasonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                double defaultDuration;
-                double defaultTarget;
-                if (profile != null && editTemptarget.getValue().equals(bg)) {
-                    defaultTarget = bg;
-                } else {
-                    //prevent changes on screen rotate
-                    defaultTarget = editTemptarget.getValue();
-                }
-                boolean erase = false;
-
-                if (resourceHelper.gs(R.string.eatingsoon).equals(reasonList.get(position))) {
-                    defaultDuration = defaultValueHelper.determineEatingSoonTTDuration();
-                    defaultTarget = defaultValueHelper.determineEatingSoonTT();
-                } else if (resourceHelper.gs(R.string.activity).equals(reasonList.get(position))) {
-                    defaultDuration = defaultValueHelper.determineActivityTTDuration();
-                    defaultTarget = defaultValueHelper.determineActivityTT();
-                } else if (resourceHelper.gs(R.string.hypo).equals(reasonList.get(position))) {
-                    defaultDuration = defaultValueHelper.determineHypoTTDuration();
-                    defaultTarget = defaultValueHelper.determineHypoTT();
-                } else if (editDuration.getValue() != 0) {
-                    defaultDuration = editDuration.getValue();
-                } else {
-                    defaultDuration = 0;
-                    erase = true;
-                }
-
-                if (defaultTarget != 0 || erase) {
-                    editTemptarget.setValue(defaultTarget);
-                }
-                if (defaultDuration != 0) {
-                    editDuration.setValue(defaultDuration);
-                } else if (erase) {
-                    editDuration.setValue(0d);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
 
         // bg
         bgUnitsView.setText(profileFunction.getUnits());
@@ -385,7 +326,6 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
         showOrHide(view.findViewById(R.id.careportal_newnstreatment_percentage_layout), options.profile);
         showOrHide(view.findViewById(R.id.careportal_newnstreatment_timeshift_layout), options.profile);
         showOrHide(view.findViewById(R.id.careportal_newnstreatment_reuse_layout), options.profile && ps != null && ps.isCPP);
-        showOrHide(view.findViewById(R.id.careportal_newnstreatment_temptarget_layout), options.tempTarget);
 
         setCancelable(true);
         getDialog().setCanceledOnTouchOutside(false);
@@ -555,16 +495,6 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
                     break;
                 case R.id.careportal_openapsoffline:
                     data.put("eventType", CareportalEvent.OPENAPSOFFLINE);
-                    break;
-                case R.id.careportal_temporarytarget:
-                    data.put("eventType", CareportalEvent.TEMPORARYTARGET);
-                    if (!reasonSpinner.getSelectedItem().toString().equals(""))
-                        data.put("reason", reasonSpinner.getSelectedItem().toString());
-                    if (SafeParse.stringToDouble(editTemptarget.getText()) != 0d) {
-                        data.put("targetBottom", SafeParse.stringToDouble(editTemptarget.getText()));
-                        data.put("targetTop", SafeParse.stringToDouble(editTemptarget.getText()));
-                    }
-                    allowZeroDuration = true;
                     break;
             }
             if (options.bg && SafeParse.stringToDouble(editBg.getText()) != 0d) {

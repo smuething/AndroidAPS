@@ -2,6 +2,7 @@ package info.nightscout.androidaps.data;
 
 import androidx.collection.LongSparseArray;
 
+import org.jetbrains.annotations.Nullable;
 import org.joda.time.DateTime;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -620,8 +621,8 @@ public class Profile {
         return (int) (passed / 1000);
     }
 
-    public static double toMgdl(double value, String units) {
-        if (units.equals(Constants.MGDL)) return value;
+    public static double toMgdl(double value, @Nullable String units) {
+        if (units == null || units.equals(Constants.MGDL)) return value;
         else return value * Constants.MMOLL_TO_MGDL;
     }
 

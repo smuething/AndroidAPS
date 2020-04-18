@@ -257,25 +257,6 @@ public class NSUpload {
         }
     }
 
-    public static void uploadTempTarget(TempTarget tempTarget) {
-        try {
-            JSONObject data = new JSONObject();
-            data.put("eventType", CareportalEvent.TEMPORARYTARGET);
-            data.put("duration", TimeUnit.MILLISECONDS.toMillis(tempTarget.getData().getDuration()));
-            if (tempTarget.getData().getLowTarget() > 0) {
-                data.put("reason", tempTarget.getReason());
-                data.put("targetBottom", Profile.fromMgdlToUnits(tempTarget.getData().getLowTarget(), ConfigBuilderPlugin.getPlugin().getProfileFunction().getUnits()));
-                data.put("targetTop", Profile.fromMgdlToUnits(tempTarget.getData().getHighTarget(), ConfigBuilderPlugin.getPlugin().getProfileFunction().getUnits()));
-                data.put("units", ConfigBuilderPlugin.getPlugin().getProfileFunction().getUnits());
-            }
-            data.put("created_at", DateUtil.toISOString(tempTarget.getData().getTimestamp()));
-            data.put("enteredBy", MainApp.gs(R.string.app_name));
-            uploadCareportalEntryToNS(data);
-        } catch (JSONException e) {
-            log.error("Unhandled exception", e);
-        }
-    }
-
     public static void updateProfileSwitch(ProfileSwitch profileSwitch) {
         try {
             JSONObject data = getJson(profileSwitch);

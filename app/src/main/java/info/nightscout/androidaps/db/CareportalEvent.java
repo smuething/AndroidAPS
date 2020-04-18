@@ -60,7 +60,6 @@ public class CareportalEvent implements DataPointWithLabelInterface, Interval {
     public static final String MEALBOLUS = "Meal Bolus";
     public static final String COMBOBOLUS = "Combo Bolus";
     public static final String TEMPBASAL = "Temp Basal";
-    public static final String TEMPORARYTARGET = "Temporary Target";
     public static final String PROFILESWITCH = "Profile Switch";
     public static final String SITECHANGE = "Site Change";
     public static final String INSULINCHANGE = "Insulin Change";

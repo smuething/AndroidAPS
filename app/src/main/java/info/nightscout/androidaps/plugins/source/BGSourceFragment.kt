@@ -16,8 +16,6 @@ import info.nightscout.androidaps.database.transactions.InvalidateGlucoseValueTr
 import info.nightscout.androidaps.events.EventNewBG
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
-import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
-import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.T
@@ -28,8 +26,8 @@ import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import info.nightscout.androidaps.utils.valueToUnitsString
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.bgsource_fragment.*
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class BGSourceFragment : DaggerFragment() {
@@ -38,10 +36,10 @@ class BGSourceFragment : DaggerFragment() {
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var repository: AppRepository
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
-    private val MILLS_TO_THE_PAST = T.hours(12).msecs()
+    private val historyInMillis = T.hours(12).msecs()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -53,27 +51,28 @@ class BGSourceFragment : DaggerFragment() {
 
         bgsource_recyclerview.setHasFixedSize(true)
         bgsource_recyclerview.layoutManager = LinearLayoutManager(view.context)
-        val now = System.currentTimeMillis()
-        disposable += repository
-            .compatGetBgReadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
-            .observeOn(aapsSchedlulers.main)
-            .subscribe { list -> bgsource_recyclerview.adapter = RecyclerViewAdapter(list) }
     }
 
     @Synchronized
     override fun onResume() {
         super.onResume()
-        disposable.add(rxBus
+
+        val now = System.currentTimeMillis()
+        disposable += repository
+            .compatGetBgReadingsDataFromTime(now - historyInMillis, false)
+            .observeOn(aapsSchedulers.main)
+            .subscribe { list -> bgsource_recyclerview?.adapter = RecyclerViewAdapter(list) }
+
+        disposable += rxBus
             .toObservable(EventNewBG::class.java)
-            .observeOn(Schedulers.io())
+            .observeOn(aapsSchedulers.io)
+            .debounce(1L, TimeUnit.SECONDS)
             .subscribe({
-                val now = System.currentTimeMillis()
                 disposable += repository
-                    .compatGetBgReadingsDataFromTime(now - MILLS_TO_THE_PAST, false)
-                    .observeOn(aapsSchedlulers.main)
+                    .compatGetBgReadingsDataFromTime(now - historyInMillis, false)
+                    .observeOn(aapsSchedulers.main)
                     .subscribe { list -> bgsource_recyclerview?.swapAdapter(RecyclerViewAdapter(list), true) }
             }) { fabricPrivacy.logException(it) }
-        )
     }
 
     @Synchronized
@@ -98,9 +97,7 @@ class BGSourceFragment : DaggerFragment() {
             holder.remove.tag = glucoseValue
         }
 
-        override fun getItemCount(): Int {
-            return glucoseValues.size
-        }
+        override fun getItemCount(): Int = glucoseValues.size
 
         inner class GlucoseValuesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             var date: TextView = itemView.findViewById(R.id.bgsource_date)
@@ -111,6 +108,7 @@ class BGSourceFragment : DaggerFragment() {
             var remove: TextView = itemView.findViewById(R.id.bgsource_remove)
 
             init {
+                remove.paintFlags = remove.paintFlags or Paint.UNDERLINE_TEXT_FLAG
                 remove.setOnClickListener { v: View ->
                     val glucoseValue = v.tag as GlucoseValue
                     activity?.let { activity ->
@@ -120,7 +118,6 @@ class BGSourceFragment : DaggerFragment() {
                         })
                     }
                 }
-                remove.paintFlags = remove.paintFlags or Paint.UNDERLINE_TEXT_FLAG
             }
         }
     }

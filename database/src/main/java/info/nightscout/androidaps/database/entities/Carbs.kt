@@ -23,7 +23,7 @@ data class Carbs(
     @Embedded
         override var interfaceIDs_backing: InterfaceIDs? = null,
     override var timestamp: Long,
-    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong() / 60000,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     override var duration: Long,
     var amount: Double
 ) : TraceableDBEntry, DBEntryWithTimeAndDuration

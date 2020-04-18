@@ -34,6 +34,13 @@
         android:key="@string/key_ns_cgm"
         android:title="@string/cgmdata" />
 
+    <ListPreference
+        android:defaultValue="PUSH"
+        android:entries="@array/syncOptionsArray"
+        android:entryValues="@array/syncOptionsValues"
+        android:key="@string/key_ns_temptargets"
+        android:title="@string/careportal_temporarytarget" />
+
     <androidx.preference.PreferenceScreen
         android:key="@string/connectionsettings_title"
         android:title="@string/connectionsettings_title">

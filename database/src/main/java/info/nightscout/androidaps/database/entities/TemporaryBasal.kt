@@ -23,7 +23,7 @@ data class TemporaryBasal(
     @Embedded
         override var interfaceIDs_backing: InterfaceIDs? = InterfaceIDs(),
     override var timestamp: Long,
-    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong() / 60000,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     var type: Type,
     var isAbsolute: Boolean,
     var rate: Double,

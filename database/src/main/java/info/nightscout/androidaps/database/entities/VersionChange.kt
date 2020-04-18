@@ -12,7 +12,7 @@ data class VersionChange(
     @PrimaryKey(autoGenerate = true)
         override var id: Long = 0L,
     override var timestamp: Long,
-    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong() / 60000,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     var versionCode: Int,
     var versionName: String,
     var gitRemote: String?,

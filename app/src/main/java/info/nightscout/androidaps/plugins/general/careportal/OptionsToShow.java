@@ -17,7 +17,6 @@ public class OptionsToShow {
     public boolean absolute;
     public boolean profile;
     public boolean split;
-    public boolean tempTarget;
 
     public OptionsToShow(int eventType, int eventName) {
         this.eventType = eventType;
@@ -71,11 +70,6 @@ public class OptionsToShow {
 
     public OptionsToShow split() {
         split = true;
-        return this;
-    }
-
-    public OptionsToShow tempTarget() {
-        tempTarget = true;
         return this;
     }
 }

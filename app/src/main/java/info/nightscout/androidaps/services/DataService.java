@@ -195,8 +195,6 @@ public class DataService extends DaggerIntentService {
         if (insulin > 0 || carbs > 0) {
             EventNsTreatment evtTreatment = new EventNsTreatment(mode, json);
             rxBus.send(evtTreatment);
-        } else if (eventType.equals(CareportalEvent.TEMPORARYTARGET)) {
-            //MainApp.getDbHelper().createTemptargetFromJsonIfNotExists(json);
         } else if (eventType.equals(CareportalEvent.TEMPBASAL)) {
             MainApp.getDbHelper().createTempBasalFromJsonIfNotExists(json);
         } else if (eventType.equals(CareportalEvent.COMBOBOLUS)) {

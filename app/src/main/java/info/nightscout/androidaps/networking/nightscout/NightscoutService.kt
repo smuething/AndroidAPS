@@ -83,7 +83,7 @@ class NightscoutService(
     }
 
     fun StatusResponse.mapRequiredPermissionToError(@StringRes spVal: Int, collection: NightscoutCollection, errors: MutableList<String>) {
-        when (sp.getString(spVal, "PULL")) {
+        when (sp.getString(spVal, "PUSH")) {
             "PULL" -> if (!apiPermissions.of(collection).read) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
             "PUSH" -> if (!apiPermissions.of(collection).createUpdate) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
             "SYNC" -> if (!apiPermissions.of(collection).full) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
@@ -115,7 +115,7 @@ class NightscoutService(
             deleteEntry(NightscoutCollection.ENTRIES, it)
         }
 
-    fun update(glucoseValue: GlucoseValue) =
+    fun updateFromNS(glucoseValue: GlucoseValue) =
         glucoseValue.interfaceIDs.nightscoutId?.let {
             updateEntry(NightscoutCollection.ENTRIES, it, fromGlucoseValue(glucoseValue, resourceHelper))
         }

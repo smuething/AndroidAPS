@@ -1,6 +1,7 @@
 package info.nightscout.androidaps.database.entities
 
 import androidx.room.*
+import com.google.gson.annotations.SerializedName
 import info.nightscout.androidaps.database.TABLE_TEMPORARY_TARGETS
 import info.nightscout.androidaps.database.embedments.InterfaceIDs
 import info.nightscout.androidaps.database.interfaces.DBEntryWithTimeAndDuration
@@ -8,32 +9,38 @@ import info.nightscout.androidaps.database.interfaces.TraceableDBEntry
 import java.util.TimeZone
 
 @Entity(tableName = TABLE_TEMPORARY_TARGETS,
-        foreignKeys = [ForeignKey(
-                entity = TemporaryTarget::class,
-                parentColumns = ["id"],
-                childColumns = ["referenceId"])],
-        indices = [Index("referenceId"), Index("timestamp")])
+    foreignKeys = [ForeignKey(
+        entity = TemporaryTarget::class,
+        parentColumns = ["id"],
+        childColumns = ["referenceId"])],
+    indices = [Index("referenceId"), Index("timestamp")])
 data class TemporaryTarget(
     @PrimaryKey(autoGenerate = true)
-        override var id: Long = 0,
+    override var id: Long = 0,
     override var version: Int = 0,
     override var dateCreated: Long = -1,
     override var isValid: Boolean = true,
     override var referenceId: Long? = null,
     @Embedded
-        override var interfaceIDs_backing: InterfaceIDs? = InterfaceIDs(),
+    override var interfaceIDs_backing: InterfaceIDs? = InterfaceIDs(),
     override var timestamp: Long,
     override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     var reason: Reason,
-    var highTarget: Double,
-    var lowTarget: Double,
-    override var duration: Long
+    var highTarget: Double, // in mgdl
+    var lowTarget: Double, // in mgdl
+    override var duration: Long // in millis
 ) : TraceableDBEntry, DBEntryWithTimeAndDuration {
-    enum class Reason {
-        CUSTOM,
-        HYPOGLYCEMIA,
-        ACTIVITY,
-        EATING_SOON,
-        AUTOMATION
+
+    enum class Reason(val text: String) {
+        @SerializedName("Custom") CUSTOM("Custom"),
+        @SerializedName("Hypo") HYPOGLYCEMIA("Hypo"),
+        @SerializedName("Activity") ACTIVITY("Activity"),
+        @SerializedName("Eating Soon") EATING_SOON("Eating Soon"),
+        @SerializedName("Automation") AUTOMATION("Automation")
+        ;
+
+        companion object {
+            fun fromString(direction : String?) = values().firstOrNull {it.text == direction} ?: CUSTOM
+        }
     }
 }

@@ -23,7 +23,7 @@ data class TherapyEvent(
     @Embedded
         override var interfaceIDs_backing: InterfaceIDs? = InterfaceIDs(),
     override var timestamp: Long,
-    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong() / 60000,
+    override var utcOffset: Long = TimeZone.getDefault().getOffset(timestamp).toLong(),
     override var duration: Long = 0,
     var type: Type,
     var note: String? = null,

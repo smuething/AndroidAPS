@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -150,9 +151,8 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
         disposable.add(rxBus
                 .toObservable(EventTempTargetChange.class)
                 .observeOn(Schedulers.io())
-                .subscribe(event -> initializeTempTargetData(range()),
-                        fabricPrivacy::logException
-                ));
+                .debounce(1L, TimeUnit.SECONDS)
+                .subscribe(event -> initializeTempTargetData(range()), fabricPrivacy::logException));
         disposable.add(rxBus
                 .toObservable(EventReloadTempBasalData.class)
                 .observeOn(Schedulers.io())
