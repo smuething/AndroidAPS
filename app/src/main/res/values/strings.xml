@@ -1822,6 +1822,9 @@
     <string name="key_ns_carbs" translatable="false">ns_carbs</string>
     <string name="key_ns_temptargets" translatable="false">ns_temptargets</string>
     <string name="key_ns_careportal" translatable="false">ns_careportal</string>
+    <string name="key_ns_profileswitch" translatable="false">ns_profileswitch</string>
+    <string name="key_ns_temporarybasal" translatable="false">ns_temporarybasal</string>
+    <string name="key_ns_extendedbolus" translatable="false">ns_extendedbolus</string>
     <string name="key_ns_settings" translatable="false">ns_settings</string>
     <string name="ssidnotmatch">SSID not match</string>
     <string name="roamingnotallowed">Roaming not allowed</string>
@@ -1836,4 +1839,5 @@
     <string name="forbidden">Forbidden</string>
     <string name="unprocessableentity">Unprocessable entity</string>
     <string name="missingpermissions">Missing permissions</string>
+    <string name="documentdeleted">Document deleted</string>
 </resources>

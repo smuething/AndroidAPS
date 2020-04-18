@@ -52,20 +52,29 @@ data class EntryRequestBody(
     // TODO: add all other possible fields
 )
 
-enum class EventType (val text : String) {
-    @SerializedName("Temporary Target") TEMPORARY_TARGET("Temporary Target")
+enum class EventType(val text: String) {
+    @SerializedName("Temporary Target")
+    TEMPORARY_TARGET("Temporary Target")
     ;
 }
 
 enum class Units(val text: String) {
-    @SerializedName(Constants.MGDL) MGDL(Constants.MGDL),
-    @SerializedName(Constants.MMOL) MMOL(Constants.MMOL)
+    @SerializedName(Constants.MGDL)
+    MGDL(Constants.MGDL),
+
+    @SerializedName(Constants.MMOL)
+    MMOL(Constants.MMOL)
 }
 
 enum class EntriesType {
-    @SerializedName("sgv") SGV,
-    @SerializedName("mbg") MBG,
-    @SerializedName("cal") CAL
+    @SerializedName("sgv")
+    SGV,
+
+    @SerializedName("mbg")
+    MBG,
+
+    @SerializedName("cal")
+    CAL
 }
 
 fun EntryRequestBody.toGlucoseValue(): GlucoseValue =
@@ -107,11 +116,12 @@ fun EntryRequestBody.toTemporaryTarget(): TemporaryTarget =
         utcOffset = TimeUnit.MINUTES.toMillis(utcOffset),
         isValid = isValid ?: true,
         timestamp = date,
-        duration = duration ?: throw BadInputDataException(this),
-        reason = reason ?: TemporaryTarget.Reason.CUSTOM,
-        lowTarget = targetBottom?.let { targetBottom -> Profile.toMgdl(targetBottom, units?.text) }
+        duration = duration?.let { TimeUnit.MINUTES.toMillis(it) }
             ?: throw BadInputDataException(this),
-        highTarget = targetTop?.let { targetTop -> Profile.toMgdl(targetTop, units?.text) }
+        reason = reason ?: TemporaryTarget.Reason.CUSTOM,
+        lowTarget = targetBottom?.let { Profile.toMgdl(it, units?.text) }
+            ?: throw BadInputDataException(this),
+        highTarget = targetTop?.let { Profile.toMgdl(it, units?.text) }
             ?: throw BadInputDataException(this)
     ).also { it.interfaceIDs.nightscoutId = identifier }
 
@@ -124,7 +134,7 @@ fun fromTemporaryTarget(temporaryTarget: TemporaryTarget, resourceHelper: Resour
         utcOffset = TimeUnit.MILLISECONDS.toMinutes(temporaryTarget.utcOffset),
         date = temporaryTarget.timestamp,
         eventType = EventType.TEMPORARY_TARGET,
-        duration = temporaryTarget.duration,
+        duration = TimeUnit.MILLISECONDS.toMinutes(temporaryTarget.duration),
         reason = temporaryTarget.reason,
         targetBottom = temporaryTarget.lowTarget,
         targetTop = temporaryTarget.highTarget,

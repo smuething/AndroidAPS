@@ -17,9 +17,6 @@ internal interface GlucoseValueDao : TraceableDao<GlucoseValue> {
     override fun deleteAllEntries()
 
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE nightscoutId = :nsId AND referenceId IS NULL")
-    fun findByNSId(nsId: String): GlucoseValue?
-
-    @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE nightscoutId = :nsId AND referenceId IS NULL")
     fun findByNSIdMaybe(nsId: String): Maybe<GlucoseValue>
 
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE timestamp = :timestamp AND sourceSensor = :sourceSensor AND referenceId IS NULL")

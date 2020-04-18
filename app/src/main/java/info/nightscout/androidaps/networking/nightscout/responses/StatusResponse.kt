@@ -1,6 +1,5 @@
 package info.nightscout.androidaps.networking.nightscout.responses
 
-import androidx.appcompat.app.AppCompatDelegate
 import com.google.gson.annotations.SerializedName
 import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 
@@ -53,12 +52,18 @@ val ApiPermission.createUpdate: Boolean
 val ApiPermission.full: Boolean
     get() = this.create && this.read && this.update && this.delete
 
-fun ApiPermissions.of(collection: NightscoutCollection) : ApiPermission =
-    when(collection) {
-        NightscoutCollection.DEVICESTATUS -> deviceStatus
-        NightscoutCollection.ENTRIES      -> entries
-        NightscoutCollection.FOOD         -> food
-        NightscoutCollection.PROFILE      -> profile
-        NightscoutCollection.SETTINGS     -> settings
-        NightscoutCollection.TREATMENTS   -> treatments
+fun ApiPermissions.of(collection: NightscoutCollection): ApiPermission =
+    when (collection) {
+        NightscoutCollection.DEVICE_STATUS    -> deviceStatus
+        NightscoutCollection.ENTRIES          -> entries
+        NightscoutCollection.FOOD             -> food
+        NightscoutCollection.PROFILE          -> profile
+        NightscoutCollection.SETTINGS         -> settings
+        NightscoutCollection.TEMPORARY_TARGET -> treatments
+        NightscoutCollection.CAREPORTAL_EVENT -> treatments
+        NightscoutCollection.INSULIN          -> treatments
+        NightscoutCollection.CARBS            -> treatments
+        NightscoutCollection.PROFILE_SWITCH   -> treatments
+        NightscoutCollection.TEMPORARY_BASAL  -> treatments
+        NightscoutCollection.EXTENDED_BOLUS   -> treatments
     }

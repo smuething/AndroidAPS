@@ -28,26 +28,26 @@ interface INightscoutService {
 
     @POST("/api/v3/{collection}")
     fun insertEntry(
-        @Path("collection") collection: NightscoutCollection,
+        @Path("collection") collection: String,
         @Body entryRequestBody: EntryRequestBody
     ): Single<Response<DummyResponse>>
 
     @DELETE("/api/v3/{collection}/{identifier}")
     fun deleteEntry(
-        @Path("collection") collection: NightscoutCollection,
+        @Path("collection") collection: String,
         @Path("identifier") identifier: String
     ): Single<Response<DummyResponse>>
 
     @PUT("/api/v3/{collection}/{identifier}")
     fun updateEntry(
-        @Path("collection") collection: NightscoutCollection,
+        @Path("collection") collection: String,
         @Path("identifier") identifier: String,
         @Body entryRequestBody: EntryRequestBody
     ): Single<Response<DummyResponse>>
 
     @GET("/api/v3/{collection}")
     fun getByDate(
-        @Path("collection") collection: NightscoutCollection,
+        @Path("collection") collection: String,
         @Query("date\$gte") from: Long,
         @Query("sort") sort : String,
         @Query("limit") limit: Int
@@ -55,8 +55,17 @@ interface INightscoutService {
 
     @GET("/api/v3/{collection}/history/{lastModified}")
     fun getByLastModified(
-        @Path("collection") collection: NightscoutCollection,
+        @Path("collection") collection: String,
         @Path("lastModified") from: Long,
+        @Query("sort") sort : String,
+        @Query("limit") limit: Int
+    ): Single<Response<ArrayOfData>>
+
+    @GET("/api/v3/{collection}/history/{lastModified}")
+    fun getByLastModified(
+        @Path("collection") collection: String,
+        @Path("lastModified") from: Long,
+        @Query("eventType") eventType : String,
         @Query("sort") sort : String,
         @Query("limit") limit: Int
     ): Single<Response<ArrayOfData>>

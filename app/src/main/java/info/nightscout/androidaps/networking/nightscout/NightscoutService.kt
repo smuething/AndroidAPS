@@ -4,11 +4,13 @@ import androidx.annotation.StringRes
 import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.entities.GlucoseValue
+import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.dependencyInjection.networking.NSRetrofitFactory
 import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.requests.EntryRequestBody
 import info.nightscout.androidaps.networking.nightscout.requests.fromGlucoseValue
+import info.nightscout.androidaps.networking.nightscout.requests.fromTemporaryTarget
 import info.nightscout.androidaps.networking.nightscout.responses.*
 import info.nightscout.androidaps.plugins.source.NSClientSourcePlugin
 import info.nightscout.androidaps.utils.T
@@ -53,27 +55,26 @@ class NightscoutService(
 
         for (collection in NightscoutCollection.values())
             when (collection) {
-                NightscoutCollection.DEVICESTATUS ->
+                NightscoutCollection.SETTINGS         -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_settings, collection, errors)
+                NightscoutCollection.FOOD             -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_food, collection, errors)
+                NightscoutCollection.PROFILE          -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_profile, collection, errors)
+                NightscoutCollection.TEMPORARY_TARGET -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_temptargets, collection, errors)
+                NightscoutCollection.INSULIN          -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_insulin, collection, errors)
+                NightscoutCollection.CARBS            -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_carbs, collection, errors)
+                NightscoutCollection.CAREPORTAL_EVENT -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_careportal, collection, errors)
+                NightscoutCollection.PROFILE_SWITCH   -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_profileswitch, collection, errors)
+                NightscoutCollection.TEMPORARY_BASAL  -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_temporarybasal, collection, errors)
+                NightscoutCollection.EXTENDED_BOLUS   -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_extendedbolus, collection, errors)
+
+                NightscoutCollection.DEVICE_STATUS    ->
                     if (!Config.NSCLIENT)
                         if (!statusResponse.apiPermissions.deviceStatus.readCreate)
-                            errors.add(PERMISSIONS_INSUFFICIENT.format(NightscoutCollection.DEVICESTATUS.collection))
+                            errors.add(PERMISSIONS_INSUFFICIENT.format(NightscoutCollection.DEVICE_STATUS.collection))
 
-                NightscoutCollection.FOOD         -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_food, collection, errors)
-                NightscoutCollection.PROFILE      -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_profile, collection, errors)
-
-                NightscoutCollection.TREATMENTS   -> {
-                    statusResponse.mapRequiredPermissionToError(R.string.key_ns_insulin, collection, errors)
-                    statusResponse.mapRequiredPermissionToError(R.string.key_ns_carbs, collection, errors)
-                    statusResponse.mapRequiredPermissionToError(R.string.key_ns_careportal, collection, errors)
-                    statusResponse.mapRequiredPermissionToError(R.string.key_ns_temptargets, collection, errors)
-                }
-
-                NightscoutCollection.ENTRIES      -> {
+                NightscoutCollection.ENTRIES          -> {
                     statusResponse.mapRequiredPermissionToError(R.string.key_ns_cgm, collection, errors)
                     if (nsClientSourcePlugin.isEnabled() && !statusResponse.apiPermissions.entries.read) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
                 }
-
-                NightscoutCollection.SETTINGS     -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_settings, collection, errors)
             }
         return if (errors.isEmpty()) {
             SetupState.Success(statusResponse.apiPermissions)
@@ -121,17 +122,32 @@ class NightscoutService(
         }
             ?: insertEntry(NightscoutCollection.ENTRIES, fromGlucoseValue(glucoseValue, resourceHelper))
 
+    // TEMP TARGET
+    fun insert(temporaryTarget: TemporaryTarget) =
+        insertEntry(NightscoutCollection.TEMPORARY_TARGET, fromTemporaryTarget(temporaryTarget, resourceHelper))
+
+    fun delete(temporaryTarget: TemporaryTarget) =
+        temporaryTarget.interfaceIDs.nightscoutId?.let {
+            deleteEntry(NightscoutCollection.TEMPORARY_TARGET, it)
+        }
+
+    fun updateFromNS(temporaryTarget: TemporaryTarget) =
+        temporaryTarget.interfaceIDs.nightscoutId?.let {
+            updateEntry(NightscoutCollection.TEMPORARY_TARGET, it, fromTemporaryTarget(temporaryTarget, resourceHelper))
+        }
+            ?: insertEntry(NightscoutCollection.TEMPORARY_TARGET, fromTemporaryTarget(temporaryTarget, resourceHelper))
+
     // GENERAL
     private fun insertEntry(collection: NightscoutCollection, entryRequestBody: EntryRequestBody): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
-        .insertEntry(collection, entryRequestBody)
+        .insertEntry(collection.collection, entryRequestBody)
         .map { it.toResponseType() }
 
     private fun updateEntry(collection: NightscoutCollection, nsId: String, entryRequestBody: EntryRequestBody): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
-        .updateEntry(collection, nsId, entryRequestBody)
+        .updateEntry(collection.collection, nsId, entryRequestBody)
         .map { it.toResponseType() }
 
     private fun deleteEntry(collection: NightscoutCollection, nsId: String): Single<PostEntryResponseType> = nsRetrofitFactory.getNSService()
-        .deleteEntry(collection, nsId)
+        .deleteEntry(collection.collection, nsId)
         .map { it.toResponseType() }
 
     private fun Response<DummyResponse>.toResponseType(): PostEntryResponseType {
@@ -141,11 +157,17 @@ class NightscoutService(
     }
 
     fun getByDate(collection: NightscoutCollection, from: Long, sort: String = "date", limit: Int = 1000) =
-        nsRetrofitFactory.getNSService().getByDate(collection, from, sort, limit)
+        nsRetrofitFactory.getNSService().getByDate(collection.collection, from, sort, limit)
 
     fun getByLastModified(collection: NightscoutCollection, from: Long, sort: String = "srvModified", limit: Int = 1000) =
-        nsRetrofitFactory.getNSService().getByLastModified(
-            collection,
+        collection.eventType?.let { eventType ->
+            nsRetrofitFactory.getNSService().getByLastModified(
+                collection.collection,
+                if (from == 0L) System.currentTimeMillis() - T.months(2).msecs() else from,
+                eventType.text,
+                sort, limit)
+        } ?: nsRetrofitFactory.getNSService().getByLastModified(
+            collection.collection,
             if (from == 0L) System.currentTimeMillis() - T.months(2).msecs() else from,
             sort, limit)
 

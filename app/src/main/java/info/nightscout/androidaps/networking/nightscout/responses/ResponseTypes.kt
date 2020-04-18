@@ -15,6 +15,7 @@ enum class ResponseCode (val code : Int, @StringRes val message: Int) {
     UNAUTHORIZED(401, R.string.unauthorized),
     NOT_FOUND(404, R.string.collectionnotfound), // collection not found
     FORBIDDEN(403, R.string.forbidden),
+    DOCUMENT_DELETED(410, R.string.documentdeleted),
     UNPROCESSABLE_ENTITY(422, R.string.unprocessableentity),
     UNKNOWN(0, R.string.unknown);
 

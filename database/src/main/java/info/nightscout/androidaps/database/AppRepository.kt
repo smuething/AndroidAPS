@@ -1,6 +1,7 @@
 package info.nightscout.androidaps.database
 
 import info.nightscout.androidaps.database.entities.GlucoseValue
+import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.database.interfaces.DBEntry
 import info.nightscout.androidaps.database.transactions.Transaction
 import io.reactivex.Completable
@@ -70,9 +71,6 @@ class AppRepository @Inject internal constructor(
             .subscribeOn(Schedulers.io())
 
     //BG READINGS -- including invalid/history records
-    fun findBgReadingByNSId(nsId: String) =
-        database.glucoseValueDao.findByNSId(nsId)
-
     fun findBgReadingByNSIdSingle(nsId: String): Single<ValueWrapper<GlucoseValue>> =
         database.glucoseValueDao.findByNSIdMaybe(nsId).toWrappedSingle()
 
@@ -93,6 +91,16 @@ class AppRepository @Inject internal constructor(
         database.temporaryTargetDao.compatGetTemporaryTargetDataFromTime(timestamp)
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
+
+    fun findTemporaryTargetByNSIdSingle(nsId: String): Single<ValueWrapper<TemporaryTarget>> =
+        database.temporaryTargetDao.findByNSIdMaybe(nsId).toWrappedSingle()
+
+    fun getModifiedTemporaryTargetsDataFromId(lastId: Long) =
+        database.temporaryTargetDao.getModifiedFrom(lastId)
+            .subscribeOn(Schedulers.io())
+
+    fun getTemporaryTargetsCorrespondingLastHistoryRecord(lastId: Long) =
+        database.temporaryTargetDao.getLastHistoryRecord(lastId)
 
 }
 
