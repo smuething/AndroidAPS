@@ -36,8 +36,6 @@ import info.nightscout.androidaps.networking.nightscout.requests.EntryResponseBo
 import info.nightscout.androidaps.networking.nightscout.requests.toGlucoseValue
 import info.nightscout.androidaps.networking.nightscout.requests.toTemporaryTarget
 import info.nightscout.androidaps.networking.nightscout.responses.ApiPermissions
-import info.nightscout.androidaps.networking.nightscout.responses.ResponseCode
-import info.nightscout.androidaps.networking.nightscout.responses.id
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientNewLog
 import info.nightscout.androidaps.plugins.general.nsclient2.events.EventNSClientFullSync
@@ -59,8 +57,10 @@ import info.nightscout.androidaps.utils.sharedPreferences.PreferenceBoolean
 import info.nightscout.androidaps.utils.sharedPreferences.PreferenceLong
 import info.nightscout.androidaps.utils.sharedPreferences.PreferenceString
 import info.nightscout.androidaps.utils.sharedPreferences.SP
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.combineLatest
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.subscribeBy
 import java.util.*
@@ -69,18 +69,18 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class NSClient2Plugin @Inject constructor(
+open class NSClient2Plugin @Inject constructor(
     aapsLogger: AAPSLogger,
     resourceHelper: ResourceHelper,
     injector: HasAndroidInjector,
     private val context: Context,
-    private val rxBus: RxBusWrapper,
-    private val sp: SP,
+    protected val rxBus: RxBusWrapper,
+    protected val sp: SP,
     private val receiverStatusStore: ReceiverStatusStore,
-    private val nightscoutService: NightscoutService,
+    protected val nightscoutService: NightscoutService,
     private val fabricPrivacy: FabricPrivacy,
     private val aapsSchedulers: AapsSchedulers,
-    private val repository: AppRepository,
+    protected val repository: AppRepository,
     private val nsClientSourcePlugin: NSClientSourcePlugin
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
@@ -95,15 +95,15 @@ class NSClient2Plugin @Inject constructor(
     private val listLog: MutableList<EventNSClientNewLog> = ArrayList()
     private val keyNSClientPaused = PreferenceBoolean(R.string.key_nsclient_paused, false, sp, resourceHelper, rxBus)
 
-    private val lastProcessedId = NightscoutCollection.values().map { it to PreferenceLong("lastProcessedId_${it.name}", 0L, sp, rxBus) }.toMap()
-    private val receiveTimestamp = NightscoutCollection.values().map { it to PreferenceLong("receiveTimestamp_${it.name}", 0L, sp, rxBus) }.toMap()
+    protected val lastProcessedId = NightscoutCollection.values().map { it to PreferenceLong("lastProcessedId_${it.name}", 0L, sp, rxBus) }.toMap()
+    protected val receiveTimestamp = NightscoutCollection.values().map { it to PreferenceLong("receiveTimestamp_${it.name}", 0L, sp, rxBus) }.toMap()
 
     var permissions: ApiPermissions? = null // grabbed permissions
 
     private val _liveData: MutableLiveData<NSClient2LiveData> = MutableLiveData(NSClient2LiveData.Log(HtmlHelper.fromHtml("")))
     val liveData: LiveData<NSClient2LiveData> = _liveData // Expose non-mutable form (avoid post from other classes)
 
-    private val compositeDisposable = CompositeDisposable() //TODO: once transformed to VM, clear! (atm plugins live forever)
+    protected val compositeDisposable = CompositeDisposable() //TODO: once transformed to VM, clear! (atm plugins live forever)
 
     override fun onStart() {
         super.onStart()
@@ -249,8 +249,7 @@ class NSClient2Plugin @Inject constructor(
         _liveData.postValue(NSClient2LiveData.Log(HtmlHelper.fromHtml("")))
     }
 
-    @Synchronized
-    private fun addToLog(ev: EventNSClientNewLog) {
+    @Synchronized protected fun addToLog(ev: EventNSClientNewLog) {
         aapsLogger.debug(LTag.NSCLIENT, ev.toString())
         listLog.add(ev)
         // remove the first line if log is too large
@@ -292,225 +291,50 @@ class NSClient2Plugin @Inject constructor(
         val cgmSync = PreferenceString(R.string.key_ns_cgm, "PUSH", sp, resourceHelper, rxBus)
         val ttSync = PreferenceString(R.string.key_ns_temptargets, "PUSH", sp, resourceHelper, rxBus)
 
+        val tasks: MutableList<Single<Unit>> = mutableListOf()
+
         if (cgmSync.download || nsClientSourcePlugin.isEnabled()) {
             //CGM download
-            compositeDisposable.add(
+            tasks +=
                 nightscoutService.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES]!!.get())
                     .doFinally {}
-                    .subscribeBy(
-                        onSuccess = { response ->
-                            val entries = response.body()
-                            addToLog(EventNSClientNewLog("entries SYNC:", "${entries?.size ?: 0} records", EventNSClientNewLog.Direction.IN))
-                            entries?.forEach { it ->
-                                // Objectives 0
-
-                                Single.just(it) // Todo: bubble this up with e.g. `flatMap { Observable::fromIterable }`
-                                    .doOnSuccess (::handleNewGlucoseValuesSideEffects)
-                                    .flatMap { entryResponseBody ->
-                                        repository.findBgReadingByNSIdSingle(entryResponseBody.identifier!!)
-                                            .map { Pair(it, entryResponseBody) }
-                                    }
-                                    .flatMap { (glucoseValueWrapper: ValueWrapper<GlucoseValue>, entryResponseBody: EntryResponseBody) ->
-                                        handleCgmDBStorage(glucoseValueWrapper, entryResponseBody)
-                                    }
-                                    .subscribeBy(
-                                        onSuccess = { /* yay!!! */ },
-                                        onError = { // TODO: put in onErrorReturn to not fail all if one fails.
-                                            when (it) {
-                                                is BadInputDataException -> {
-                                                    // TODO wrong NS data
-                                                    addToLog(EventNSClientNewLog("entries BAD DATA:", "${it.badData}", EventNSClientNewLog.Direction.IN))
-                                                    aapsLogger.error("Bad input data")
-                                                }
-
-                                                else                     -> aapsLogger.error("Something bad happened: $it")
-                                            }
-                                        }
-                                    )
+                    .flatMapObservable { Observable.fromIterable(it.body()) }
+                    .doOnNext(::handleNewGlucoseValuesSideEffects)
+                    .flatMapSingle { entryResponseBody ->
+                        repository.findBgReadingByNSIdSingle(entryResponseBody.identifier!!)
+                            .map { Pair(it, entryResponseBody) }
+                    }
+                    .flatMapSingle { (glucoseValueWrapper: ValueWrapper<GlucoseValue>, entryResponseBody: EntryResponseBody) ->
+                        handleCgmDBStorage(glucoseValueWrapper, entryResponseBody)
+                    }
+                    .doOnError {
+                        when (it) {
+                            is BadInputDataException -> {
+                                // TODO wrong NS data
+                                addToLog(EventNSClientNewLog("entries BAD DATA:", "${it.badData}", EventNSClientNewLog.Direction.IN))
+                                aapsLogger.error("Bad input data")
                             }
 
-                        },
-                        onError = { addToLog(EventNSClientNewLog("entries ERROR", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) }
-                    )
-            )
-        }
-
-        if (cgmSync.upload) {
-            // CGM upload
-            val list = repository
-                .getModifiedBgReadingsDataFromId(lastProcessedId[NightscoutCollection.ENTRIES]!!.get())
-                .blockingGet()
-
-            addToLog(EventNSClientNewLog("entries SYNC:", "${list.size} records", EventNSClientNewLog.Direction.OUT))
-            for (gv in list) {
-                aapsLogger.debug(LTag.NSCLIENT, "Uploading $gv")
-
-                // determine id of changed record we are processing
-                // for new records it's directly gv.id
-                // for modified records gv is in list because of existing new history record
-                val lastHistory = repository.getBgReadingsCorrespondingLastHistoryRecord(gv.id)
-                val processingId = lastHistory?.id ?: gv.id
-
-                if (lastHistory?.contentEqualsTo(gv) == true) {
-                    // expecting only NS identifier change
-                    lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                } else if (lastHistory?.isRecordDeleted(gv) == true) {
-                    // expecting only invalidated record
-                    nightscoutService.delete(gv)?.blockingGet()?.let { httpResult ->
-                        when (httpResult.code) {
-                            ResponseCode.RECORD_EXISTS -> {
-                                lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                                addToLog(EventNSClientNewLog("entries DELETE:", "${lastHistory.interfaceIDs.nightscoutId}", EventNSClientNewLog.Direction.OUT))
-                            }
-
-                            else                       -> {
-                                // exit from loop, next try in next round
-                                addToLog(EventNSClientNewLog("entries DELETE ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
-                                return
-                            }
-                        }
-                    } ?: lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                } else {
-                    val httpResult = nightscoutService.updateFromNS(gv).blockingGet()
-                    gv.interfaceIDs.nightscoutId = httpResult.location?.id
-                    when (httpResult.code) {
-                        ResponseCode.RECORD_CREATED -> {
-                            lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                            compositeDisposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
-                            addToLog(EventNSClientNewLog("entries UPLOAD NEW:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
-                        }
-
-                        ResponseCode.RECORD_EXISTS  -> {
-                            lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                            addToLog(EventNSClientNewLog("entries UPLOAD EXISTING:", "", EventNSClientNewLog.Direction.OUT))
-                        }
-
-                        ResponseCode.DOCUMENT_DELETED  -> {
-                            lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                            addToLog(EventNSClientNewLog("entries UPLOAD DELETED:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
-                        }
-
-                        else                        -> {
-                            // exit from loop, next try in next round
-                            addToLog(EventNSClientNewLog("entries UPLOAD ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
-                            return
+                            else                     -> aapsLogger.error("Something bad happened: $it")
                         }
                     }
-                }
-            }
+                    .onErrorReturn { Unit } // TODO: map to something meaningful?
+                    .toList()
+                    .map { Unit } // TODO: map to something meaningful?
         }
 
-        if (ttSync.upload) {
-            // TempTarget upload
-            val list = repository
-                .getModifiedTemporaryTargetsDataFromId(lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]!!.get())
-                .blockingGet()
 
-            addToLog(EventNSClientNewLog("temptarget SYNC:", "${list.size} records", EventNSClientNewLog.Direction.OUT))
-            for (tt in list) {
-                aapsLogger.debug(LTag.NSCLIENT, "Uploading $tt")
-
-                // determine id of changed record we are processing
-                // for new records it's directly tt.id
-                // for modified records gv is in list because of existing new history record
-                val lastHistory = repository.getTemporaryTargetsCorrespondingLastHistoryRecord(tt.id)
-                val processingId = lastHistory?.id ?: tt.id
-
-                if (lastHistory?.contentEqualsTo(tt) == true) {
-                    // expecting only NS identifier change
-                    lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
-                } else if (lastHistory?.isRecordDeleted(tt) == true) {
-                    // expecting only invalidated record
-                    nightscoutService.delete(tt)?.blockingGet()?.let { httpResult ->
-                        when (httpResult.code) {
-                            ResponseCode.RECORD_EXISTS -> {
-                                lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
-                                addToLog(EventNSClientNewLog("temptarget DELETE:", "${lastHistory.interfaceIDs.nightscoutId}", EventNSClientNewLog.Direction.OUT))
-                            }
-
-                            else                       -> {
-                                // exit from loop, next try in next round
-                                addToLog(EventNSClientNewLog("temptarget DELETE ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
-                                return
-                            }
-                        }
-                    } ?: lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
-                } else {
-                    val httpResult = nightscoutService.updateFromNS(tt).blockingGet()
-                    tt.interfaceIDs.nightscoutId = httpResult.location?.id
-                    when (httpResult.code) {
-                        ResponseCode.RECORD_CREATED -> {
-                            lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
-                            compositeDisposable += repository.runTransactionForResult(UpdateTemporaryTargetTransaction(tt)).subscribe()
-                            addToLog(EventNSClientNewLog("temptarget UPLOAD NEW:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
-                        }
-
-                        ResponseCode.RECORD_EXISTS  -> {
-                            lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
-                            addToLog(EventNSClientNewLog("temptarget UPLOAD EXISTING:", "", EventNSClientNewLog.Direction.OUT))
-                        }
-
-                        ResponseCode.DOCUMENT_DELETED  -> {
-                            lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
-                            addToLog(EventNSClientNewLog("temptarget UPLOAD DELETED:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
-                        }
-
-                        else                        -> {
-                            // exit from loop, next try in next round
-                            addToLog(EventNSClientNewLog("temptarget UPLOAD ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
-                            return
-                        }
-                    }
-                }
-            }
-        }
-
-        if (ttSync.download) {
-            //CGM download
-            compositeDisposable.add(
-                nightscoutService.getByLastModified(NightscoutCollection.TEMPORARY_TARGET, receiveTimestamp[NightscoutCollection.TEMPORARY_TARGET]!!.get())
-                    .doFinally {}
-                    .subscribeBy(
-                        onSuccess = { response ->
-                            val entries = response.body()
-                            addToLog(EventNSClientNewLog("temptarget SYNC:", "${entries?.size ?: 0} records", EventNSClientNewLog.Direction.IN))
-                            entries?.forEach { it ->
-                                // Objectives 0
-
-                                Single.just(it) // Todo: bubble this up with e.g. `flatMap { Observable::fromIterable }`
-                                    .flatMap { entryResponseBody ->
-                                        repository.findTemporaryTargetByNSIdSingle(entryResponseBody.identifier!!)
-                                            .map { Pair(it, entryResponseBody) }
-                                    }
-                                    .flatMap { (temporaryTargetWrapper: ValueWrapper<TemporaryTarget>, entryResponseBody: EntryResponseBody) ->
-                                        handleTemporaryTargetDBStorage(temporaryTargetWrapper, entryResponseBody)
-                                    }
-                                    .subscribeBy(
-                                        onSuccess = { /* yay!!! */ },
-                                        onError = { // TODO: put in onErrorReturn to not fail all if one fails.
-                                            when (it) {
-                                                is BadInputDataException -> {
-                                                    // TODO wrong NS data
-                                                    addToLog(EventNSClientNewLog("temptarget BAD DATA:", "${it.badData}", EventNSClientNewLog.Direction.IN))
-                                                    aapsLogger.error("Bad input data")
-                                                }
-
-                                                else                     -> aapsLogger.error("Something bad happened: $it")
-                                            }
-                                        }
-                                    )
-                            }
-
-                        },
-                        onError = { addToLog(EventNSClientNewLog("temptarget ERROR", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) }
-                    )
+        compositeDisposable += tasks.map { it.toObservable() }
+            .combineLatest { Unit } // TODO map to something meaningful? This actually gives back a list of all results of all tasks
+            .firstOrError()
+            .subscribeBy(
+                onSuccess = {
+                    _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ready)))
+                    addToLog(EventNSClientNewLog("SYNC FINISHED", "From: $from"))
+                    aapsLogger.debug(LTag.NSCLIENT, "Finished sync from $from")
+                },
+                onError = { /* boo! :(  */ }
             )
-        }
-
-
-        _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ready)))
-        addToLog(EventNSClientNewLog("SYNC FINISHED", "From: $from"))
-        aapsLogger.debug(LTag.NSCLIENT, "Finished sync from $from")
     }
 
     private fun handleNewGlucoseValuesSideEffects(it: EntryResponseBody) {
@@ -552,7 +376,7 @@ class NSClient2Plugin @Inject constructor(
         }
     }
 
-    private fun handleTemporaryTargetDBStorage(temporaryTargetWrapper: ValueWrapper<TemporaryTarget>, entryResponseBody: EntryResponseBody): Single<Unit> {
+    protected fun handleTemporaryTargetDBStorage(temporaryTargetWrapper: ValueWrapper<TemporaryTarget>, entryResponseBody: EntryResponseBody): Single<Unit> {
         val tt = entryResponseBody.toTemporaryTarget()
         return when (temporaryTargetWrapper) {
             is ValueWrapper.Existing -> {
