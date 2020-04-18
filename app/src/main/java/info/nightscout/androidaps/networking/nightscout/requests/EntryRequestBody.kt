@@ -12,6 +12,8 @@ import info.nightscout.androidaps.utils.resources.ResourceHelper
  * Created by adrian on 08.04.20.
  */
 
+typealias EntryResponseBody = EntryRequestBody // We get same things back as we send
+
 data class EntryRequestBody(
     // response only
     @SerializedName("srvModified") val srvModified: Long? = null,
@@ -72,7 +74,7 @@ fun EntryRequestBody.toGlucoseValue(): GlucoseValue =
         utcOffset = utcOffset,
         raw = raw,
         value = sgv?.let { sgv -> if (units == Units.MGDL) sgv else sgv * Constants.MGDL_TO_MMOLL }
-            ?: throw BadInputDataException(),
+            ?: throw BadInputDataException(this),
         trendArrow = direction ?: GlucoseValue.TrendArrow.NONE,
         noise = noise,
         sourceSensor = GlucoseValue.SourceSensor.valueOf(device

@@ -1,5 +1,5 @@
 package info.nightscout.androidaps.networking.nightscout.responses
 
-import info.nightscout.androidaps.networking.nightscout.requests.EntryRequestBody
+import info.nightscout.androidaps.networking.nightscout.requests.EntryResponseBody
 
-typealias ArrayOfData = Array<EntryRequestBody>
+typealias ArrayOfData = Array<EntryResponseBody>

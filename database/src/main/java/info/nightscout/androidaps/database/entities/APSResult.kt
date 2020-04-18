@@ -5,7 +5,7 @@ import info.nightscout.androidaps.database.TABLE_APS_RESULTS
 import info.nightscout.androidaps.database.embedments.InterfaceIDs
 import info.nightscout.androidaps.database.interfaces.DBEntryWithTime
 import info.nightscout.androidaps.database.interfaces.TraceableDBEntry
-import java.util.*
+import java.util.TimeZone
 
 @Entity(tableName = TABLE_APS_RESULTS,
         foreignKeys = [ForeignKey(

@@ -1,3 +1,3 @@
 package info.nightscout.androidaps.networking.nightscout.exceptions
 
-class BadInputDataException : Exception()
+class BadInputDataException(val badData: Any) : Exception()

@@ -1,8 +1,10 @@
 package info.nightscout.androidaps.database
 
+import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.interfaces.DBEntry
 import info.nightscout.androidaps.database.transactions.Transaction
 import io.reactivex.Completable
+import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
@@ -71,6 +73,9 @@ class AppRepository @Inject internal constructor(
     fun findBgReadingByNSId(nsId: String) =
         database.glucoseValueDao.findByNSId(nsId)
 
+    fun findBgReadingByNSIdSingle(nsId: String): Single<ValueWrapper<GlucoseValue>> =
+        database.glucoseValueDao.findByNSIdMaybe(nsId).toWrappedSingle()
+
     fun getModifiedBgReadingsDataFromId(lastId: Long) =
         database.glucoseValueDao.getModifiedFrom(lastId)
             .subscribeOn(Schedulers.io())
@@ -89,4 +94,14 @@ class AppRepository @Inject internal constructor(
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
 
+}
+
+inline fun <reified T> Maybe<T>.toWrappedSingle(): Single<ValueWrapper<T>> =
+    this.map { ValueWrapper.Existing(it) as ValueWrapper<T> }
+        .switchIfEmpty(Maybe.just(ValueWrapper.Absent()))
+        .toSingle()
+
+sealed class ValueWrapper<T> {
+    data class Existing<T>(val value: T) : ValueWrapper<T>()
+    class Absent<T> : ValueWrapper<T>()
 }

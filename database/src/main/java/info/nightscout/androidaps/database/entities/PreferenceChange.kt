@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 import info.nightscout.androidaps.database.TABLE_PREFERENCE_CHANGES
 import info.nightscout.androidaps.database.interfaces.DBEntry
 import info.nightscout.androidaps.database.interfaces.DBEntryWithTime
-import java.util.*
+import java.util.TimeZone
 
 @Entity(tableName = TABLE_PREFERENCE_CHANGES)
 data class PreferenceChange(
