@@ -28,7 +28,7 @@ import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
-import info.nightscout.androidaps.networking.nightscout.NightscoutService
+import info.nightscout.androidaps.networking.nightscout.NightscoutServiceWrapper
 import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.data.SetupState
 import info.nightscout.androidaps.networking.nightscout.exceptions.BadInputDataException
@@ -77,7 +77,7 @@ open class NSClient2Plugin @Inject constructor(
     protected val rxBus: RxBusWrapper,
     protected val sp: SP,
     private val receiverStatusStore: ReceiverStatusStore,
-    protected val nightscoutService: NightscoutService,
+    protected val nightscoutServiceWrapper: NightscoutServiceWrapper,
     private val fabricPrivacy: FabricPrivacy,
     private val aapsSchedulers: AapsSchedulers,
     protected val repository: AppRepository,
@@ -192,7 +192,7 @@ open class NSClient2Plugin @Inject constructor(
     }
 
     private fun readPermissions(ok: Runnable) = compositeDisposable.add(
-        nightscoutService
+        nightscoutServiceWrapper
             .testConnection()
             .observeOn(aapsSchedulers.io)
             .subscribeBy(
@@ -210,7 +210,7 @@ open class NSClient2Plugin @Inject constructor(
     )
 
     private fun testConnection(context: Context) = compositeDisposable.add(
-        nightscoutService
+        nightscoutServiceWrapper
             .testConnection()
             .observeOn(aapsSchedulers.main)
             .subscribeBy(
@@ -230,14 +230,14 @@ open class NSClient2Plugin @Inject constructor(
     )
 
     fun lastModifiedCall() = compositeDisposable.add(
-        nightscoutService.lastModified().subscribeBy(
+        nightscoutServiceWrapper.lastModified().subscribeBy(
             onSuccess = { addToLog(EventNSClientNewLog("RESULT", "success: $it", EventNSClientNewLog.Direction.IN)) },
             onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) })
     )
 
     fun getEntriesCall() {
         compositeDisposable.add(
-            nightscoutService.getByDate(NightscoutCollection.ENTRIES, DateUtil.now() - T.mins(20).msecs()).subscribeBy(
+            nightscoutServiceWrapper.getByDate(NightscoutCollection.ENTRIES, DateUtil.now() - T.mins(20).msecs()).subscribeBy(
                 onSuccess = { addToLog(EventNSClientNewLog("RESULT", "success: ${it.body()}", EventNSClientNewLog.Direction.IN)) },
                 onError = { addToLog(EventNSClientNewLog("RESULT", "failure: ${it.message}", EventNSClientNewLog.Direction.IN)) })
         )
@@ -284,7 +284,7 @@ open class NSClient2Plugin @Inject constructor(
         get() = get() == "PUSH" || get() == "SYNC"
 
     @Synchronized
-    private fun doSync(from: String) {
+    private fun doSync(from: String){
         addToLog(EventNSClientNewLog("SYNC START", "From: $from"))
         _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.combo_pump_state_running)))
 
@@ -296,8 +296,8 @@ open class NSClient2Plugin @Inject constructor(
         if (cgmSync.download || nsClientSourcePlugin.isEnabled()) {
             //CGM download
             tasks +=
-                nightscoutService.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES]!!.get())
-                    .doFinally {}
+                nightscoutServiceWrapper.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES]!!.get())
+                    //.doFinally {}
                     .flatMapObservable { Observable.fromIterable(it.body()) }
                     .doOnNext(::handleNewGlucoseValuesSideEffects)
                     .flatMapSingle { entryResponseBody ->

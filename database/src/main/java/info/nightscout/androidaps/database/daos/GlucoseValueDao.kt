@@ -23,13 +23,13 @@ internal interface GlucoseValueDao : TraceableDao<GlucoseValue> {
     fun findByTimestampAndSensor(timestamp: Long, sourceSensor: GlucoseValue.SourceSensor): GlucoseValue?
 
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE timestamp >= :timestamp AND isValid = 1 AND referenceId IS NULL AND value >= 39 ORDER BY timestamp ASC")
-    fun compatGetBgReadingsDataFromTime(timestamp: Long): Single<List<GlucoseValue>>
+    fun compatGetBgReadingsDataAfterTime(timestamp: Long): Single<List<GlucoseValue>>
 
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE timestamp BETWEEN :start AND :end AND isValid = 1 AND referenceId IS NULL AND value >= 39 ORDER BY timestamp ASC")
-    fun compatGetBgReadingsDataFromTime(start: Long, end: Long): Single<List<GlucoseValue>>
+    fun compatGetBgReadingsDataAfterTime(start: Long, end: Long): Single<List<GlucoseValue>>
 
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE id > :lastId AND referenceId IS NULL ORDER BY timestamp ASC")
-    fun getDataFromId(lastId: Long): Single<List<GlucoseValue>>
+    fun getDataAfterId(lastId: Long): Single<List<GlucoseValue>>
 
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE id >= :id")
     fun getAllStartingFrom(id: Long): Single<List<GlucoseValue>>
@@ -37,6 +37,9 @@ internal interface GlucoseValueDao : TraceableDao<GlucoseValue> {
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE referenceId = :id ORDER BY id DESC LIMIT 1")
     fun getLastHistoryRecord(id: Long): GlucoseValue?
 
+    @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE referenceId = :id ORDER BY id DESC LIMIT 1")
+    fun getLastHistoryRecordMaybe(id: Long): Maybe<GlucoseValue>
+
     @Query("SELECT * FROM $TABLE_GLUCOSE_VALUES WHERE id > :id AND referenceId IS NULL OR id IN (SELECT DISTINCT referenceId FROM $TABLE_GLUCOSE_VALUES WHERE id > :id) ORDER BY id ASC")
-    fun getModifiedFrom(id: Long): Single<List<GlucoseValue>>
+    fun getModifiedAfter(id: Long): Single<List<GlucoseValue>>
 }

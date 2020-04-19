@@ -3,7 +3,7 @@ package info.nightscout.androidaps.dependencyInjection.networking
 import com.google.gson.Gson
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.dependencyInjection.networking.NetModule.Companion.NAME_NIGHTSCOUT
-import info.nightscout.androidaps.networking.nightscout.INightscoutService
+import info.nightscout.androidaps.networking.nightscout.NightscoutService
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.schedulers.Schedulers
 import okhttp3.OkHttpClient
@@ -41,5 +41,5 @@ class NSRetrofitFactory(
         .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))
         .build()
 
-    fun getNSService(): INightscoutService = getRetrofit().create(INightscoutService::class.java)
+    fun getNSService(): NightscoutService = getRetrofit().create(NightscoutService::class.java)
 }

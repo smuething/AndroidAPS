@@ -11,7 +11,7 @@ import info.nightscout.androidaps.database.transactions.UpdateGlucoseValueTransa
 import info.nightscout.androidaps.database.transactions.UpdateTemporaryTargetTransaction
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
-import info.nightscout.androidaps.networking.nightscout.NightscoutService
+import info.nightscout.androidaps.networking.nightscout.NightscoutServiceWrapper
 import info.nightscout.androidaps.networking.nightscout.data.NightscoutCollection
 import info.nightscout.androidaps.networking.nightscout.exceptions.BadInputDataException
 import info.nightscout.androidaps.networking.nightscout.requests.EntryResponseBody
@@ -50,12 +50,12 @@ class NSClient2LegacyCodeholder constructor(
     rxBus: RxBusWrapper,
     sp: SP,
     receiverStatusStore: ReceiverStatusStore,
-    nightscoutService: NightscoutService,
+    nightscoutServiceWrapper: NightscoutServiceWrapper,
     fabricPrivacy: FabricPrivacy,
     aapsSchedulers: AapsSchedulers,
     repository: AppRepository,
     nsClientSourcePlugin: NSClientSourcePlugin
-) : NSClient2Plugin(aapsLogger, resourceHelper, injector, context, rxBus, sp, receiverStatusStore, nightscoutService, fabricPrivacy, aapsSchedulers, repository, nsClientSourcePlugin
+) : NSClient2Plugin(aapsLogger, resourceHelper, injector, context, rxBus, sp, receiverStatusStore, nightscoutServiceWrapper, fabricPrivacy, aapsSchedulers, repository, nsClientSourcePlugin
 ) {
 
     fun legacyDoSync() {
@@ -66,13 +66,17 @@ class NSClient2LegacyCodeholder constructor(
         if (cgmSync.upload) {
             // CGM upload
             val list = repository
-                .getModifiedBgReadingsDataFromId(lastProcessedId.getValue(NightscoutCollection.ENTRIES).get())
+                .getModifiedBgReadingsDataAfterId(lastProcessedId.getValue(NightscoutCollection.ENTRIES).get())
                 .doOnSuccess {
                     addToLog(EventNSClientNewLog("entries SYNC:", "${it.size} records", EventNSClientNewLog.Direction.OUT))
                 }
                 .flatMapObservable { Observable.fromIterable(it) }
+                .flatMapSingle { gv ->
+                    repository.getBgReadingsCorrespondingLastHistoryRecordSingle(gv.id)
+                        .map { Pair(gv, it) }
+                }
                 .flatMapSingle {
-                    Single.fromCallable {uploadGlucoseValue(it)}
+                    Single.fromCallable { uploadGlucoseValue(it) }
                 }
                 .toList()
         }
@@ -98,7 +102,7 @@ class NSClient2LegacyCodeholder constructor(
                     lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
                 } else if (lastHistory?.isRecordDeleted(tt) == true) {
                     // expecting only invalidated record
-                    nightscoutService.delete(tt)?.blockingGet()?.let { httpResult ->
+                    nightscoutServiceWrapper.delete(tt)?.blockingGet()?.let { httpResult ->
                         when (httpResult.code) {
                             ResponseCode.RECORD_EXISTS -> {
                                 lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
@@ -113,7 +117,7 @@ class NSClient2LegacyCodeholder constructor(
                         }
                     } ?: lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
                 } else {
-                    val httpResult = nightscoutService.updateFromNS(tt).blockingGet()
+                    val httpResult = nightscoutServiceWrapper.updateFromNS(tt).blockingGet()
                     tt.interfaceIDs.nightscoutId = httpResult.location?.id
                     when (httpResult.code) {
                         ResponseCode.RECORD_CREATED   -> {
@@ -145,7 +149,7 @@ class NSClient2LegacyCodeholder constructor(
         if (ttSync.download) {
             //CGM download
             compositeDisposable.add(
-                nightscoutService.getByLastModified(NightscoutCollection.TEMPORARY_TARGET, receiveTimestamp[NightscoutCollection.TEMPORARY_TARGET]!!.get())
+                nightscoutServiceWrapper.getByLastModified(NightscoutCollection.TEMPORARY_TARGET, receiveTimestamp[NightscoutCollection.TEMPORARY_TARGET]!!.get())
                     .doFinally {}
                     .subscribeBy(
                         onSuccess = { response ->
@@ -185,59 +189,96 @@ class NSClient2LegacyCodeholder constructor(
         }
     }
 
-
-    fun uploadGlucoseValue(gv : GlucoseValue){
-        aapsLogger.debug(LTag.NSCLIENT, "Uploading $gv")
+    fun uploadGlucoseValue(uploadPair: Pair<GlucoseValue, ValueWrapper<GlucoseValue>>) {
+        aapsLogger.debug(LTag.NSCLIENT, "Uploading ${uploadPair.first}") // Todo: move to rxChain. would be called when constructing.
 
         // determine id of changed record we are processing
         // for new records it's directly gv.id
         // for modified records gv is in list because of existing new history record
-        val lastHistory = repository.getBgReadingsCorrespondingLastHistoryRecord(gv.id)
-        val processingId = lastHistory?.id ?: gv.id
+        val lastHistory = uploadPair.second
+        val gv = uploadPair.first
+        val processingId = when (lastHistory) {
+                is ValueWrapper.Existing -> lastHistory.value.id
+                is ValueWrapper.Absent   -> gv.id
+            }
 
-        if (lastHistory?.contentEqualsTo(gv) == true) {
-            // expecting only NS identifier change
-            lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-        } else if (lastHistory?.isRecordDeleted(gv) == true) {
-            // expecting only invalidated record
-            nightscoutService.delete(gv)?.blockingGet()?.let { httpResult ->
+        // we have the following cases:
+        // 1) history is same as current one. -> just ignore re. upload?
+        //    -> reason: only an interface ID was added.
+        //    -> open question: what if there were multiple changes during upload and only the last was in addition of an interfaceID?
+        //          Don't we need the first history event after (or even before?) last upload?
+        // 2) We have a deletion in last step.
+        //    -> send delete to NS
+        //    -> open question: Same as 1) first history event after/before last upload.
+        // 3) We do have no history event?
+        //    -> upload and store back interfaceID.
+        // 4) There has been a change
+        //    -> upload
+        //
+        // 3) and 4) can be combined?
+        //
+        // Open Question: what happens if we upload to/from multiple NS instances?
+        //
+        // Open Question: on Error exit loop?
+        //  In Rx if we throw a Throwable, the stream gets disposed.
+        //  So only do "onErrorReturn" after combining the results?
+        //  Atm on download we continue as only one value could be off (e.g. BadInputDataException on eval. mg/dl or mmol/l. )
+        //  One Record at a time? -> concatMap instead of flatMap
+
+
+        // Further ideas:
+        // * contentEqualsTo could be extension functions on GlucoseValue? -> work on null
+        // * isRecordDeleted() gives me no hint on expected data (other etc.). `wasDeletedBetween(from: TraceableDBEntry,  to: TraceableDBEntry)`?
+
+        when {
+            lastHistory?.contentEqualsTo(gv) == true -> {
+                // expecting only NS identifier change
+                lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
+            }
+
+            lastHistory?.isRecordDeleted(gv) == true -> {
+                // expecting only invalidated record
+                nightscoutServiceWrapper.delete(gv)?.blockingGet()?.let { httpResult ->
+                    when (httpResult.code) {
+                        ResponseCode.RECORD_EXISTS -> {
+                            lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
+                            addToLog(EventNSClientNewLog("entries DELETE:", "${lastHistory.interfaceIDs.nightscoutId}", EventNSClientNewLog.Direction.OUT))
+                        }
+
+                        else                       -> {
+                            // exit from loop, next try in next round
+                            addToLog(EventNSClientNewLog("entries DELETE ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
+                            return
+                        }
+                    }
+                } ?: lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
+            }
+
+            else                                     -> {
+                val httpResult = nightscoutServiceWrapper.updateFromNS(gv).blockingGet()
+                gv.interfaceIDs.nightscoutId = httpResult.location?.id
                 when (httpResult.code) {
-                    ResponseCode.RECORD_EXISTS -> {
+                    ResponseCode.RECORD_CREATED   -> {
                         lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                        addToLog(EventNSClientNewLog("entries DELETE:", "${lastHistory.interfaceIDs.nightscoutId}", EventNSClientNewLog.Direction.OUT))
+                        compositeDisposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
+                        addToLog(EventNSClientNewLog("entries UPLOAD NEW:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
                     }
 
-                    else                       -> {
+                    ResponseCode.RECORD_EXISTS    -> {
+                        lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
+                        addToLog(EventNSClientNewLog("entries UPLOAD EXISTING:", "", EventNSClientNewLog.Direction.OUT))
+                    }
+
+                    ResponseCode.DOCUMENT_DELETED -> {
+                        lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
+                        addToLog(EventNSClientNewLog("entries UPLOAD DELETED:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
+                    }
+
+                    else                          -> {
                         // exit from loop, next try in next round
-                        addToLog(EventNSClientNewLog("entries DELETE ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
+                        addToLog(EventNSClientNewLog("entries UPLOAD ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
                         return
                     }
-                }
-            } ?: lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-        } else {
-            val httpResult = nightscoutService.updateFromNS(gv).blockingGet()
-            gv.interfaceIDs.nightscoutId = httpResult.location?.id
-            when (httpResult.code) {
-                ResponseCode.RECORD_CREATED   -> {
-                    lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                    compositeDisposable += repository.runTransactionForResult(UpdateGlucoseValueTransaction(gv)).subscribe()
-                    addToLog(EventNSClientNewLog("entries UPLOAD NEW:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
-                }
-
-                ResponseCode.RECORD_EXISTS    -> {
-                    lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                    addToLog(EventNSClientNewLog("entries UPLOAD EXISTING:", "", EventNSClientNewLog.Direction.OUT))
-                }
-
-                ResponseCode.DOCUMENT_DELETED -> {
-                    lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                    addToLog(EventNSClientNewLog("entries UPLOAD DELETED:", "${httpResult.location?.id}", EventNSClientNewLog.Direction.OUT))
-                }
-
-                else                          -> {
-                    // exit from loop, next try in next round
-                    addToLog(EventNSClientNewLog("entries UPLOAD ERROR:", "${httpResult.code}", EventNSClientNewLog.Direction.OUT))
-                    return
                 }
             }
         }

@@ -7,7 +7,6 @@ import info.nightscout.androidaps.networking.nightscout.responses.ApiPermissions
  */
 
 sealed class SetupState {
-
     class Success(val permissions: ApiPermissions) : SetupState()
     class Error(val message: String) : SetupState()
 }

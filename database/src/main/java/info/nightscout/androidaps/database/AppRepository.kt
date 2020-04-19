@@ -61,12 +61,12 @@ class AppRepository @Inject internal constructor(
 
     //BG READINGS -- only valid records
     fun compatGetBgReadingsDataFromTime(timestamp: Long, ascending: Boolean) =
-        database.glucoseValueDao.compatGetBgReadingsDataFromTime(timestamp)
+        database.glucoseValueDao.compatGetBgReadingsDataAfterTime(timestamp)
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
 
     fun compatGetBgReadingsDataFromTime(start: Long, end: Long, ascending: Boolean) =
-        database.glucoseValueDao.compatGetBgReadingsDataFromTime(start, end)
+        database.glucoseValueDao.compatGetBgReadingsDataAfterTime(start, end)
             .map { if (!ascending) it.reversed() else it }
             .subscribeOn(Schedulers.io())
 
@@ -74,12 +74,15 @@ class AppRepository @Inject internal constructor(
     fun findBgReadingByNSIdSingle(nsId: String): Single<ValueWrapper<GlucoseValue>> =
         database.glucoseValueDao.findByNSIdMaybe(nsId).toWrappedSingle()
 
-    fun getModifiedBgReadingsDataFromId(lastId: Long) =
-        database.glucoseValueDao.getModifiedFrom(lastId)
+    fun getModifiedBgReadingsDataAfterId(lastId: Long) =
+        database.glucoseValueDao.getModifiedAfter(lastId)
             .subscribeOn(Schedulers.io())
 
     fun getBgReadingsCorrespondingLastHistoryRecord(lastId: Long) =
         database.glucoseValueDao.getLastHistoryRecord(lastId)
+
+    fun getBgReadingsCorrespondingLastHistoryRecordSingle(lastId: Long) =
+        database.glucoseValueDao.getLastHistoryRecordMaybe(lastId).toWrappedSingle()
 
     @Suppress("unused") // debug purpose only
     fun getAllBgReadingsStartingFrom(lastId: Long) =
