@@ -7,6 +7,7 @@ import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
+import info.nightscout.androidaps.plugins.general.nsclient2.data.toNs
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import org.json.JSONArray
 import org.json.JSONException
@@ -28,7 +29,7 @@ class XDripBroadcast @Inject constructor(
                 val entriesBody = JSONArray()
                 val json = JSONObject()
                 json.put("sgv", glucoseValue.value)
-                json.put("direction", glucoseValue.trendArrow.text)
+                json.put("direction", glucoseValue.trendArrow.toNs().text)
                 json.put("device", "G5")
                 json.put("type", "sgv")
                 json.put("date", glucoseValue.timestamp)

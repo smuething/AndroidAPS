@@ -16,6 +16,7 @@ import info.nightscout.androidaps.database.transactions.InvalidateGlucoseValueTr
 import info.nightscout.androidaps.events.EventNewBG
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.plugins.general.nsclient2.data.toNs
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.T
@@ -93,7 +94,7 @@ class BGSourceFragment : DaggerFragment() {
             holder.invalid.visibility = (!glucoseValue.isValid).toVisibility()
             holder.date.text = DateUtil.dateAndTimeString(glucoseValue.timestamp)
             holder.value.text = glucoseValue.valueToUnitsString(profileFunction.getUnits())
-            holder.direction.text = glucoseValue.trendArrow.symbol
+            holder.direction.text = glucoseValue.trendArrow.toNs().symbol
             holder.remove.tag = glucoseValue
         }
 

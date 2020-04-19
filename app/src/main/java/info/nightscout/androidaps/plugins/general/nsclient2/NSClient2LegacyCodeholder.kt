@@ -206,10 +206,10 @@ class NSClient2LegacyCodeholder constructor(
         // 1) history is same as current one. -> just ignore re. upload?
         //    -> reason: only an interface ID was added.
         //    -> open question: what if there were multiple changes during upload and only the last was in addition of an interfaceID?
-        //          Don't we need the first history event after (or even before?) last upload?
+        //          Don't we need the first history event after last upload?
         // 2) We have a deletion in last step.
         //    -> send delete to NS
-        //    -> open question: Same as 1) first history event after/before last upload.
+        //    -> open question: Same as 1) first history event after last upload.
         // 3) We do have no history event?
         //    -> upload and store back interfaceID.
         // 4) There has been a change
@@ -222,7 +222,7 @@ class NSClient2LegacyCodeholder constructor(
         // Open Question: on Error exit loop?
         //  In Rx if we throw a Throwable, the stream gets disposed.
         //  So only do "onErrorReturn" after combining the results?
-        //  Atm on download we continue as only one value could be off (e.g. BadInputDataException on eval. mg/dl or mmol/l. )
+        //  Atm on download we continue as only one value could be off (e.g. BadInputDataException on eval. mg/dl or mmol/l. ) -> for download good.
         //  One Record at a time? -> concatMap instead of flatMap
 
 
@@ -231,18 +231,18 @@ class NSClient2LegacyCodeholder constructor(
         // * isRecordDeleted() gives me no hint on expected data (other etc.). `wasDeletedBetween(from: TraceableDBEntry,  to: TraceableDBEntry)`?
 
         when {
-            lastHistory?.contentEqualsTo(gv) == true -> {
+            /*lastHistory?.contentEqualsTo(gv) */false == true -> {
                 // expecting only NS identifier change
                 lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
             }
 
-            lastHistory?.isRecordDeleted(gv) == true -> {
+            /*lastHistory?.contentEqualsTo(gv) */false == true -> {
                 // expecting only invalidated record
                 nightscoutServiceWrapper.delete(gv)?.blockingGet()?.let { httpResult ->
                     when (httpResult.code) {
                         ResponseCode.RECORD_EXISTS -> {
                             lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
-                            addToLog(EventNSClientNewLog("entries DELETE:", "${lastHistory.interfaceIDs.nightscoutId}", EventNSClientNewLog.Direction.OUT))
+                            // TODO: addToLog(EventNSClientNewLog("entries DELETE:", "${lastHistory.interfaceIDs.nightscoutId}", EventNSClientNewLog.Direction.OUT))
                         }
 
                         else                       -> {

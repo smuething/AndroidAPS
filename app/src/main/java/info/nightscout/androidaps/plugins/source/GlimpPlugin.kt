@@ -13,6 +13,8 @@ import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.BundleLogger
 import info.nightscout.androidaps.logging.LTag
+import info.nightscout.androidaps.plugins.general.nsclient2.data.TrendArrowNightScout
+import info.nightscout.androidaps.plugins.general.nsclient2.data.toEntity
 import info.nightscout.androidaps.utils.XDripBroadcast
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.disposables.CompositeDisposable
@@ -56,7 +58,7 @@ class GlimpPlugin @Inject constructor(
             value = bundle.getDouble("mySGV"),
             raw = null,
             noise = null,
-            trendArrow = GlucoseValue.TrendArrow.fromString(bundle.getString("myTrend")!!),
+            trendArrow = TrendArrowNightScout.fromString(bundle.getString("myTrend")!!).toEntity(),
             sourceSensor = GlucoseValue.SourceSensor.GLIMP
         )
         disposable += repository.runTransactionForResult(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({
