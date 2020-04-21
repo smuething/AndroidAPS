@@ -170,6 +170,7 @@ open class AppModule {
         @ContributesAndroidInjector fun objective7Injector(): Objective7
         @ContributesAndroidInjector fun objective8Injector(): Objective8
         @ContributesAndroidInjector fun objective9Injector(): Objective9
+        @ContributesAndroidInjector fun objective10Injector(): Objective10
 
         @ContributesAndroidInjector fun automationEventInjector(): AutomationEvent
 
@@ -254,6 +255,7 @@ open class AppModule {
         @ContributesAndroidInjector fun swButtonInjector(): SWButton
         @ContributesAndroidInjector fun swEditNumberWithUnitsInjector(): SWEditNumberWithUnits
         @ContributesAndroidInjector fun swEditStringInjector(): SWEditString
+        @ContributesAndroidInjector fun swEditEncryptedPasswordInjector(): SWEditEncryptedPassword
         @ContributesAndroidInjector fun swEditUrlInjector(): SWEditUrl
         @ContributesAndroidInjector fun swFragmentInjector(): SWFragment
         @ContributesAndroidInjector fun swHtmlLinkInjector(): SWHtmlLink

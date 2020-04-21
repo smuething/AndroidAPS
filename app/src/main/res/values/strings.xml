@@ -1212,7 +1212,7 @@
     <string name="error_adding_treatment_title">Treatment data incomplete</string>
     <string name="maintenance_settings">Maintenance Settings</string>
     <string name="maintenance_email">Email recipient</string>
-    <string name="key_maintenance_encrypt_exported_prefs">maintenance_encrypt_exported_prefs</string>
+    <string name="key_maintenance_encrypt_exported_prefs" translatable="false">maintenance_encrypt_exported_prefs</string>
     <string name="maintenance_encrypt_exported_prefs">Encrypt exported settings</string>
     <string name="key_maintenance_logs_email" translatable="false">maintenance_logs_email</string>
     <string name="key_maintenance_logs_amount" translatable="false">maintenance_logs_amount</string>
@@ -1761,8 +1761,8 @@
     <string name="key_snoozedTo" translatable="false">snoozedTo</string>
     <string name="key_snooze_dst_in24h" translatable="false">snooze_dst_in24h</string>
     <string name="key_snooze_loopdisabled" translatable="false">snooze_loopdisabled</string>
-    <string name="key_enable_fabric">enable_fabric</string>
-    <string name="sixdigitnumber">^\\d{6}</string>
+    <string name="key_enable_fabric" translatable="false">enable_fabric</string>
+    <string name="sixdigitnumber" translatable="false">^\\d{6}</string>
     <string name="ebstopsloop">Use of Extended bolus feature will stop closed loop mode for the time of running extended bolus. Do you really want it?</string>
     <string name="closed_loop_disabled_with_eb">Closed loop disabled because of running Extended bolus</string>
     <string name="extended_bolus_short">EB</string>
@@ -1810,6 +1810,11 @@
     <string name="overview_show_predictions">Predictions</string>
     <string name="overview_show_deviationslope">Deviation slope</string>
     <string name="key_graphconfig" translatable="false">graphconfig</string>
+    <string name="authorizationfailed">Authorization failed</string>
+    <string name="overview_show_absinsulin">Absolute insulin</string>
+    <string name="master_password_summary">Master password is used for backup encryption and to override security in application. Remember it or store on a safe place.</string>
+    <string name="passwords_dont_match">Passwords don\'t match</string>
+    <string name="current_master_password">Current master password</string>
     <string name="fullsync">Full sync</string>
     <string name="key_nsclient_test_login">nsclient_test_login</string>
     <string name="title_verify_credentials">Verify credentials</string>
