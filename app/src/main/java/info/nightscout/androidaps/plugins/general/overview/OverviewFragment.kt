@@ -69,8 +69,13 @@ import info.nightscout.androidaps.utils.wizard.QuickWizard
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import kotlinx.android.synthetic.main.careportal_stats_fragment.*
 import kotlinx.android.synthetic.main.overview_fragment.*
+import kotlinx.android.synthetic.main.overview_fragment.careportal_canulaage
+import kotlinx.android.synthetic.main.overview_fragment.careportal_insulinage
+import kotlinx.android.synthetic.main.overview_fragment.careportal_reservoirlevel
+import kotlinx.android.synthetic.main.overview_fragment.careportal_sensorage
+import kotlinx.android.synthetic.main.overview_fragment.careportal_pbage
+import kotlinx.android.synthetic.main.overview_fragment.careportal_batterylevel
 import kotlinx.android.synthetic.main.overview_fragment.overview_activeprofile
 import kotlinx.android.synthetic.main.overview_fragment.overview_apsmode
 import kotlinx.android.synthetic.main.overview_fragment.overview_arrow
@@ -718,15 +723,9 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
             }
         }
 
-        // NSClient mode
-        statusLightHandler.updateAge(careportal_sensorage, careportal_insulinage, careportal_canulaage, careportal_pbage)
-        // Mode modes
-        if (sp.getBoolean(R.string.key_show_statuslights, false)) {
-            if (sp.getBoolean(R.string.key_show_statuslights_extended, false))
-                statusLightHandler.extendedStatusLight(overview_canulaage, overview_insulinage, overview_reservoirlevel, overview_sensorage, overview_batterylevel)
-            else
-                statusLightHandler.statusLight(overview_canulaage, overview_insulinage, overview_reservoirlevel, overview_sensorage, overview_batterylevel)
-        }
+        // Status lights
+        overview_statuslights?.visibility = (sp.getBoolean(R.string.key_show_statuslights, true) || Config.NSCLIENT).toVisibility()
+        statusLightHandler.updateStatusLights(careportal_canulaage, careportal_insulinage, careportal_reservoirlevel, careportal_sensorage, careportal_pbage, careportal_batterylevel)
 
         // cob
         var cobText: String = resourceHelper.gs(R.string.value_unavailable_short)
@@ -759,6 +758,7 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
 
         // ****** GRAPH *******
         GlobalScope.launch(Dispatchers.Main) {
+            overview_bggraph ?: return@launch
             val graphData = GraphData(injector, overview_bggraph, iobCobCalculatorPlugin)
             val secondaryGraphsData: ArrayList<GraphData> = ArrayList()
 

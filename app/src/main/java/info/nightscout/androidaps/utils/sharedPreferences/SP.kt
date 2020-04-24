@@ -28,8 +28,8 @@ interface SP {
     fun getLong(key: String, defaultValue: Long): Long
     fun putBoolean(key: String, value: Boolean)
     fun putBoolean(@StringRes resourceID: Int, value: Boolean)
-    fun putDouble(@StringRes resourceID: Int, value: Double)
     fun putDouble(key: String, value: Double)
+    fun putDouble(@StringRes resourceID: Int, value: Double)
     fun putLong(key: String, value: Long)
     fun putLong(@StringRes resourceID: Int, value: Long)
     fun putInt(key: String, value: Int)

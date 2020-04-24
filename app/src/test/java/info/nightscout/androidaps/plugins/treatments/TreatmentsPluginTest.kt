@@ -3,6 +3,7 @@ package info.nightscout.androidaps.plugins.treatments
 import android.content.Context
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.TestBaseWithProfile
+import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.db.DatabaseHelper
 import info.nightscout.androidaps.db.TemporaryBasal
 import info.nightscout.androidaps.logging.LTag
@@ -24,13 +25,14 @@ import org.powermock.core.classloader.annotations.PrepareForTest
 import org.powermock.modules.junit4.PowerMockRunner
 
 @RunWith(PowerMockRunner::class)
-@PrepareForTest(FabricPrivacy::class, MainApp::class, DatabaseHelper::class)
+@PrepareForTest(FabricPrivacy::class, MainApp::class, DatabaseHelper::class, AppRepository::class)
 class TreatmentsPluginTest : TestBaseWithProfile() {
 
     @Mock lateinit var context: Context
     @Mock lateinit var sp: SP
     @Mock lateinit var databaseHelper: DatabaseHelper
     @Mock lateinit var treatmentService: TreatmentService
+    @Mock lateinit var repository: AppRepository
 
     lateinit var insulinOrefRapidActingPlugin: InsulinOrefRapidActingPlugin
     lateinit var sot: TreatmentsPlugin
@@ -45,7 +47,7 @@ class TreatmentsPluginTest : TestBaseWithProfile() {
         `when`(profileFunction.getProfile(ArgumentMatchers.anyLong())).thenReturn(validProfile)
         `when`(activePluginProvider.activeInsulin).thenReturn(insulinOrefRapidActingPlugin)
 
-        sot = TreatmentsPlugin(profileInjector, aapsLogger, rxBus, resourceHelper, context, sp, profileFunction, activePluginProvider, fabricPrivacy)
+        sot = TreatmentsPlugin(profileInjector, aapsLogger, rxBus, resourceHelper, context, sp, profileFunction, activePluginProvider, fabricPrivacy, repository)
         sot.service = treatmentService
     }
 
