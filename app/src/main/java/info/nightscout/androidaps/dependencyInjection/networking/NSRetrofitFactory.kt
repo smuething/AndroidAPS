@@ -27,7 +27,7 @@ import javax.inject.Named
 
 class NSRetrofitFactory(
     private val sp: SP,
-    @Named(NAME_NIGHTSCOUT) private val okHttpClient: OkHttpClient,
+    @Named(NAME_NIGHTSCOUT) private val okHttpClient: dagger.Lazy<OkHttpClient>,
     private val gson: Gson
 ) {
 
@@ -35,8 +35,8 @@ class NSRetrofitFactory(
     private fun getBaseURL() = sp.getString(R.string.key_nsclient2_baseurl, "") // Test-Server: "nsapiv3.herokuapp.com"
 
     private fun getRetrofit(): Retrofit = Retrofit.Builder()
-        .baseUrl("${getBaseURL()}")
-        .client(okHttpClient)
+        .baseUrl(getBaseURL())
+        .client(okHttpClient.get())
         .addConverterFactory(GsonConverterFactory.create(gson))
         .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))
         .build()
