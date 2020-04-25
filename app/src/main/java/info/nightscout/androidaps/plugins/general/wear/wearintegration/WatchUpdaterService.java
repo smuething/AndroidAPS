@@ -51,7 +51,7 @@ import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin;
 import info.nightscout.androidaps.plugins.treatments.Treatment;
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin;
-import info.nightscout.androidaps.utils.BatteryLevel;
+import info.nightscout.androidaps.receivers.ReceiverStatusStore;
 import info.nightscout.androidaps.utils.DecimalFormatter;
 import info.nightscout.androidaps.utils.DefaultValueHelper;
 import info.nightscout.androidaps.utils.GlucoseValueUtilsKt;
@@ -74,6 +74,7 @@ public class WatchUpdaterService extends WearableListenerService implements Goog
     @Inject public TreatmentsPlugin treatmentsPlugin;
     @Inject public ActionStringHandler actionStringHandler;
     @Inject public AppRepository repository;
+    @Inject ReceiverStatusStore receiverStatusStore;
 
     public static final String ACTION_RESEND = WatchUpdaterService.class.getName().concat(".Resend");
     public static final String ACTION_OPEN_SETTINGS = WatchUpdaterService.class.getName().concat(".OpenSettings");
@@ -708,7 +709,7 @@ public class WatchUpdaterService extends WearableListenerService implements Goog
 
 
             //batteries
-            int phoneBattery = BatteryLevel.getBatteryLevel();
+            int phoneBattery = receiverStatusStore.getBatteryLevel();
             String rigBattery = nsDeviceStatus.getUploaderStatus().trim();
 
 

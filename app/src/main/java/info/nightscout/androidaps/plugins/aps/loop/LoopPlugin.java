@@ -64,6 +64,7 @@ import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin;
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin;
 import info.nightscout.androidaps.queue.Callback;
 import info.nightscout.androidaps.queue.commands.Command;
+import info.nightscout.androidaps.receivers.ReceiverStatusStore;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.FabricPrivacy;
 import info.nightscout.androidaps.utils.T;
@@ -87,6 +88,7 @@ public class LoopPlugin extends PluginBase {
     private final VirtualPumpPlugin virtualPumpPlugin;
     private final Lazy<ActionStringHandler> actionStringHandler;
     private final IobCobCalculatorPlugin iobCobCalculatorPlugin;
+    private final ReceiverStatusStore receiverStatusStore;
     private final FabricPrivacy fabricPrivacy;
 
     private CompositeDisposable disposable = new CompositeDisposable();
@@ -131,6 +133,7 @@ public class LoopPlugin extends PluginBase {
             VirtualPumpPlugin virtualPumpPlugin,
             Lazy<ActionStringHandler> actionStringHandler, // TODO Adrian use RxBus instead of Lazy
             IobCobCalculatorPlugin iobCobCalculatorPlugin,
+            ReceiverStatusStore receiverStatusStore,
             FabricPrivacy fabricPrivacy
     ) {
         super(new PluginDescription()
@@ -155,6 +158,7 @@ public class LoopPlugin extends PluginBase {
         this.virtualPumpPlugin = virtualPumpPlugin;
         this.actionStringHandler = actionStringHandler;
         this.iobCobCalculatorPlugin = iobCobCalculatorPlugin;
+        this.receiverStatusStore = receiverStatusStore;
         this.fabricPrivacy = fabricPrivacy;
 
         loopSuspendedTill = sp.getLong("loopSuspendedTill", 0L);
@@ -395,7 +399,7 @@ public class LoopPlugin extends PluginBase {
             lastRun.lastSMBEnact = 0;
             lastRun.lastSMBRequest = 0;
 
-            NSUpload.uploadDeviceStatus(this, iobCobCalculatorPlugin, profileFunction, activePlugin.getActivePump());
+            NSUpload.uploadDeviceStatus(this, iobCobCalculatorPlugin, profileFunction, activePlugin.getActivePump(), receiverStatusStore);
 
             if (isSuspended()) {
                 getAapsLogger().debug(LTag.APS, resourceHelper.gs(R.string.loopsuspended));
@@ -422,7 +426,7 @@ public class LoopPlugin extends PluginBase {
                     if (resultAfterConstraints.bolusRequested)
                         lastRun.smbSetByPump = waiting;
                     rxBus.send(new EventLoopUpdateGui());
-                    FabricPrivacy.getInstance().logCustom("APSRequest");
+                    fabricPrivacy.logCustom("APSRequest");
                     applyTBRRequest(resultAfterConstraints, profile, new Callback() {
                         @Override
                         public void run() {
@@ -520,13 +524,13 @@ public class LoopPlugin extends PluginBase {
                     lastRun.lastTBRRequest = lastRun.lastAPSRun;
                     lastRun.lastTBREnact = DateUtil.now();
                     lastRun.lastOpenModeAccept = DateUtil.now();
-                    NSUpload.uploadDeviceStatus(lp, iobCobCalculatorPlugin, profileFunction, activePlugin.getActivePump());
+                    NSUpload.uploadDeviceStatus(lp, iobCobCalculatorPlugin, profileFunction, activePlugin.getActivePump(), receiverStatusStore);
                     sp.incInt(R.string.key_ObjectivesmanualEnacts);
                 }
                 rxBus.send(new EventAcceptOpenLoopChange());
             }
         });
-        FabricPrivacy.getInstance().logCustom("AcceptTemp");
+        fabricPrivacy.logCustom("AcceptTemp");
     }
 
     /**
@@ -748,7 +752,7 @@ public class LoopPlugin extends PluginBase {
         } catch (JSONException e) {
             getAapsLogger().error("Unhandled exception", e);
         }
-        CareportalEvent event = new CareportalEvent();
+        CareportalEvent event = new CareportalEvent(getInjector());
         event.date = DateUtil.now();
         event.source = Source.USER;
         event.eventType = CareportalEvent.OPENAPSOFFLINE;

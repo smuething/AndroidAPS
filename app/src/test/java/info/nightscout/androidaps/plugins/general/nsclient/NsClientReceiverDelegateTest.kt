@@ -32,7 +32,7 @@ class NsClientReceiverDelegateTest : TestBase() {
     @Mock lateinit var sp: SP
     @Mock lateinit var resourceHelper: ResourceHelper
 
-    lateinit var receiverStatusStore: ReceiverStatusStore
+    private lateinit var receiverStatusStore: ReceiverStatusStore
     val rxBus: RxBusWrapper = RxBusWrapper(aapsSchedulers)
 
     private var sut: NsClientReceiverDelegate? = null
@@ -50,14 +50,14 @@ class NsClientReceiverDelegateTest : TestBase() {
     @Test fun testCalculateStatusChargingState() {
         PowerMockito.mockStatic(SP::class.java)
         `when`(sp.getBoolean(anyInt(), anyBoolean())).thenReturn(false)
-        var ev = EventChargingState(true)
+        var ev = EventChargingState(true, 0)
         Assert.assertTrue(sut!!.calculateStatus(ev))
-        ev = EventChargingState(false)
+        ev = EventChargingState(false, 0)
         Assert.assertTrue(sut!!.calculateStatus(ev))
         `when`(sp.getBoolean(anyInt(), anyBoolean())).thenReturn(true)
-        ev = EventChargingState(true)
+        ev = EventChargingState(true, 0)
         Assert.assertTrue(sut!!.calculateStatus(ev))
-        ev = EventChargingState(false)
+        ev = EventChargingState(false, 0)
         Assert.assertTrue(!sut!!.calculateStatus(ev))
     }
 

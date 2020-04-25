@@ -12,7 +12,6 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
@@ -20,12 +19,10 @@ import info.nightscout.androidaps.data.DetailedBolusInfo;
 import info.nightscout.androidaps.data.IobTotal;
 import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.data.ProfileStore;
-import info.nightscout.androidaps.database.entities.GlucoseValue;
 import info.nightscout.androidaps.db.CareportalEvent;
 import info.nightscout.androidaps.db.DbRequest;
 import info.nightscout.androidaps.db.ExtendedBolus;
 import info.nightscout.androidaps.db.ProfileSwitch;
-import info.nightscout.androidaps.db.TempTarget;
 import info.nightscout.androidaps.db.TemporaryBasal;
 import info.nightscout.androidaps.interfaces.PumpInterface;
 import info.nightscout.androidaps.logging.L;
@@ -33,10 +30,9 @@ import info.nightscout.androidaps.logging.StacktraceLoggerWrapper;
 import info.nightscout.androidaps.plugins.aps.loop.APSResult;
 import info.nightscout.androidaps.plugins.aps.loop.DeviceStatus;
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin;
-import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin;
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin;
-import info.nightscout.androidaps.utils.BatteryLevel;
+import info.nightscout.androidaps.receivers.ReceiverStatusStore;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.JsonHelper;
 import info.nightscout.androidaps.utils.SP;
@@ -66,11 +62,10 @@ public class NSUpload {
         }
     }
 
-    public static void uploadTempBasalStartPercent(TemporaryBasal temporaryBasal) {
+    public static void uploadTempBasalStartPercent(TemporaryBasal temporaryBasal, Profile profile) {
         try {
             SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(MainApp.instance().getApplicationContext());
             boolean useAbsolute = SP.getBoolean("ns_sync_use_absolute", false);
-            Profile profile = ConfigBuilderPlugin.getPlugin().getProfileFunction().getProfile(temporaryBasal.date);
             double absoluteRate = 0;
             if (profile != null) {
                 absoluteRate = profile.getBasal(temporaryBasal.date) * temporaryBasal.percentRate / 100d;
@@ -154,7 +149,7 @@ public class NSUpload {
         }
     }
 
-    public static void uploadDeviceStatus(LoopPlugin loopPlugin, IobCobCalculatorPlugin iobCobCalculatorPlugin, ProfileFunction profileFunction, PumpInterface pumpInterface) {
+    public static void uploadDeviceStatus(LoopPlugin loopPlugin, IobCobCalculatorPlugin iobCobCalculatorPlugin, ProfileFunction profileFunction, PumpInterface pumpInterface, ReceiverStatusStore receiverStatusStore) {
         Profile profile = profileFunction.getProfile();
         String profileName = profileFunction.getProfileName();
 
@@ -210,7 +205,7 @@ public class NSUpload {
                 deviceStatus.pump = pumpstatus;
             }
 
-            int batteryLevel = BatteryLevel.getBatteryLevel();
+            int batteryLevel = receiverStatusStore.getBatteryLevel();
             deviceStatus.uploaderBattery = batteryLevel;
 
             deviceStatus.created_at = DateUtil.toISOString(new Date());

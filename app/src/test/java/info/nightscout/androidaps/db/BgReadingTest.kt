@@ -10,7 +10,6 @@ import info.nightscout.androidaps.logging.L
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
 import info.nightscout.androidaps.utils.DefaultValueHelper
-import info.nightscout.androidaps.utils.SP
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.Single
 import org.junit.Assert
@@ -25,7 +24,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 import java.util.logging.Logger
 
 @RunWith(PowerMockRunner::class)
-@PrepareForTest(AppRepository::class, Logger::class, L::class, SP::class, GlucoseStatus::class)
+@PrepareForTest(AppRepository::class, Logger::class, L::class, GlucoseStatus::class)
 class BgReadingTest : TestBase() {
 
     @Mock lateinit var defaultValueHelper: DefaultValueHelper

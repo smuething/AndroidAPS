@@ -166,7 +166,7 @@ abstract class PluginsModule {
     abstract fun bindVirtualPumpPlugin(plugin: VirtualPumpPlugin): PluginBase
 
     @Binds
-    @NotNSClient
+    @NSClient
     @IntoMap
     @IntKey(180)
     abstract fun bindCareportalPlugin(plugin: CareportalPlugin): PluginBase
@@ -214,8 +214,9 @@ abstract class PluginsModule {
     abstract fun bindTreatmentsPlugin(plugin: TreatmentsPlugin): PluginBase
 
     @Binds
-    @NotNSClient
-    @IntoSet
+    @AllConfigs
+    @IntoMap
+    @IntKey(265)
     abstract fun bindSafetyPlugin(plugin: SafetyPlugin): PluginBase
 
     @Binds
@@ -365,6 +366,9 @@ abstract class PluginsModule {
 
     @Qualifier
     annotation class NotNSClient
+
+    @Qualifier
+    annotation class NSClient
 
     @Qualifier
     annotation class APS

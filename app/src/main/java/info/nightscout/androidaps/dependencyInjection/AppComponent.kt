@@ -10,11 +10,13 @@ import info.nightscout.androidaps.data.ProfileStore
 import info.nightscout.androidaps.data.PumpEnactResult
 import info.nightscout.androidaps.database.DatabaseModule
 import info.nightscout.androidaps.db.BgReading
+import info.nightscout.androidaps.db.CareportalEvent
 import info.nightscout.androidaps.db.ProfileSwitch
+import info.nightscout.androidaps.db.TemporaryBasal
 import info.nightscout.androidaps.dependencyInjection.networking.NetModule
+import info.nightscout.androidaps.plugins.aps.logger.LoggerCallback
 import info.nightscout.androidaps.plugins.aps.loop.APSResult
 import info.nightscout.androidaps.plugins.aps.openAPSAMA.DetermineBasalResultAMA
-import info.nightscout.androidaps.plugins.aps.logger.LoggerCallback
 import info.nightscout.androidaps.plugins.aps.openAPSSMB.DetermineBasalAdapterSMBJS
 import info.nightscout.androidaps.plugins.aps.openAPSSMB.DetermineBasalResultSMB
 import info.nightscout.androidaps.plugins.constraints.objectives.objectives.*
@@ -156,6 +158,8 @@ interface AppComponent : AndroidInjector<MainApp> {
     fun injectTreatment(treatment: Treatment)
     fun injectBgReading(bgReading: BgReading)
     fun injectProfileSwitch(profileSwitch: ProfileSwitch)
+    fun injectTemporaryBasal(temporaryBasal: TemporaryBasal)
+    fun injectCareportalEvent(careportalEvent: CareportalEvent)
 
     fun injectNotification(notificationWithAction: NotificationWithAction)
 
