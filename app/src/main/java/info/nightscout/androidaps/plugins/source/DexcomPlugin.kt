@@ -19,6 +19,8 @@ import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
+import info.nightscout.androidaps.plugins.general.nsclient2.data.TrendArrowNightScout
+import info.nightscout.androidaps.plugins.general.nsclient2.data.toEntity
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.XDripBroadcast
@@ -82,7 +84,7 @@ class DexcomPlugin @Inject constructor(
                 value = glucoseValueBundle.getInt("glucoseValue").toDouble(),
                 noise = null,
                 raw = null,
-                trendArrow = GlucoseValue.TrendArrow.fromString(glucoseValueBundle.getString("trendArrow")!!),
+                trendArrow = TrendArrowNightScout.fromString(glucoseValueBundle.getString("trendArrow")!!).toEntity(),
                 sourceSensor = sourceSensor
             )
         }

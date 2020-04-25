@@ -13,6 +13,8 @@ import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
+import info.nightscout.androidaps.plugins.general.nsclient2.data.TrendArrowNightScout
+import info.nightscout.androidaps.plugins.general.nsclient2.data.toEntity
 import info.nightscout.androidaps.utils.XDripBroadcast
 import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
@@ -63,7 +65,7 @@ class PoctechPlugin @Inject constructor(
                 value = json.getDouble("current") * (if (json.getString("units") == "mmol/L") Constants.MMOLL_TO_MGDL else 1.0),
                 raw = json.getDouble("raw"),
                 noise = null,
-                trendArrow = GlucoseValue.TrendArrow.fromString(json.getString("direction")),
+                trendArrow = TrendArrowNightScout.fromString(json.getString("direction")).toEntity(),
                 sourceSensor = GlucoseValue.SourceSensor.POCTECH_NATIVE
             )
         }

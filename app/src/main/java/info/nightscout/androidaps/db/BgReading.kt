@@ -8,6 +8,7 @@ import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.plugins.general.nsclient2.data.toNs
 import info.nightscout.androidaps.plugins.general.overview.graphExtensions.DataPointWithLabelInterface
 import info.nightscout.androidaps.plugins.general.overview.graphExtensions.PointsWithLabelGraphSeries
 import info.nightscout.androidaps.utils.DecimalFormatter
@@ -69,8 +70,8 @@ class BgReading : DataPointWithLabelInterface {
         else DecimalFormatter.to1Decimal(data.value * Constants.MGDL_TO_MMOLL)
 
     fun directionToSymbol(): String =
-        if (data.trendArrow == GlucoseValue.TrendArrow.NONE) calculateDirection().symbol
-        else data.trendArrow.symbol
+        if (data.trendArrow == GlucoseValue.TrendArrow.NONE) calculateDirection().toNs().symbol
+        else data.trendArrow.toNs().symbol
 
     fun date(date: Long): BgReading {
         data.timestamp = date

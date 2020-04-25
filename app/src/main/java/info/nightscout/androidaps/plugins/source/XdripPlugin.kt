@@ -13,6 +13,9 @@ import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.BundleLogger
 import info.nightscout.androidaps.logging.LTag
+import info.nightscout.androidaps.plugins.general.nsclient2.data.SourceSensorNightScout
+import info.nightscout.androidaps.plugins.general.nsclient2.data.TrendArrowNightScout
+import info.nightscout.androidaps.plugins.general.nsclient2.data.toEntity
 import info.nightscout.androidaps.services.Intents
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.disposables.CompositeDisposable
@@ -57,8 +60,8 @@ class XdripPlugin @Inject constructor(
             value = bundle.getDouble(Intents.EXTRA_BG_ESTIMATE),
             raw = bundle.getDouble(Intents.EXTRA_RAW),
             noise = null,
-            trendArrow = GlucoseValue.TrendArrow.fromString(bundle.getString(Intents.EXTRA_BG_SLOPE_NAME)!!),
-            sourceSensor = GlucoseValue.SourceSensor.fromString(source)
+            trendArrow = TrendArrowNightScout.fromString(bundle.getString(Intents.EXTRA_BG_SLOPE_NAME)!!).toEntity(),
+            sourceSensor = SourceSensorNightScout.fromString(source).toEntity()
         )
         disposable += repository.runTransaction(CgmSourceTransaction(listOf(glucoseValue), emptyList(), null)).subscribe({}, {
             aapsLogger.error(LTag.BGSOURCE, "Error while saving values from xDrip", it)
@@ -68,6 +71,6 @@ class XdripPlugin @Inject constructor(
     private fun setSource(source: String) {
         advancedFiltering =
             arrayOf(GlucoseValue.SourceSensor.DEXCOM_G6_NATIVE_XDRIP, GlucoseValue.SourceSensor.DEXCOM_G6_NATIVE_XDRIP)
-                .contains(GlucoseValue.SourceSensor.fromString(source))
+                .contains(SourceSensorNightScout.fromString(source).toEntity())
     }
 }
