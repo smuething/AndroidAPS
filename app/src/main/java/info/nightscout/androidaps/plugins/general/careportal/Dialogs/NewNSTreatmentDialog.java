@@ -77,6 +77,7 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
     @Inject TreatmentsPlugin treatmentsPlugin;
     @Inject HardLimits hardLimits;
     @Inject AppRepository repository;
+    @Inject Translator translator;
 
     private static OptionsToShow options;
     private static @StringRes int event;
@@ -554,7 +555,7 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
         if (data.has("glucoseType")) {
             ret += resourceHelper.gs(R.string.careportal_newnstreatment_glucosetype);
             ret += ": ";
-            ret += Translator.translate(JsonHelper.safeGetString(data, "glucoseType", ""));
+            ret += translator.translate(JsonHelper.safeGetString(data, "glucoseType", ""));
             ret += "\n";
         }
         if (data.has("carbs")) {
@@ -643,7 +644,7 @@ public class NewNSTreatmentDialog extends DaggerDialogFragment implements View.O
 
     private void confirmNSTreatmentCreation() {
         final JSONObject data = gatherData();
-        OKDialog.showConfirmation(getContext(), Translator.translate(JsonHelper.safeGetString(data, "eventType", resourceHelper.gs(R.string.overview_treatment_label))), buildConfirmText(data), () -> NSUpload.createNSTreatment(data, profileStore, profileFunction, eventTime.getTime()));
+        OKDialog.showConfirmation(getContext(), translator.translate(JsonHelper.safeGetString(data, "eventType", resourceHelper.gs(R.string.overview_treatment_label))), buildConfirmText(data), () -> NSUpload.createNSTreatment(data, profileStore, profileFunction, eventTime.getTime()));
     }
 
 
