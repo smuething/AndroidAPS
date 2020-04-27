@@ -58,6 +58,8 @@ class MedtronicFragment : DaggerFragment() {
     @Inject lateinit var medtronicPumpPlugin: MedtronicPumpPlugin
     @Inject lateinit var aapsSchedlulers: AapsSchedulers
     @Inject lateinit var warnColors: WarnColors
+    @Inject lateinit var rileyLinkUtil: RileyLinkUtil
+    @Inject lateinit var medtronicUtil: MedtronicUtil
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -86,7 +88,7 @@ class MedtronicFragment : DaggerFragment() {
         medtronic_pump_status.text = "{fa-bed}"
 
         medtronic_history.setOnClickListener {
-            if (MedtronicUtil.getPumpStatus().verifyConfiguration()) {
+            if (medtronicUtil.getPumpStatus().verifyConfiguration()) {
                 startActivity(Intent(context, MedtronicHistoryActivity::class.java))
             } else {
                 displayNotConfiguredDialog()
@@ -94,7 +96,7 @@ class MedtronicFragment : DaggerFragment() {
         }
 
         medtronic_refresh.setOnClickListener {
-            if (!MedtronicUtil.getPumpStatus().verifyConfiguration()) {
+            if (!medtronicUtil.getPumpStatus().verifyConfiguration()) {
                 displayNotConfiguredDialog()
             } else {
                 medtronic_refresh.isEnabled = false
@@ -108,7 +110,7 @@ class MedtronicFragment : DaggerFragment() {
         }
 
         medtronic_stats.setOnClickListener {
-            if (MedtronicUtil.getPumpStatus().verifyConfiguration()) {
+            if (medtronicUtil.getPumpStatus().verifyConfiguration()) {
                 startActivity(Intent(context, RileyLinkStatusActivity::class.java))
             } else {
                 displayNotConfiguredDialog()
@@ -148,7 +150,7 @@ class MedtronicFragment : DaggerFragment() {
             .observeOn(aapsSchedlulers.main)
             .subscribe({
                 aapsLogger.debug(LTag.PUMP, "EventMedtronicPumpConfigurationChanged triggered")
-                MedtronicUtil.getPumpStatus().verifyConfiguration()
+                medtronicUtil.getPumpStatus().verifyConfiguration()
                 updateGUI()
             }, { fabricPrivacy.logException(it) })
         disposable += rxBus
@@ -172,12 +174,12 @@ class MedtronicFragment : DaggerFragment() {
 
     @Synchronized
     private fun setDeviceStatus() {
-        val pumpStatus: MedtronicPumpStatus = MedtronicUtil.getPumpStatus()
+        val pumpStatus: MedtronicPumpStatus = medtronicUtil.getPumpStatus()
         pumpStatus.rileyLinkServiceState = checkStatusSet(pumpStatus.rileyLinkServiceState,
-            RileyLinkUtil.getServiceState()) as RileyLinkServiceState?
+            rileyLinkUtil.getServiceState()) as RileyLinkServiceState?
 
         val resourceId = pumpStatus.rileyLinkServiceState.getResourceId(RileyLinkTargetDevice.MedtronicPump)
-        val rileyLinkError = RileyLinkUtil.getError()
+        val rileyLinkError = rileyLinkUtil.getError()
         medtronic_rl_status.text =
             when {
                 pumpStatus.rileyLinkServiceState == RileyLinkServiceState.NotStarted -> resourceHelper.gs(resourceId)
@@ -188,7 +190,7 @@ class MedtronicFragment : DaggerFragment() {
             }
         medtronic_rl_status.setTextColor(if (rileyLinkError != null) Color.RED else Color.WHITE)
 
-        pumpStatus.rileyLinkError = checkStatusSet(pumpStatus.rileyLinkError, RileyLinkUtil.getError()) as RileyLinkError?
+        pumpStatus.rileyLinkError = checkStatusSet(pumpStatus.rileyLinkError, rileyLinkUtil.getError()) as RileyLinkError?
 
         medtronic_errors.text =
             pumpStatus.rileyLinkError?.let {
@@ -196,7 +198,7 @@ class MedtronicFragment : DaggerFragment() {
             } ?: "-"
 
         pumpStatus.pumpDeviceState = checkStatusSet(pumpStatus.pumpDeviceState,
-            MedtronicUtil.getPumpDeviceState()) as PumpDeviceState?
+            medtronicUtil.getPumpDeviceState()) as PumpDeviceState?
 
         when (pumpStatus.pumpDeviceState) {
             null,
@@ -209,17 +211,17 @@ class MedtronicFragment : DaggerFragment() {
             PumpDeviceState.InvalidConfiguration -> medtronic_pump_status.text = " " + resourceHelper.gs(pumpStatus.pumpDeviceState.resourceId)
 
             PumpDeviceState.Active               -> {
-                val cmd = MedtronicUtil.getCurrentCommand()
+                val cmd = medtronicUtil.getCurrentCommand()
                 if (cmd == null)
                     medtronic_pump_status.text = " " + resourceHelper.gs(pumpStatus.pumpDeviceState.resourceId)
                 else {
                     aapsLogger.debug(LTag.PUMP, "Command: " + cmd)
                     val cmdResourceId = cmd.resourceId
                     if (cmd == MedtronicCommandType.GetHistoryData) {
-                        medtronic_pump_status.text = MedtronicUtil.frameNumber?.let {
-                            resourceHelper.gs(cmdResourceId, MedtronicUtil.pageNumber, MedtronicUtil.frameNumber)
+                        medtronic_pump_status.text = medtronicUtil.frameNumber?.let {
+                            resourceHelper.gs(cmdResourceId, medtronicUtil.pageNumber, medtronicUtil.frameNumber)
                         }
-                            ?: resourceHelper.gs(R.string.medtronic_cmd_desc_get_history_request, MedtronicUtil.pageNumber)
+                            ?: resourceHelper.gs(R.string.medtronic_cmd_desc_get_history_request, medtronicUtil.pageNumber)
                     } else {
                         medtronic_pump_status.text = " " + (cmdResourceId?.let { resourceHelper.gs(it) }
                             ?: cmd.getCommandDescription())
@@ -261,7 +263,7 @@ class MedtronicFragment : DaggerFragment() {
     @Synchronized
     fun updateGUI() {
         if (medtronic_rl_status == null) return
-        val pumpStatus = MedtronicUtil.getPumpStatus()
+        val pumpStatus = medtronicUtil.getPumpStatus()
 
         setDeviceStatus()
 
@@ -322,7 +324,7 @@ class MedtronicFragment : DaggerFragment() {
             ?: ""
 
         // battery
-        if (MedtronicUtil.getBatteryType() == BatteryType.None || pumpStatus.batteryVoltage == null) {
+        if (medtronicUtil.getBatteryType() == BatteryType.None || pumpStatus.batteryVoltage == null) {
             medtronic_pumpstate_battery.text = "{fa-battery-" + pumpStatus.batteryRemaining / 25 + "}  "
         } else {
             medtronic_pumpstate_battery.text = "{fa-battery-" + pumpStatus.batteryRemaining / 25 + "}  " + pumpStatus.batteryRemaining + "%" + String.format("  (%.2f V)", pumpStatus.batteryVoltage)

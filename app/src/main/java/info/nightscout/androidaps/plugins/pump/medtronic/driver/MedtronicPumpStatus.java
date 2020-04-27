@@ -1,8 +1,6 @@
 package info.nightscout.androidaps.plugins.pump.medtronic.driver;
 
 import org.joda.time.LocalDateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -10,11 +8,12 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 
-import info.nightscout.androidaps.MainApp;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import info.nightscout.androidaps.R;
-import info.nightscout.androidaps.interfaces.PumpDescription;
-import info.nightscout.androidaps.logging.L;
-import info.nightscout.androidaps.logging.StacktraceLoggerWrapper;
+import info.nightscout.androidaps.logging.AAPSLogger;
+import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.pump.common.data.PumpStatus;
 import info.nightscout.androidaps.plugins.pump.common.defs.PumpType;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.RileyLinkConst;
@@ -23,6 +22,7 @@ import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.ble.defs.Rile
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.ble.defs.RileyLinkTargetFrequency;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.defs.RileyLinkError;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.defs.RileyLinkServiceState;
+import info.nightscout.androidaps.plugins.pump.medtronic.MedtronicPumpPlugin;
 import info.nightscout.androidaps.plugins.pump.medtronic.data.MedtronicHistoryData;
 import info.nightscout.androidaps.plugins.pump.medtronic.defs.BasalProfileStatus;
 import info.nightscout.androidaps.plugins.pump.medtronic.defs.BatteryType;
@@ -30,15 +30,19 @@ import info.nightscout.androidaps.plugins.pump.medtronic.defs.MedtronicDeviceTyp
 import info.nightscout.androidaps.plugins.pump.medtronic.defs.PumpDeviceState;
 import info.nightscout.androidaps.plugins.pump.medtronic.util.MedtronicConst;
 import info.nightscout.androidaps.plugins.pump.medtronic.util.MedtronicUtil;
-import info.nightscout.androidaps.utils.SP;
+import info.nightscout.androidaps.utils.resources.ResourceHelper;
+import info.nightscout.androidaps.utils.sharedPreferences.SP;
 
 /**
  * Created by andy on 4/28/18.
  */
 
+@Singleton
 public class MedtronicPumpStatus extends PumpStatus {
 
-    private static Logger LOG = StacktraceLoggerWrapper.getLogger(L.PUMP);
+    private final AAPSLogger aapsLogger;
+    private final ResourceHelper resourceHelper;
+    private final SP sp;
 
     public String errorDescription = null;
     public String serialNumber;
@@ -46,7 +50,7 @@ public class MedtronicPumpStatus extends PumpStatus {
     public String rileyLinkAddress = null;
     public Double maxBolus;
     public Double maxBasal;
-    public boolean inPreInit = true;
+    private boolean inPreInit = true;
 
     // statuses
     public RileyLinkServiceState rileyLinkServiceState = RileyLinkServiceState.NotStarted;
@@ -81,13 +85,21 @@ public class MedtronicPumpStatus extends PumpStatus {
     public BatteryType batteryType = BatteryType.None;
 
 
-    public MedtronicPumpStatus(PumpDescription pumpDescription) {
-        super(pumpDescription);
+    @Inject
+    public MedtronicPumpStatus(
+            AAPSLogger aapsLogger,
+            ResourceHelper resourceHelper,
+            SP sp
+    ) {
+        super();
+        this.aapsLogger = aapsLogger;
+        this.resourceHelper = resourceHelper;
+        this.sp = sp;
+        initSettings();
     }
 
 
-    @Override
-    public void initSettings() {
+    private void initSettings() {
 
         this.activeProfileName = "STD";
         this.reservoirRemainingUnits = 75d;
@@ -99,7 +111,7 @@ public class MedtronicPumpStatus extends PumpStatus {
         if (this.medtronicDeviceTypeMap == null)
             createMedtronicDeviceTypeMap();
 
-        this.lastConnection = SP.getLong(MedtronicConst.Statistics.LastGoodPumpCommunicationTime, 0L);
+        this.lastConnection = sp.getLong(MedtronicConst.Statistics.LastGoodPumpCommunicationTime, 0L);
         this.lastDataTime = new LocalDateTime(this.lastConnection);
     }
 
@@ -136,8 +148,8 @@ public class MedtronicPumpStatus extends PumpStatus {
         medtronicPumpMap.put("754", PumpType.Medtronic_554_754_Veo);
 
         frequencies = new String[2];
-        frequencies[0] = MainApp.gs(R.string.key_medtronic_pump_frequency_us_ca);
-        frequencies[1] = MainApp.gs(R.string.key_medtronic_pump_frequency_worldwide);
+        frequencies[0] = resourceHelper.gs(R.string.key_medtronic_pump_frequency_us_ca);
+        frequencies[1] = resourceHelper.gs(R.string.key_medtronic_pump_frequency_worldwide);
     }
 
 
@@ -153,14 +165,14 @@ public class MedtronicPumpStatus extends PumpStatus {
 
             this.errorDescription = "-";
 
-            String serialNr = SP.getString(MedtronicConst.Prefs.PumpSerial, null);
+            String serialNr = sp.getStringOrNull(MedtronicConst.Prefs.PumpSerial, null);
 
             if (serialNr == null) {
-                this.errorDescription = MainApp.gs(R.string.medtronic_error_serial_not_set);
+                this.errorDescription = resourceHelper.gs(R.string.medtronic_error_serial_not_set);
                 return false;
             } else {
                 if (!serialNr.matches(regexSN)) {
-                    this.errorDescription = MainApp.gs(R.string.medtronic_error_serial_invalid);
+                    this.errorDescription = resourceHelper.gs(R.string.medtronic_error_serial_invalid);
                     return false;
                 } else {
                     if (!serialNr.equals(this.serialNumber)) {
@@ -170,21 +182,21 @@ public class MedtronicPumpStatus extends PumpStatus {
                 }
             }
 
-            String pumpType = SP.getString(MedtronicConst.Prefs.PumpType, null);
+            String pumpType = sp.getStringOrNull(MedtronicConst.Prefs.PumpType, null);
 
             if (pumpType == null) {
-                this.errorDescription = MainApp.gs(R.string.medtronic_error_pump_type_not_set);
+                this.errorDescription = resourceHelper.gs(R.string.medtronic_error_pump_type_not_set);
                 return false;
             } else {
                 String pumpTypePart = pumpType.substring(0, 3);
 
                 if (!pumpTypePart.matches("[0-9]{3}")) {
-                    this.errorDescription = MainApp.gs(R.string.medtronic_error_pump_type_invalid);
+                    this.errorDescription = resourceHelper.gs(R.string.medtronic_error_pump_type_invalid);
                     return false;
                 } else {
                     this.pumpType = medtronicPumpMap.get(pumpTypePart);
                     this.medtronicDeviceType = medtronicDeviceTypeMap.get(pumpTypePart);
-                    this.pumpDescription.setPumpDescription(this.pumpType);
+                    MedtronicPumpPlugin.getPlugin().getPumpDescription().setPumpDescription(this.pumpType);
 
                     if (pumpTypePart.startsWith("7"))
                         this.reservoirFullUnits = 300;
@@ -193,14 +205,14 @@ public class MedtronicPumpStatus extends PumpStatus {
                 }
             }
 
-            String pumpFrequency = SP.getString(MedtronicConst.Prefs.PumpFrequency, null);
+            String pumpFrequency = sp.getStringOrNull(MedtronicConst.Prefs.PumpFrequency, null);
 
             if (pumpFrequency == null) {
-                this.errorDescription = MainApp.gs(R.string.medtronic_error_pump_frequency_not_set);
+                this.errorDescription = resourceHelper.gs(R.string.medtronic_error_pump_frequency_not_set);
                 return false;
             } else {
                 if (!pumpFrequency.equals(frequencies[0]) && !pumpFrequency.equals(frequencies[1])) {
-                    this.errorDescription = MainApp.gs(R.string.medtronic_error_pump_frequency_invalid);
+                    this.errorDescription = resourceHelper.gs(R.string.medtronic_error_pump_frequency_invalid);
                     return false;
                 } else {
                     this.pumpFrequency = pumpFrequency;
@@ -211,7 +223,7 @@ public class MedtronicPumpStatus extends PumpStatus {
                             : RileyLinkTargetFrequency.Medtronic_WorldWide;
 
                     if (targetFrequency != newTargetFrequency) {
-                        RileyLinkUtil.setRileyLinkTargetFrequency(newTargetFrequency);
+                        RileyLinkUtil.getInstance().setRileyLinkTargetFrequency(newTargetFrequency);
                         targetFrequency = newTargetFrequency;
                         targetFrequencyChanged = true;
                     }
@@ -219,18 +231,16 @@ public class MedtronicPumpStatus extends PumpStatus {
                 }
             }
 
-            String rileyLinkAddress = SP.getString(RileyLinkConst.Prefs.RileyLinkAddress, null);
+            String rileyLinkAddress = sp.getStringOrNull(RileyLinkConst.Prefs.RileyLinkAddress, null);
 
             if (rileyLinkAddress == null) {
-                if (isLogEnabled())
-                    LOG.debug("RileyLink address invalid: null");
-                this.errorDescription = MainApp.gs(R.string.medtronic_error_rileylink_address_invalid);
+                aapsLogger.debug(LTag.PUMP, "RileyLink address invalid: null");
+                this.errorDescription = resourceHelper.gs(R.string.medtronic_error_rileylink_address_invalid);
                 return false;
             } else {
                 if (!rileyLinkAddress.matches(regexMac)) {
-                    this.errorDescription = MainApp.gs(R.string.medtronic_error_rileylink_address_invalid);
-                    if (isLogEnabled())
-                        LOG.debug("RileyLink address invalid: {}", rileyLinkAddress);
+                    this.errorDescription = resourceHelper.gs(R.string.medtronic_error_rileylink_address_invalid);
+                    aapsLogger.debug(LTag.PUMP, "RileyLink address invalid: {}", rileyLinkAddress);
                 } else {
                     if (!rileyLinkAddress.equals(this.rileyLinkAddress)) {
                         this.rileyLinkAddress = rileyLinkAddress;
@@ -256,7 +266,7 @@ public class MedtronicPumpStatus extends PumpStatus {
             }
 
 
-            String encodingTypeStr = SP.getString(MedtronicConst.Prefs.Encoding, null);
+            String encodingTypeStr = sp.getStringOrNull(MedtronicConst.Prefs.Encoding, null);
 
             if (encodingTypeStr == null) {
                 return false;
@@ -271,21 +281,21 @@ public class MedtronicPumpStatus extends PumpStatus {
                 this.encodingChanged = true;
             }
 
-            String batteryTypeStr = SP.getString(MedtronicConst.Prefs.BatteryType, null);
+            String batteryTypeStr = sp.getStringOrNull(MedtronicConst.Prefs.BatteryType, null);
 
             if (batteryTypeStr == null)
                 return false;
 
-            BatteryType batteryType = BatteryType.getByDescription(batteryTypeStr);
+            BatteryType batteryType = getBatteryTypeByDescription(batteryTypeStr);
 
             if (this.batteryType != batteryType) {
                 this.batteryType = batteryType;
-                MedtronicUtil.setBatteryType(this.batteryType);
+                MedtronicUtil.getInstance().setBatteryType(this.batteryType);
             }
 
-            String bolusDebugEnabled = SP.getString(MedtronicConst.Prefs.BolusDebugEnabled, null);
+            String bolusDebugEnabled = sp.getStringOrNull(MedtronicConst.Prefs.BolusDebugEnabled, null);
 
-            boolean bolusDebug = bolusDebugEnabled != null && bolusDebugEnabled.equals(MainApp.gs(R.string.common_on));
+            boolean bolusDebug = bolusDebugEnabled != null && bolusDebugEnabled.equals(resourceHelper.gs(R.string.common_on));
 
             MedtronicHistoryData.doubleBolusDebug = bolusDebug;
 
@@ -295,7 +305,7 @@ public class MedtronicPumpStatus extends PumpStatus {
 
         } catch (Exception ex) {
             this.errorDescription = ex.getMessage();
-            LOG.error("Error on Verification: " + ex.getMessage(), ex);
+            aapsLogger.error(LTag.PUMP, "Error on Verification: " + ex.getMessage(), ex);
             return false;
         }
     }
@@ -303,20 +313,20 @@ public class MedtronicPumpStatus extends PumpStatus {
 
     private boolean reconfigureService() {
 
-        if (!inPreInit && MedtronicUtil.getMedtronicService() != null) {
+        if (!inPreInit && MedtronicUtil.getInstance().getMedtronicService() != null) {
 
             if (serialChanged) {
-                MedtronicUtil.getMedtronicService().setPumpIDString(this.serialNumber); // short operation
+                MedtronicUtil.getInstance().getMedtronicService().setPumpIDString(this.serialNumber); // short operation
                 serialChanged = false;
             }
 
             if (rileyLinkAddressChanged) {
-                MedtronicUtil.sendBroadcastMessage(RileyLinkConst.Intents.RileyLinkNewAddressSet);
+                RileyLinkUtil.getInstance().sendBroadcastMessage(RileyLinkConst.Intents.RileyLinkNewAddressSet);
                 rileyLinkAddressChanged = false;
             }
 
             if (encodingChanged) {
-                RileyLinkUtil.getRileyLinkService().changeRileyLinkEncoding(encodingType);
+                RileyLinkUtil.getInstance().getRileyLinkService().changeRileyLinkEncoding(encodingType);
                 encodingChanged = false;
             }
         }
@@ -335,17 +345,17 @@ public class MedtronicPumpStatus extends PumpStatus {
     private double checkParameterValue(int key, String defaultValue, double defaultValueDouble) {
         double val = 0.0d;
 
-        String value = SP.getString(key, defaultValue);
+        String value = sp.getString(key, defaultValue);
 
         try {
             val = Double.parseDouble(value);
         } catch (Exception ex) {
-            LOG.error("Error parsing setting: {}, value found {}", key, value);
+            aapsLogger.error("Error parsing setting: {}, value found {}", key, value);
             val = defaultValueDouble;
         }
 
         if (val > defaultValueDouble) {
-            SP.putString(key, defaultValue);
+            sp.putString(key, defaultValue);
             val = defaultValueDouble;
         }
 
@@ -384,8 +394,20 @@ public class MedtronicPumpStatus extends PumpStatus {
         return 0;
     }
 
-    private boolean isLogEnabled() {
-        return L.isEnabled(L.PUMP);
+    // Battery type
+    private Map<String, BatteryType> mapByDescription;
+
+    private BatteryType getBatteryTypeByDescription(String batteryTypeStr) {
+        if (mapByDescription == null) {
+            mapByDescription = new HashMap<>();
+            for (BatteryType value : BatteryType.values()) {
+                mapByDescription.put(resourceHelper.gs(value.description), value);
+            }
+        }
+        if (mapByDescription.containsKey(batteryTypeStr)) {
+            return mapByDescription.get(batteryTypeStr);
+        }
+        return BatteryType.None;
     }
 
 }

@@ -1,8 +1,8 @@
 package info.nightscout.androidaps.plugins.pump.common.data;
 
-import java.util.Date;
-
 import org.joda.time.LocalDateTime;
+
+import java.util.Date;
 
 import info.nightscout.androidaps.data.ProfileStore;
 import info.nightscout.androidaps.interfaces.PumpDescription;
@@ -19,7 +19,9 @@ public abstract class PumpStatus {
     public LocalDateTime lastDataTime;
     public long lastConnection = 0L;
     public long previousConnection = 0L; // here should be stored last connection of previous session (so needs to be
-                                         // read before lastConnection is modified for first time).
+    // read before lastConnection is modified for first time).
+
+    public long lastErrorConnection = 0L;
 
     // last bolus
     public Date lastBolusTime;
@@ -27,10 +29,10 @@ public abstract class PumpStatus {
 
     // other pump settings
     public String activeProfileName = "0";
-    public double reservoirRemainingUnits = 0d;
+    public double reservoirRemainingUnits = 0.0d;
     public int reservoirFullUnits = 0;
     public int batteryRemaining = 0; // percent, so 0-100
-    public Double batteryVoltage = null; 
+    public Double batteryVoltage = null;
 
 
     // iob
@@ -50,22 +52,26 @@ public abstract class PumpStatus {
     public int tempBasalRatio = 0;
     public int tempBasalRemainMin = 0;
     public Date tempBasalStart;
-    protected PumpDescription pumpDescription;
+    //protected PumpDescription pumpDescription;
 
 
-    public PumpStatus(PumpDescription pumpDescription) {
-        this.pumpDescription = pumpDescription;
+   public PumpStatus() {
+ //  public PumpStatus(PumpDescription pumpDescription) {
+ //       this.pumpDescription = pumpDescription;
 
-        this.initSettings();
+//        this.initSettings();
     }
 
 
-    public abstract void initSettings();
 
 
     public void setLastCommunicationToNow() {
         this.lastDataTime = LocalDateTime.now();
         this.lastConnection = System.currentTimeMillis();
+    }
+
+    public void setLastFailedCommunicationToNow() {
+        this.lastErrorConnection = System.currentTimeMillis();
     }
 
 

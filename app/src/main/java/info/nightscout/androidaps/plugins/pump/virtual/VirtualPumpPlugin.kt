@@ -30,6 +30,7 @@ import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.InstanceId.instanceId
 import io.reactivex.rxkotlin.plusAssign
+import info.nightscout.androidaps.utils.TimeChangeType
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.disposables.CompositeDisposable
@@ -409,5 +410,6 @@ class VirtualPumpPlugin @Inject constructor(
         pumpType = pumpTypeNew
     }
 
-    override fun timeDateOrTimeZoneChanged() {}
+    override fun timezoneOrDSTChanged(timeChangeType: TimeChangeType?) {}
+
 }

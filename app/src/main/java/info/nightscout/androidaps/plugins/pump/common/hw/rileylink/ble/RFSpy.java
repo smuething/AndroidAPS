@@ -32,6 +32,7 @@ import info.nightscout.androidaps.plugins.pump.common.utils.ByteUtil;
 import info.nightscout.androidaps.plugins.pump.common.utils.StringUtil;
 import info.nightscout.androidaps.plugins.pump.common.utils.ThreadUtil;
 import info.nightscout.androidaps.plugins.pump.medtronic.util.MedtronicConst;
+
 import info.nightscout.androidaps.utils.SP;
 
 /**
@@ -90,7 +91,7 @@ public class RFSpy {
     public void initializeRileyLink() {
         bleVersion = getVersion();
         firmwareVersion = getFirmwareVersion();
-        RileyLinkUtil.setFirmwareVersion(firmwareVersion);
+        RileyLinkUtil.getInstance().setFirmwareVersion(firmwareVersion);
     }
 
 
@@ -114,6 +115,12 @@ public class RFSpy {
             LOG.error("getVersion failed with code: " + result.resultCode);
             return "(null)";
         }
+    }
+
+    public boolean isRileyLinkStillAvailable() {
+        RileyLinkFirmwareVersion firmwareVersion = getFirmwareVersion();
+
+        return (firmwareVersion!= RileyLinkFirmwareVersion.UnknownVersion);
     }
 
 
@@ -289,7 +296,7 @@ public class RFSpy {
 
         this.currentFrequencyMHz = freqMHz;
 
-        configureRadioForRegion(RileyLinkUtil.getRileyLinkTargetFrequency());
+        configureRadioForRegion(RileyLinkUtil.getInstance().getRileyLinkTargetFrequency());
     }
 
 
@@ -396,7 +403,7 @@ public class RFSpy {
 
         if (resp.isOK()) {
             reader.setRileyLinkEncodingType(encoding);
-            RileyLinkUtil.setEncoding(encoding);
+            RileyLinkUtil.getInstance().setEncoding(encoding);
         }
 
         return resp;

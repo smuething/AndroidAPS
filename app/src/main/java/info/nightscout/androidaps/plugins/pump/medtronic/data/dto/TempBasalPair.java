@@ -1,7 +1,5 @@
 package info.nightscout.androidaps.plugins.pump.medtronic.data.dto;
 
-import com.google.gson.annotations.Expose;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,17 +17,9 @@ import info.nightscout.androidaps.plugins.pump.medtronic.util.MedtronicUtil;
  * <p>
  * Just need a class to keep the pair together, for parcel transport.
  */
-public class TempBasalPair {
+public class TempBasalPair extends info.nightscout.androidaps.plugins.pump.common.data.TempBasalPair {
 
     private static final Logger LOG = StacktraceLoggerWrapper.getLogger(L.PUMPCOMM);
-
-    @Expose
-    private double insulinRate = 0.0d;
-    @Expose
-    private int durationMinutes = 0;
-    @Expose
-    private boolean isPercent = false;
-
 
     public TempBasalPair() {
     }
@@ -43,6 +33,8 @@ public class TempBasalPair {
      * @param isPercent
      */
     public TempBasalPair(byte rateByte, int startTimeByte, boolean isPercent) {
+        super();
+
         int rateInt = ByteUtil.asUINT8(rateByte);
 
         if (isPercent)
@@ -51,13 +43,6 @@ public class TempBasalPair {
             this.insulinRate = rateInt * 0.025;
         this.durationMinutes = startTimeByte * 30;
         this.isPercent = isPercent;
-    }
-
-
-    public TempBasalPair(double insulinRate, boolean isPercent, int durationMinutes) {
-        this.insulinRate = insulinRate;
-        this.isPercent = isPercent;
-        this.durationMinutes = durationMinutes;
     }
 
 
@@ -71,7 +56,7 @@ public class TempBasalPair {
         if (isPercent) {
             insulinRate = response[1];
         } else {
-            int strokes = MedtronicUtil.makeUnsignedShort(response[2], response[3]);
+            int strokes = MedtronicUtil.getInstance().makeUnsignedShort(response[2], response[3]);
 
             insulinRate = strokes / 40.0d;
         }
@@ -79,7 +64,7 @@ public class TempBasalPair {
         if (response.length<6) {
             durationMinutes = ByteUtil.asUINT8(response[4]);
         } else {
-            durationMinutes = MedtronicUtil.makeUnsignedShort(response[4], response[5]);
+            durationMinutes = MedtronicUtil.getInstance().makeUnsignedShort(response[4], response[5]);
         }
 
         LOG.warn("TempBasalPair (with {} byte response): {}", response.length, toString());
@@ -87,33 +72,8 @@ public class TempBasalPair {
     }
 
 
-    public double getInsulinRate() {
-        return insulinRate;
-    }
-
-
-    public void setInsulinRate(double insulinRate) {
-        this.insulinRate = insulinRate;
-    }
-
-
-    public int getDurationMinutes() {
-        return durationMinutes;
-    }
-
-
-    public void setDurationMinutes(int durationMinutes) {
-        this.durationMinutes = durationMinutes;
-    }
-
-
-    public boolean isPercent() {
-        return isPercent;
-    }
-
-
-    public void setIsPercent(boolean yesIsPercent) {
-        this.isPercent = yesIsPercent;
+    public TempBasalPair(double insulinRate, boolean isPercent, int durationMinutes) {
+        super(insulinRate, isPercent, durationMinutes);
     }
 
 
@@ -123,8 +83,8 @@ public class TempBasalPair {
 
         list.add((byte) 5);
 
-        byte[] insulinRate = MedtronicUtil.getBasalStrokes(this.insulinRate, true);
-        byte timeMin = (byte) MedtronicUtil.getIntervalFromMinutes(durationMinutes);
+        byte[] insulinRate = MedtronicUtil.getInstance().getBasalStrokes(this.insulinRate, true);
+        byte timeMin = (byte) MedtronicUtil.getInstance().getIntervalFromMinutes(durationMinutes);
 
         // list.add((byte) 0); // ?
 
@@ -147,11 +107,11 @@ public class TempBasalPair {
 
         list.add(insulinRate[1]);
 
-        return MedtronicUtil.createByteArray(list);
+        return MedtronicUtil.getInstance().createByteArray(list);
     }
 
     public boolean isCancelTBR() {
-        return (MedtronicUtil.isSame(insulinRate, 0.0d) && durationMinutes == 0);
+        return (MedtronicUtil.getInstance().isSame(insulinRate, 0.0d) && durationMinutes == 0);
     }
 
 

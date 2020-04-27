@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import info.nightscout.androidaps.plugins.pump.common.defs.PumpHistoryEntryGroup;
 import info.nightscout.androidaps.plugins.pump.medtronic.defs.MedtronicDeviceType;
 import info.nightscout.androidaps.plugins.pump.medtronic.util.MedtronicUtil;
 
@@ -379,7 +380,7 @@ public enum PumpHistoryEntryType // implements CodeEnum
         int size = defaultValue;
 
         for (SpecialRule rule : rules) {
-            if (MedtronicDeviceType.isSameDevice(MedtronicUtil.getMedtronicPumpModel(), rule.deviceType)) {
+            if (MedtronicDeviceType.isSameDevice(MedtronicUtil.getInstance().getMedtronicPumpModel(), rule.deviceType)) {
                 size = rule.size;
                 break;
             }
