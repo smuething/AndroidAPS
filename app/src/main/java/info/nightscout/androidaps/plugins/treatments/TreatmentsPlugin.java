@@ -128,7 +128,7 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
 
     @Override
     protected void onStart() {
-        this.service = new TreatmentService();
+        this.service = new TreatmentService(getInjector());
         initializeData(range());
         super.onStart();
         disposable.add(rxBus
@@ -309,13 +309,13 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
 
         long time = System.currentTimeMillis();
         synchronized (treatments) {
-            getAapsLogger().debug(MedtronicHistoryData.doubleBolusDebug, LTag.DATATREATMENTS, "DoubleBolusDebug: AllTreatmentsInDb: " + new GsonBuilder().create().toJson(treatments));
+            getAapsLogger().debug(MedtronicHistoryData.doubleBolusDebug, LTag.DATATREATMENTS, "DoubleBolusDebug: AllTreatmentsInDb: " + new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create().toJson(treatments));
 
             for (Treatment t : treatments) {
                 if (t.date <= time && t.date >= fromTimestamp)
                     in5minback.add(t);
             }
-            getAapsLogger().debug(MedtronicHistoryData.doubleBolusDebug, LTag.DATATREATMENTS, "DoubleBolusDebug: FilteredTreatments: AfterTime={}, Items={} " + fromTimestamp + " " + new GsonBuilder().create().toJson(in5minback));
+            getAapsLogger().debug(MedtronicHistoryData.doubleBolusDebug, LTag.DATATREATMENTS, "DoubleBolusDebug: FilteredTreatments: AfterTime={}, Items={} " + fromTimestamp + " " + new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create().toJson(in5minback));
             return in5minback;
         }
     }
@@ -432,7 +432,7 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
                     Profile profile = profileFunction.getProfile(e.date);
                     if (profile == null) continue;
                     if (truncate && e.end() > truncateTime) {
-                        ExtendedBolus dummyExt = new ExtendedBolus();
+                        ExtendedBolus dummyExt = new ExtendedBolus(getInjector());
                         dummyExt.copyFrom(e);
                         dummyExt.cutEndTo(truncateTime);
                         calc = dummyExt.iobCalc(time);
@@ -507,7 +507,7 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
                     Profile profile = profileFunction.getProfile(e.date);
                     if (profile == null) continue;
                     if (e.end() > truncateTime) {
-                        ExtendedBolus dummyExt = new ExtendedBolus();
+                        ExtendedBolus dummyExt = new ExtendedBolus(getInjector());
                         dummyExt.copyFrom(e);
                         dummyExt.cutEndTo(truncateTime);
                         calc = dummyExt.iobCalc(time, profile, lastAutosensResult, exercise_mode, half_basal_exercise_target, isTempTarget);

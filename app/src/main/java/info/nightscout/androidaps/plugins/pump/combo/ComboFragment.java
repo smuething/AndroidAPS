@@ -38,6 +38,7 @@ public class ComboFragment extends DaggerFragment implements View.OnClickListene
     @Inject RxBusWrapper rxBus;
     @Inject SP sp;
     @Inject AapsSchedulers aapsSchedulers;
+    @Inject FabricPrivacy fabricPrivacy;
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -81,12 +82,12 @@ public class ComboFragment extends DaggerFragment implements View.OnClickListene
         disposable.add(rxBus
                 .toObservable(EventComboPumpUpdateGUI.class)
                 .observeOn(aapsSchedulers.getMain())
-                .subscribe(event -> updateGui(), exception -> FabricPrivacy.getInstance().logException(exception))
+                .subscribe(event -> updateGui(), fabricPrivacy::logException)
         );
         disposable.add(rxBus
                 .toObservable(EventQueueChanged.class)
                 .observeOn(aapsSchedulers.getMain())
-                .subscribe(event -> updateGui(), exception -> FabricPrivacy.getInstance().logException(exception))
+                .subscribe(event -> updateGui(), fabricPrivacy::logException)
         );
         updateGui();
     }
