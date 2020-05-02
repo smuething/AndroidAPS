@@ -70,6 +70,7 @@ import info.nightscout.androidaps.utils.FabricPrivacy;
 import info.nightscout.androidaps.utils.T;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
+import info.nightscout.androidaps.utils.HardLimits;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
@@ -90,6 +91,7 @@ public class LoopPlugin extends PluginBase {
     private final IobCobCalculatorPlugin iobCobCalculatorPlugin;
     private final ReceiverStatusStore receiverStatusStore;
     private final FabricPrivacy fabricPrivacy;
+    private final HardLimits hardLimits;
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -134,7 +136,8 @@ public class LoopPlugin extends PluginBase {
             Lazy<ActionStringHandler> actionStringHandler, // TODO Adrian use RxBus instead of Lazy
             IobCobCalculatorPlugin iobCobCalculatorPlugin,
             ReceiverStatusStore receiverStatusStore,
-            FabricPrivacy fabricPrivacy
+            FabricPrivacy fabricPrivacy,
+            HardLimits hardLimits
     ) {
         super(new PluginDescription()
                         .mainType(PluginType.LOOP)
@@ -160,6 +163,7 @@ public class LoopPlugin extends PluginBase {
         this.iobCobCalculatorPlugin = iobCobCalculatorPlugin;
         this.receiverStatusStore = receiverStatusStore;
         this.fabricPrivacy = fabricPrivacy;
+        this.hardLimits = hardLimits;
 
         loopSuspendedTill = sp.getLong("loopSuspendedTill", 0L);
         isSuperBolus = sp.getBoolean("isSuperBolus", false);
@@ -290,6 +294,21 @@ public class LoopPlugin extends PluginBase {
         }
 
         return true;
+    }
+
+    public boolean isLGS(){
+        Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopAllowed();
+        Double MaxIOBallowed = constraintChecker.getMaxIOBAllowed().value();
+        String APSmode = sp.getString(R.string.key_aps_mode, "open");
+        PumpInterface pump = activePlugin.getActivePump();
+        boolean isLGS = false;
+
+        if (!isSuspended() && !pump.isSuspended())
+            if (closedLoopEnabled.value())
+                if ((MaxIOBallowed.equals(hardLimits.getMAXIOB_LGS())) || (APSmode.equals("lgs")))
+                    isLGS = true;
+
+        return isLGS;
     }
 
     public boolean isSuperBolus() {
