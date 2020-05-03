@@ -28,6 +28,7 @@ import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutos
 import info.nightscout.androidaps.utils.DecimalFormatter
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.androidNotification.NotificationHolder
+import info.nightscout.androidaps.utils.resources.IconsProvider
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.valueToUnitsString
 import io.reactivex.disposables.CompositeDisposable
@@ -46,7 +47,8 @@ class PersistentNotificationPlugin @Inject constructor(
     private var iobCobCalculatorPlugin: IobCobCalculatorPlugin,
     private var rxBus: RxBusWrapper,
     private var context: Context,
-    private var notificationHolder: NotificationHolder
+    private var notificationHolder: NotificationHolder,
+    private val iconsProvider: IconsProvider
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .neverVisible(true)
@@ -210,8 +212,8 @@ class PersistentNotificationPlugin @Inject constructor(
         builder.setOngoing(true)
         builder.setOnlyAlertOnce(true)
         builder.setCategory(NotificationCompat.CATEGORY_STATUS)
-        builder.setSmallIcon(resourceHelper.getNotificationIcon())
-        builder.setLargeIcon(resourceHelper.decodeResource(resourceHelper.getIcon()))
+        builder.setSmallIcon(iconsProvider.getNotificationIcon())
+        builder.setLargeIcon(resourceHelper.decodeResource(iconsProvider.getIcon()))
         if (line1 != null) builder.setContentTitle(line1)
         if (line2 != null) builder.setContentText(line2)
         if (line3 != null) builder.setSubText(line3)

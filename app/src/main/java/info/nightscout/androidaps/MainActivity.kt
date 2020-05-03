@@ -53,6 +53,7 @@ import info.nightscout.androidaps.utils.alertDialogs.OKDialog
 import info.nightscout.androidaps.utils.buildHelper.BuildHelper
 import info.nightscout.androidaps.utils.extensions.isRunningRealPumpTest
 import info.nightscout.androidaps.utils.protection.ProtectionCheck
+import info.nightscout.androidaps.utils.resources.IconsProvider
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
@@ -78,6 +79,7 @@ class MainActivity : NoSplashAppCompatActivity() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var protectionCheck: ProtectionCheck
     @Inject lateinit var aapsSchedulers: AapsSchedulers
+    @Inject lateinit var iconsProvider: IconsProvider
 
     private lateinit var actionBarDrawerToggle: ActionBarDrawerToggle
     private var pluginPreferencesMenuItem: MenuItem? = null
@@ -284,7 +286,7 @@ class MainActivity : NoSplashAppCompatActivity() {
                 Linkify.addLinks(messageSpanned, Linkify.WEB_URLS)
                 AlertDialog.Builder(this)
                     .setTitle(resourceHelper.gs(R.string.app_name) + " " + BuildConfig.VERSION)
-                    .setIcon(resourceHelper.getIcon())
+                    .setIcon(iconsProvider.getIcon())
                     .setMessage(messageSpanned)
                     .setPositiveButton(resourceHelper.gs(R.string.ok), null)
                     .create().also {
