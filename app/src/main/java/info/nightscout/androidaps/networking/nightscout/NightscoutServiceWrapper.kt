@@ -118,7 +118,7 @@ class NightscoutServiceWrapper(
             deleteEntry(NightscoutCollection.ENTRIES, it)
         }
 
-    fun updateFromNS(glucoseValue: GlucoseValue) =
+    fun upsertOnNS(glucoseValue: GlucoseValue) =
         glucoseValue.interfaceIDs.nightscoutId?.let {
             updateEntry(NightscoutCollection.ENTRIES, it, fromGlucoseValue(glucoseValue, resourceHelper))
         }
@@ -133,7 +133,7 @@ class NightscoutServiceWrapper(
             deleteEntry(NightscoutCollection.TEMPORARY_TARGET, it)
         }
 
-    fun updateFromNS(temporaryTarget: TemporaryTarget) =
+    fun upsertOnNS(temporaryTarget: TemporaryTarget) =
         temporaryTarget.interfaceIDs.nightscoutId?.let {
             updateEntry(NightscoutCollection.TEMPORARY_TARGET, it, fromTemporaryTarget(temporaryTarget, resourceHelper))
         }

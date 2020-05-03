@@ -117,7 +117,7 @@ class NSClient2LegacyCodeholder constructor(
                         }
                     } ?: lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]?.store(processingId)
                 } else {
-                    val httpResult = nightscoutServiceWrapper.updateFromNS(tt).blockingGet()
+                    val httpResult = nightscoutServiceWrapper.upsertOnNS(tt).blockingGet()
                     tt.interfaceIDs.nightscoutId = httpResult.location?.id
                     when (httpResult.code) {
                         ResponseCode.RECORD_CREATED   -> {
@@ -217,23 +217,23 @@ class NSClient2LegacyCodeholder constructor(
         //
         // 3) and 4) can be combined?
         //
-        // Open Question: what happens if we upload to/from multiple NS instances?
+        // Question: what happens if we upload to/from multiple remotes (NS & Tidepool) -> last change can be a non-change
+        // -> we need to not get the last one but the first after the last upload and compare those.
         //
-        // Open Question: on Error exit loop?
+        //  Question: on Error exit loop? -> Answer: No, but evaluate the lassed processed ID correctly (first before first error)
         //  In Rx if we throw a Throwable, the stream gets disposed.
         //  So only do "onErrorReturn" after combining the results?
         //  Atm on download we continue as only one value could be off (e.g. BadInputDataException on eval. mg/dl or mmol/l. ) -> for download good.
-        //  One Record at a time? -> concatMap instead of flatMap
 
+        //  Upload one record at a time -> concatMap instead of flatMap
 
-        // Further ideas:
         // * contentEqualsTo could be extension functions on GlucoseValue? -> work on null
-        // * isRecordDeleted() gives me no hint on expected data (other etc.). `wasDeletedBetween(from: TraceableDBEntry,  to: TraceableDBEntry)`?
+        // * isRecordDeleted() -> `wasDeletedBetween(from: TraceableDBEntry,  to: TraceableDBEntry)`
 
         when {
             /*lastHistory?.contentEqualsTo(gv) */false == true -> {
                 // expecting only NS identifier change
-                lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId)
+                lastProcessedId[NightscoutCollection.ENTRIES]?.store(processingId) // move to post-processing
             }
 
             /*lastHistory?.contentEqualsTo(gv) */false == true -> {
@@ -255,7 +255,7 @@ class NSClient2LegacyCodeholder constructor(
             }
 
             else                                     -> {
-                val httpResult = nightscoutServiceWrapper.updateFromNS(gv).blockingGet()
+                val httpResult = nightscoutServiceWrapper.upsertOnNS(gv).blockingGet()
                 gv.interfaceIDs.nightscoutId = httpResult.location?.id
                 when (httpResult.code) {
                     ResponseCode.RECORD_CREATED   -> {

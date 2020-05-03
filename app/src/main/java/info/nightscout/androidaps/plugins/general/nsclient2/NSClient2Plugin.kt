@@ -95,8 +95,14 @@ open class NSClient2Plugin @Inject constructor(
     private val listLog: MutableList<EventNSClientNewLog> = ArrayList()
     private val keyNSClientPaused = PreferenceBoolean(R.string.key_nsclient_paused, false, sp, resourceHelper, rxBus)
 
-    protected val lastProcessedId = NightscoutCollection.values().map { it to PreferenceLong("lastProcessedId_${it.name}", 0L, sp, rxBus) }.toMap()
-    protected val receiveTimestamp = NightscoutCollection.values().map { it to PreferenceLong("receiveTimestamp_${it.name}", 0L, sp, rxBus) }.toMap()
+    protected val lastProcessedId = NightscoutCollection
+        .values()
+        .map { it to PreferenceLong("lastProcessedId_${it.name}", 0L, sp, rxBus) }
+        .toMap()
+    protected val receiveTimestamp = NightscoutCollection
+        .values()
+        .map { it to PreferenceLong("receiveTimestamp_${it.name}", 0L, sp, rxBus) }
+        .toMap()
 
     var permissions: ApiPermissions? = null // grabbed permissions
 
@@ -283,7 +289,7 @@ open class NSClient2Plugin @Inject constructor(
         get() = get() == "PUSH" || get() == "SYNC"
 
     @Synchronized
-    private fun doSync(from: String){
+    private fun doSync(from: String) {
         addToLog(EventNSClientNewLog("SYNC START", "From: $from"))
         _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.combo_pump_state_running)))
 
@@ -297,11 +303,17 @@ open class NSClient2Plugin @Inject constructor(
             tasks +=
                 nightscoutServiceWrapper.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES]!!.get())
                     //.doFinally {}
-                    .flatMapObservable { Observable.fromIterable(it.body()) }
-                    .doOnNext(::handleNewGlucoseValuesSideEffects)
+                    .flatMapObservable {
+                        Observable.fromIterable(it.body())
+                    }
+                    .doOnNext(
+                        ::handleNewGlucoseValuesSideEffects
+                    )
                     .flatMapSingle { entryResponseBody ->
                         repository.findBgReadingByNSIdSingle(entryResponseBody.identifier!!)
-                            .map { Pair(it, entryResponseBody) }
+                            .map {
+                                Pair(it, entryResponseBody)
+                            }
                     }
                     .flatMapSingle { (glucoseValueWrapper: ValueWrapper<GlucoseValue>, entryResponseBody: EntryResponseBody) ->
                         handleCgmDBStorage(glucoseValueWrapper, entryResponseBody)
