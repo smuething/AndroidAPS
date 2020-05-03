@@ -24,7 +24,7 @@ import info.nightscout.androidaps.receivers.ReceiverStatusStore
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
-import info.nightscout.androidaps.utils.sharedPreferences.PreferenceString
+import info.nightscout.androidaps.utils.sharedPreferences.BusPreference
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -60,10 +60,10 @@ class NSClient2LegacyCodeholder constructor(
 
     fun legacyDoSync() {
 
-        val cgmSync = PreferenceString(R.string.key_ns_cgm, "PUSH", sp, resourceHelper, rxBus)
-        val ttSync = PreferenceString(R.string.key_ns_temptargets, "PUSH", sp, resourceHelper, rxBus)
+        val cgmSync by BusPreference(R.string.key_ns_cgm, PUSH, sp, resourceHelper, rxBus)
+        val ttSync by BusPreference(R.string.key_ns_temptargets, PUSH, sp, resourceHelper, rxBus)
 
-        if (cgmSync.upload) {
+        if (cgmSync.shouldUpload()) {
             // CGM upload
             val list = repository
                 .getModifiedBgReadingsDataAfterId(lastProcessedId.getValue(NightscoutCollection.ENTRIES).get())
@@ -81,7 +81,7 @@ class NSClient2LegacyCodeholder constructor(
                 .toList()
         }
 
-        if (ttSync.upload) {
+        if (ttSync.shouldUpload()) {
             // TempTarget upload
             val list = repository
                 .getModifiedTemporaryTargetsDataFromId(lastProcessedId[NightscoutCollection.TEMPORARY_TARGET]!!.get())
@@ -146,7 +146,7 @@ class NSClient2LegacyCodeholder constructor(
             }
         }
 
-        if (ttSync.download) {
+        if (ttSync.shouldDownload()) {
             //CGM download
             compositeDisposable.add(
                 nightscoutServiceWrapper.getByLastModified(NightscoutCollection.TEMPORARY_TARGET, receiveTimestamp[NightscoutCollection.TEMPORARY_TARGET]!!.get())

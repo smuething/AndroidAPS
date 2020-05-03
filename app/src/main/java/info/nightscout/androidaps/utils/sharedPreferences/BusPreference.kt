@@ -4,14 +4,20 @@ import androidx.annotation.StringRes
 import info.nightscout.androidaps.events.EventPreferenceChange
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
+
+/**
+ * Created by adrian on 03.05.20.
+ */
 
 @Suppress("UNCHECKED_CAST")
-class PreferenceProvider<T : Any> constructor(val preference: String, val defaultValue : T, val sp: SP, val rxBus: RxBusWrapper) {
+class BusPreference<T>(val preference: String, val defaultValue: T, val sp: SP, val rxBus: RxBusWrapper) : ReadWriteProperty<Any?, T> {
 
     constructor(@StringRes resId: Int, defaultValue: T, sp: SP, resourceHelper: ResourceHelper, rxBus: RxBusWrapper)
         : this(resourceHelper.gs(resId), defaultValue, sp, rxBus)
 
-    fun get(): T {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): T {
         return when (defaultValue) {
             is Int     -> sp.getInt(preference, defaultValue) as T
             is Long    -> sp.getLong(preference, defaultValue) as T
@@ -22,7 +28,7 @@ class PreferenceProvider<T : Any> constructor(val preference: String, val defaul
         }
     }
 
-    fun store(value: T) {
+    override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
         when (value) {
             is Int     -> sp.putInt(preference, value as Int)
             is Long    -> sp.putLong(preference, value as Long)
@@ -34,14 +40,3 @@ class PreferenceProvider<T : Any> constructor(val preference: String, val defaul
         rxBus.send(EventPreferenceChange(preference))
     }
 }
-
-@Suppress("unused")
-typealias PreferenceInt = PreferenceProvider<Int>
-@Suppress("unused")
-typealias PreferenceLong = PreferenceProvider<Long>
-@Suppress("unused")
-typealias PreferenceDouble = PreferenceProvider<Double>
-@Suppress("unused")
-typealias PreferenceBoolean = PreferenceProvider<Boolean>
-@Suppress("unused")
-typealias PreferenceString = PreferenceProvider<String>

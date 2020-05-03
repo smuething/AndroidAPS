@@ -86,7 +86,7 @@ class NightscoutServiceWrapper(
     }
 
     private fun StatusResponse.addRequiredPermissionToErrors(@StringRes spVal: Int, collection: NightscoutCollection, errors: MutableList<String>) {
-        when (sp.getString(spVal, "PUSH")) { // TODO: const val or Enum?
+        when (sp.getString(spVal, "PUSH")) { // TODO: Use constants from NSClient2
             "PULL" -> if (!apiPermissions.of(collection).read) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
             "PUSH" -> if (!apiPermissions.of(collection).createUpdate) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))
             "SYNC" -> if (!apiPermissions.of(collection).full) errors.add(PERMISSIONS_INSUFFICIENT.format(collection.collection))

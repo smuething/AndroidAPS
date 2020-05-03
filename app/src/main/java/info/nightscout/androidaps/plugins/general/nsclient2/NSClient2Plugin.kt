@@ -53,9 +53,7 @@ import info.nightscout.androidaps.utils.alertDialogs.ErrorDialog
 import info.nightscout.androidaps.utils.alertDialogs.OKDialog
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
-import info.nightscout.androidaps.utils.sharedPreferences.PreferenceBoolean
-import info.nightscout.androidaps.utils.sharedPreferences.PreferenceLong
-import info.nightscout.androidaps.utils.sharedPreferences.PreferenceString
+import info.nightscout.androidaps.utils.sharedPreferences.BusPreference
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -93,15 +91,15 @@ open class NSClient2Plugin @Inject constructor(
 ) {
 
     private val listLog: MutableList<EventNSClientNewLog> = ArrayList()
-    private val keyNSClientPaused = PreferenceBoolean(R.string.key_nsclient_paused, false, sp, resourceHelper, rxBus)
+    private var keyNSClientPaused by BusPreference(R.string.key_nsclient_paused, false, sp, resourceHelper, rxBus)
 
     protected val lastProcessedId = NightscoutCollection
         .values()
-        .map { it to PreferenceLong("lastProcessedId_${it.name}", 0L, sp, rxBus) }
+        .map { it to PreferenceLong("lastProcessedId_${it.name}", 0L, sp) }
         .toMap()
     protected val receiveTimestamp = NightscoutCollection
         .values()
-        .map { it to PreferenceLong("receiveTimestamp_${it.name}", 0L, sp, rxBus) }
+        .map { it to PreferenceLong("receiveTimestamp_${it.name}", 0L, sp) }
         .toMap()
 
     var permissions: ApiPermissions? = null // grabbed permissions
@@ -113,8 +111,7 @@ open class NSClient2Plugin @Inject constructor(
 
     override fun onStart() {
         super.onStart()
-
-
+        
         compositeDisposable += rxBus
             .toObservable(EventPreferenceChange::class.java)
             .subscribeBy(
@@ -161,7 +158,7 @@ open class NSClient2Plugin @Inject constructor(
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_show_statuslights)))
 
             val cgmData = preferenceFragment.findPreference(resourceHelper.gs(R.string.key_ns_cgm)) as ListPreference?
-            cgmData?.value = "PULL"
+            cgmData?.value = PULL
             cgmData?.isEnabled = false
         }
         // test connection from preferences
@@ -272,7 +269,7 @@ open class NSClient2Plugin @Inject constructor(
 
     fun sync(from: String) {
         aapsLogger.debug(LTag.NSCLIENT, "Running sync from $from")
-        if (keyNSClientPaused.get()) {
+        if (keyNSClientPaused) {
             _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.paused)))
             return
         }
@@ -283,22 +280,20 @@ open class NSClient2Plugin @Inject constructor(
         } else doSync(from)
     }
 
-    val PreferenceString.download: Boolean
-        get() = get() == "PULL" || get() == "SYNC"
-    val PreferenceString.upload: Boolean
-        get() = get() == "PUSH" || get() == "SYNC"
+    fun String.shouldDownload(): Boolean = this == PULL || this == SYNC // Todo: use constants for PULL and SYNC
+    fun String.shouldUpload(): Boolean = this == PUSH || this == SYNC
 
     @Synchronized
     private fun doSync(from: String) {
         addToLog(EventNSClientNewLog("SYNC START", "From: $from"))
         _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.combo_pump_state_running)))
 
-        val cgmSync = PreferenceString(R.string.key_ns_cgm, "PUSH", sp, resourceHelper, rxBus)
-        val ttSync = PreferenceString(R.string.key_ns_temptargets, "PUSH", sp, resourceHelper, rxBus)
+        val cgmSync by BusPreference(R.string.key_ns_cgm, PUSH, sp, resourceHelper, rxBus)
+        val ttSync by BusPreference(R.string.key_ns_temptargets, PUSH, sp, resourceHelper, rxBus)
 
         val tasks: MutableList<Single<Unit>> = mutableListOf()
 
-        if (cgmSync.download || nsClientSourcePlugin.isEnabled()) {
+        if (cgmSync.shouldDownload() || nsClientSourcePlugin.isEnabled()) {
             //CGM download
             tasks +=
                 nightscoutServiceWrapper.getByLastModified(NightscoutCollection.ENTRIES, receiveTimestamp[NightscoutCollection.ENTRIES]!!.get())
@@ -425,7 +420,7 @@ open class NSClient2Plugin @Inject constructor(
     }
 
     fun pause(newState: Boolean) {
-        keyNSClientPaused.store(newState)
+        keyNSClientPaused = newState
         if (newState) _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.paused)))
         else commAllowed()
     }
@@ -471,7 +466,9 @@ open class NSClient2Plugin @Inject constructor(
     }
 
     companion object {
-        const val RATE_IDENT = "NSCLIENT2SYNC"
         const val RATE_SEC = 30
+        const val PULL = "PULL"
+        const val SYNC = "SYNC"
+        const val PUSH = "PUSH"
     }
 }
