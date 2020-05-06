@@ -123,9 +123,7 @@ class CareportalFragment : DaggerFragment(), View.OnClickListener {
             R.id.careportal_tempbasalend           -> newDialog.setOptions(TEMPBASALEND, R.string.careportal_tempbasalend)
             R.id.careportal_openapsoffline         -> newDialog.setOptions(OPENAPSOFFLINE, R.string.careportal_openapsoffline)
         }
-        fragmentManager?.let {
-            NewNSTreatmentDialog().show(it, "CareportalFragment")
-        }
+        NewNSTreatmentDialog().show(childFragmentManager, "CareportalFragment")
     }
 
     private fun updateGUI() {

@@ -110,6 +110,8 @@ public class TemporaryBasal implements Interval, DbObjectBase {
     }
 
     public TemporaryBasal(ExtendedBolus extendedBolus) {
+        injector = MainApp.instance();
+        injector.androidInjector().inject(this);
         double basal = profileFunction.getProfile(extendedBolus.date).getBasal(extendedBolus.date);
         this.date = extendedBolus.date;
         this.isValid = extendedBolus.isValid;
@@ -508,9 +510,9 @@ public class TemporaryBasal implements Interval, DbObjectBase {
             } else {
                 rate = absoluteRate;
             }
-            return DecimalFormatter.to2Decimal(rate) + "U/h ";
+            return DecimalFormatter.to2Decimal(rate) + "U/h";
         } else { // percent
-            return percentRate + "% ";
+            return percentRate + "%";
         }
     }
 

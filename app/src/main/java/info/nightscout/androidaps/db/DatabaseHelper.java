@@ -43,6 +43,7 @@ import info.nightscout.androidaps.events.EventReloadTreatmentData;
 import info.nightscout.androidaps.events.EventTempBasalChange;
 import info.nightscout.androidaps.interfaces.ActivePluginProvider;
 import info.nightscout.androidaps.interfaces.ProfileInterface;
+import info.nightscout.androidaps.logging.L;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.logging.StacktraceLoggerWrapper;
 import info.nightscout.androidaps.plugins.bus.RxBus;
@@ -913,6 +914,22 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             queryBuilder.orderBy("date", ascending);
             Where where = queryBuilder.where();
             where.ge("date", mills);
+            PreparedQuery<ExtendedBolus> preparedQuery = queryBuilder.prepare();
+            extendedBoluses = getDaoExtendedBolus().query(preparedQuery);
+            return extendedBoluses;
+        } catch (SQLException e) {
+            log.error("Unhandled exception", e);
+        }
+        return new ArrayList<ExtendedBolus>();
+    }
+
+    public List<ExtendedBolus> getExtendedBolusDataFromTime(long from, long to, boolean ascending) {
+        try {
+            List<ExtendedBolus> extendedBoluses;
+            QueryBuilder<ExtendedBolus, Long> queryBuilder = getDaoExtendedBolus().queryBuilder();
+            queryBuilder.orderBy("date", ascending);
+            Where where = queryBuilder.where();
+            where.between("date", from, to);
             PreparedQuery<ExtendedBolus> preparedQuery = queryBuilder.prepare();
             extendedBoluses = getDaoExtendedBolus().query(preparedQuery);
             return extendedBoluses;

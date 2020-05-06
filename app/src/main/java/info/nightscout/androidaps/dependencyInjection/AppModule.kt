@@ -28,7 +28,11 @@ import info.nightscout.androidaps.utils.storage.FileStorage
 import info.nightscout.androidaps.utils.storage.Storage
 import javax.inject.Singleton
 
-@Module(includes = [AppModule.AppBindings::class, PluginsModule::class])
+@Module(includes = [
+    AppModule.AppBindings::class,
+    PluginsModule::class,
+    SkinsModule::class
+])
 open class AppModule {
 
     @Provides
