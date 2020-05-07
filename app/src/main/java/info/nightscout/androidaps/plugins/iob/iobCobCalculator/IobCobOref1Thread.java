@@ -18,8 +18,6 @@ import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.data.IobTotal;
 import info.nightscout.androidaps.data.Profile;
-import info.nightscout.androidaps.database.entities.GlucoseValue;
-import info.nightscout.androidaps.db.BgReading;
 import info.nightscout.androidaps.db.TempTarget;
 import info.nightscout.androidaps.events.Event;
 import info.nightscout.androidaps.interfaces.ActivePluginProvider;
@@ -27,14 +25,15 @@ import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.aps.openAPSSMB.SMBDefaults;
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper;
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction;
+import info.nightscout.androidaps.interfaces.ProfileFunction;
 import info.nightscout.androidaps.plugins.general.overview.events.EventNewNotification;
 import info.nightscout.androidaps.plugins.general.overview.notifications.Notification;
+import info.nightscout.androidaps.plugins.iob.iobCobCalculator.data.AutosensData;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventIobCalculationProgress;
 import info.nightscout.androidaps.plugins.sensitivity.SensitivityAAPSPlugin;
 import info.nightscout.androidaps.plugins.sensitivity.SensitivityWeightedAveragePlugin;
-import info.nightscout.androidaps.plugins.treatments.Treatment;
+import info.nightscout.androidaps.db.Treatment;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.DecimalFormatter;
 import info.nightscout.androidaps.utils.FabricPrivacy;
@@ -241,7 +240,8 @@ public class IobCobOref1Thread extends Thread {
                     List<Treatment> recentCarbTreatments = activePluginProvider.getActiveTreatments().getCarbTreatments5MinBackFromHistory(bgTime);
                     for (Treatment recentCarbTreatment : recentCarbTreatments) {
                         autosensData.carbsFromBolus += recentCarbTreatment.carbs;
-                        autosensData.activeCarbsList.add(autosensData.new CarbsInPast(recentCarbTreatment));
+                        boolean isAAPSOrWeighted = sensitivityAAPSPlugin.isEnabled() || sensitivityWeightedAveragePlugin.isEnabled();
+                        autosensData.activeCarbsList.add(autosensData.new CarbsInPast(recentCarbTreatment, isAAPSOrWeighted));
                         autosensData.pastSensitivity += "[" + DecimalFormatter.to0Decimal(recentCarbTreatment.carbs) + "g]";
                     }
 
@@ -278,7 +278,8 @@ public class IobCobOref1Thread extends Thread {
                         autosensData.uam = previous.uam;
                     }
 
-                    autosensData.removeOldCarbs(bgTime);
+                    boolean isAAPSOrWeighted = sensitivityAAPSPlugin.isEnabled() || sensitivityWeightedAveragePlugin.isEnabled();
+                    autosensData.removeOldCarbs(bgTime, isAAPSOrWeighted);
                     autosensData.cob += autosensData.carbsFromBolus;
                     autosensData.mealCarbs += autosensData.carbsFromBolus;
                     autosensData.deviation = deviation;

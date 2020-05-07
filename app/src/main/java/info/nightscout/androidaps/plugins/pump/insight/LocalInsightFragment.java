@@ -45,6 +45,7 @@ public class LocalInsightFragment extends DaggerFragment implements View.OnClick
     @Inject ResourceHelper resourceHelper;
     @Inject FabricPrivacy fabricPrivacy;
     @Inject AapsSchedulers aapsSchedulers;
+    @Inject DateUtil dateUtil;
 
     private CompositeDisposable disposable = new CompositeDisposable();
 
@@ -238,7 +239,7 @@ public class LocalInsightFragment extends DaggerFragment implements View.OnClick
                 long lastConnection = localInsightPlugin.getConnectionService().getLastConnected();
                 if (lastConnection == 0) return;
                 int min = (int) ((System.currentTimeMillis() - lastConnection) / 60000);
-                statusItems.add(getStatusItem(resourceHelper.gs(R.string.last_connected), DateUtil.timeString(lastConnection)));
+                statusItems.add(getStatusItem(resourceHelper.gs(R.string.last_connected), dateUtil.timeString(lastConnection)));
         }
     }
 

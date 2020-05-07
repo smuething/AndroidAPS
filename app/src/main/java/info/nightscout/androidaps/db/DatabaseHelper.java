@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.data.NonOverlappingIntervals;
 import info.nightscout.androidaps.data.Profile;
-import info.nightscout.androidaps.data.ProfileStore;
+import info.nightscout.androidaps.interfaces.ProfileStore;
 import info.nightscout.androidaps.events.EventCareportalEventChange;
 import info.nightscout.androidaps.events.EventExtendedBolusChange;
 import info.nightscout.androidaps.events.EventProfileNeedsUpdate;
@@ -56,6 +56,7 @@ import info.nightscout.androidaps.plugins.pump.insight.database.InsightPumpID;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.db.PodHistory;
 import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin;
 import info.nightscout.androidaps.utils.PercentageSplitter;
+import info.nightscout.androidaps.utils.T;
 import info.nightscout.androidaps.utils.ToastUtils;
 
 /**
@@ -75,7 +76,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
     public static final String DATABASE_DANARHISTORY = "DanaRHistory";
     public static final String DATABASE_DBREQUESTS = "DBRequests";
     public static final String DATABASE_CAREPORTALEVENTS = "CareportalEvents";
-    public static final String DATABASE_PROFILESWITCHES = "ProfileSwitches";
     public static final String DATABASE_TDDS = "TDDs";
     public static final String DATABASE_INSIGHT_HISTORY_OFFSETS = "InsightHistoryOffsets";
     public static final String DATABASE_INSIGHT_BOLUS_IDS = "InsightBolusIDs";
@@ -1575,5 +1575,4 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
         }
         return new ArrayList<>();
     }
-
 }

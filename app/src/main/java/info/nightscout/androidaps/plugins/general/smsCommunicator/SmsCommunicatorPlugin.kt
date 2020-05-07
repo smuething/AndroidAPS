@@ -18,7 +18,6 @@ import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.database.transactions.CancelCurrentTemporaryTargetIfAnyTransaction
 import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
 import info.nightscout.androidaps.db.Source
-import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.events.EventPreferenceChange
 import info.nightscout.androidaps.events.EventRefreshOverview
 import info.nightscout.androidaps.interfaces.*
@@ -27,7 +26,7 @@ import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.general.nsclient.events.EventNSClientRestart
 import info.nightscout.androidaps.plugins.general.overview.events.EventNewNotification
 import info.nightscout.androidaps.plugins.general.overview.notifications.Notification
@@ -67,7 +66,9 @@ class SmsCommunicatorPlugin @Inject constructor(
     private val iobCobCalculatorPlugin: IobCobCalculatorPlugin,
     private val xdripCalibrations: XdripCalibrations,
     private var otp: OneTimePassword,
-    private val repository: AppRepository
+    private val repository: AppRepository,
+    private val config: Config,
+    private val dateUtil: DateUtil
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .fragmentClass(SmsCommunicatorFragment::class.java.name)
@@ -618,7 +619,7 @@ class SmsCommunicatorPlugin @Inject constructor(
                             override fun run() {
                                 if (result.success) {
                                     var replyText = String.format(resourceHelper.gs(R.string.smscommunicator_extendedset), aDouble, duration)
-                                    if (Config.APS) replyText += "\n" + resourceHelper.gs(R.string.loopsuspended)
+                                    if (config.APS) replyText += "\n" + resourceHelper.gs(R.string.loopsuspended)
                                     replyText += "\n" + activePlugin.activePump.shortStatus(true)
                                     sendSMSToAllNumbers(Sms(receivedSms.phoneNumber, replyText))
                                 } else {
@@ -718,7 +719,7 @@ class SmsCommunicatorPlugin @Inject constructor(
         if (grams == 0) sendSMS(Sms(receivedSms.phoneNumber, resourceHelper.gs(R.string.wrongformat)))
         else {
             val passCode = generatePasscode()
-            val reply = String.format(resourceHelper.gs(R.string.smscommunicator_carbsreplywithcode), grams, DateUtil.timeString(time), passCode)
+            val reply = String.format(resourceHelper.gs(R.string.smscommunicator_carbsreplywithcode), grams, dateUtil.timeString(time), passCode)
             receivedSms.processed = true
             messageToConfirm = AuthRequest(injector, receivedSms, reply, passCode, object : SmsAction(grams, time) {
                 override fun run() {

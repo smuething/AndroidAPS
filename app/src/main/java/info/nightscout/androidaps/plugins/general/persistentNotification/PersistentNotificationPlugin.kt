@@ -14,14 +14,11 @@ import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.MainActivity
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.Profile
+import info.nightscout.androidaps.db.DatabaseHelper
 import info.nightscout.androidaps.events.*
-import info.nightscout.androidaps.interfaces.ActivePluginProvider
-import info.nightscout.androidaps.interfaces.PluginBase
-import info.nightscout.androidaps.interfaces.PluginDescription
-import info.nightscout.androidaps.interfaces.PluginType
+import info.nightscout.androidaps.interfaces.*
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished

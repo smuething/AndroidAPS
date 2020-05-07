@@ -33,7 +33,7 @@ import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.Config;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
-import info.nightscout.androidaps.data.ProfileStore;
+import info.nightscout.androidaps.interfaces.ProfileStore;
 import info.nightscout.androidaps.db.DbRequest;
 import info.nightscout.androidaps.events.EventAppExit;
 import info.nightscout.androidaps.events.EventConfigBuilderChange;
@@ -88,6 +88,7 @@ public class NSClientService extends DaggerService {
     @Inject SP sp;
     @Inject NSClientPlugin nsClientPlugin;
     @Inject BuildHelper buildHelper;
+    @Inject Config config;
 
     private static Logger log = StacktraceLoggerWrapper.getLogger(LTag.NSCLIENT);
     private CompositeDisposable disposable = new CompositeDisposable();
@@ -554,7 +555,7 @@ public class NSClientService extends DaggerService {
                             nsSettingsStatus.setData(status);
 
                             if (!status.has("versionNum")) {
-                                if (status.getInt("versionNum") < Config.SUPPORTEDNSVERSION) {
+                                if (status.getInt("versionNum") < config.getSUPPORTEDNSVERSION()) {
                                     rxBus.send(new EventNSClientNewLog("ERROR", "Unsupported Nightscout version !!!!"));
                                 }
                             } else {

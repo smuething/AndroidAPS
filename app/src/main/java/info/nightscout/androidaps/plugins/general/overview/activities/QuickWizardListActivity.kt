@@ -30,6 +30,7 @@ class QuickWizardListActivity : NoSplashAppCompatActivity() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var quickWizard: QuickWizard
     @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -40,8 +41,8 @@ class QuickWizardListActivity : NoSplashAppCompatActivity() {
         }
 
         override fun onBindViewHolder(holder: QuickWizardEntryViewHolder, position: Int) {
-            holder.from.text = DateUtil.timeString(quickWizard[position].validFromDate())
-            holder.to.text = DateUtil.timeString(quickWizard[position].validToDate())
+            holder.from.text = dateUtil.timeString(quickWizard[position].validFromDate())
+            holder.to.text = dateUtil.timeString(quickWizard[position].validToDate())
             holder.buttonText.text = quickWizard[position].buttonText()
             holder.carbs.text = resourceHelper.gs(R.string.format_carbs, quickWizard[position].carbs())
         }

@@ -15,7 +15,6 @@ import androidx.annotation.StringRes
 import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.FragmentManager
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.activities.ErrorHelperActivity
@@ -24,8 +23,6 @@ import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.database.transactions.CancelCurrentTemporaryTargetIfAnyTransaction
 import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
-import info.nightscout.androidaps.db.Source
-import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.dialogs.ProfileSwitchDialog
 import info.nightscout.androidaps.dialogs.ProfileViewerDialog
 import info.nightscout.androidaps.dialogs.TempTargetDialog
@@ -38,7 +35,7 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.queue.Callback
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.DefaultValueHelper
@@ -48,7 +45,6 @@ import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import java.lang.reflect.Type
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -67,7 +63,8 @@ class OverviewMenus @Inject constructor(
     private val commandQueue: CommandQueueProvider,
     private val configBuilderPlugin: ConfigBuilderPlugin,
     private val loopPlugin: LoopPlugin,
-    private val repository: AppRepository
+    private val repository: AppRepository,
+    private val config: Config
 ) {
 
     val compositeDisposable = CompositeDisposable()
@@ -127,8 +124,8 @@ class OverviewMenus @Inject constructor(
 
         chartButton.setOnClickListener { v: View ->
             val predictionsAvailable: Boolean = when {
-                Config.APS      -> loopPlugin.lastRun?.request?.hasPredictions ?: false
-                Config.NSCLIENT -> true
+                config.APS      -> loopPlugin.lastRun?.request?.hasPredictions ?: false
+                config.NSCLIENT -> true
                 else            -> false
             }
             val popup = PopupMenu(v.context, v)

@@ -19,7 +19,6 @@ import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.interfaces.PumpDescription
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.general.smsCommunicator.otp.OneTimePassword
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.CobInfo
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
@@ -30,7 +29,6 @@ import info.nightscout.androidaps.plugins.treatments.TreatmentService
 import info.nightscout.androidaps.queue.Callback
 import info.nightscout.androidaps.queue.CommandQueue
 import info.nightscout.androidaps.utils.DateUtil
-import info.nightscout.androidaps.utils.DefaultValueHelper
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.XdripCalibrations

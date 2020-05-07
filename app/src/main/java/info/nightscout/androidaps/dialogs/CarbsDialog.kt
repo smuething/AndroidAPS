@@ -15,11 +15,9 @@ import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
 import info.nightscout.androidaps.db.CareportalEvent
-import info.nightscout.androidaps.db.Source
-import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.interfaces.Constraint
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.plugins.treatments.CarbsGenerator

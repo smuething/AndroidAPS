@@ -17,8 +17,8 @@ import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.database.transactions.InvalidateTemporaryTargetTransaction
 import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.events.EventTempTargetChange
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.treatments.fragments.TreatmentsTempTargetFragment.RecyclerViewAdapter.TempTargetsViewHolder
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
@@ -43,6 +43,7 @@ class TreatmentsTempTargetFragment : DaggerFragment() {
     @Inject lateinit var aapsSchedulers: AapsSchedulers
     @Inject lateinit var repository: AppRepository
     @Inject lateinit var fabricPrivacy: FabricPrivacy
+    @Inject lateinit var dateUtil: DateUtil
 
     private val disposable = CompositeDisposable()
     private val historyInMillis = T.days(10).msecs()
@@ -100,7 +101,7 @@ class TreatmentsTempTargetFragment : DaggerFragment() {
             val tempTarget = TempTarget(tempTargetList[position])
             holder.ns.visibility = (tempTarget.data.interfaceIDs.nightscoutId != null).toVisibility()
             if (!tempTarget.isEndingEvent) {
-                holder.date.text = DateUtil.dateAndTimeString(tempTarget.data.timestamp) + " - " + DateUtil.timeString(tempTarget.originalEnd())
+                holder.date.text = DateUtil.dateAndTimeString(tempTarget.data.timestamp) + " - " + dateUtil.timeString(tempTarget.originalEnd())
                 holder.duration.text = resourceHelper.gs(R.string.format_mins, TimeUnit.MILLISECONDS.toMinutes(tempTarget.data.duration))
                 holder.low.text = tempTarget.lowValueToUnitsToString(units)
                 holder.high.text = tempTarget.highValueToUnitsToString(units)

@@ -14,6 +14,8 @@ import com.j256.ormlite.android.apptools.OpenHelperManager;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 import javax.inject.Inject;
@@ -24,6 +26,7 @@ import info.nightscout.androidaps.database.AppRepository;
 import info.nightscout.androidaps.database.transactions.VersionChangeTransaction;
 import info.nightscout.androidaps.db.CompatDBHelper;
 import info.nightscout.androidaps.db.DatabaseHelper;
+import info.nightscout.androidaps.db.StaticInjector;
 import info.nightscout.androidaps.dependencyInjection.DaggerAppComponent;
 import info.nightscout.androidaps.interfaces.PluginBase;
 import info.nightscout.androidaps.logging.AAPSLogger;
@@ -64,6 +67,8 @@ public class MainApp extends DaggerApplication {
     @Inject List<PluginBase> plugins;
     @Inject CompatDBHelper compatDBHelper;
     @Inject AppRepository repository;
+
+    @Inject StaticInjector staticInjector; // TODO remove , fake only to initialize
 
     @Override
     public void onCreate() {
