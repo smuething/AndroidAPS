@@ -34,6 +34,7 @@ class OpenAPSSMBFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var openAPSSMBPlugin: OpenAPSSMBPlugin
     @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -100,7 +101,7 @@ class OpenAPSSMBFragment : DaggerFragment() {
             }
         }
         if (openAPSSMBPlugin.lastAPSRun != 0L) {
-            openapsma_lastrun.text = DateUtil.dateAndTimeString(openAPSSMBPlugin.lastAPSRun)
+            openapsma_lastrun.text = dateUtil.dateAndTimeString(openAPSSMBPlugin.lastAPSRun)
         }
         openAPSSMBPlugin.lastAutosensResult?.let {
             openapsma_autosensdata.text = JSONFormatter.format(it.json())

@@ -48,6 +48,7 @@ class NSClientSourcePlugin @Inject constructor(
     // Not used, data goes through NSClient2Plugin
     override fun handleNewData(intent: Intent) {}
 
+
     fun detectSource(glucoseValue: GlucoseValue) {
         if (glucoseValue.timestamp > lastBGTimeStamp) {
             isAdvancedFilteringEnabled = arrayOf(

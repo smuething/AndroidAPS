@@ -101,13 +101,13 @@ class TreatmentsTempTargetFragment : DaggerFragment() {
             val tempTarget = TempTarget(tempTargetList[position])
             holder.ns.visibility = (tempTarget.data.interfaceIDs.nightscoutId != null).toVisibility()
             if (!tempTarget.isEndingEvent) {
-                holder.date.text = DateUtil.dateAndTimeString(tempTarget.data.timestamp) + " - " + dateUtil.timeString(tempTarget.originalEnd())
+                holder.date.text = dateUtil.dateAndTimeString(tempTarget.data.timestamp) + " - " + dateUtil.timeString(tempTarget.originalEnd())
                 holder.duration.text = resourceHelper.gs(R.string.format_mins, TimeUnit.MILLISECONDS.toMinutes(tempTarget.data.duration))
                 holder.low.text = tempTarget.lowValueToUnitsToString(units)
                 holder.high.text = tempTarget.highValueToUnitsToString(units)
                 holder.reason.text = tempTarget.data.reason.text
             } else {
-                holder.date.text = DateUtil.dateAndTimeString(tempTarget.data.timestamp)
+                holder.date.text = dateUtil.dateAndTimeString(tempTarget.data.timestamp)
                 holder.duration.setText(R.string.cancel)
                 holder.low.text = ""
                 holder.high.text = ""
@@ -141,7 +141,7 @@ class TreatmentsTempTargetFragment : DaggerFragment() {
                     activity?.let { activity ->
                         val text = resourceHelper.gs(R.string.careportal_temporarytarget) + "\n" +
                             tempTarget.friendlyDescription(profileFunction.getUnits(), resourceHelper) + "\n" +
-                            DateUtil.dateAndTimeString(tempTarget.data.timestamp)
+                            dateUtil.dateAndTimeString(tempTarget.data.timestamp)
                         OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.removerecord), text, Runnable {
                             disposable.add(repository.runTransaction(InvalidateTemporaryTargetTransaction(tempTarget.data.id)).subscribe())
                         })

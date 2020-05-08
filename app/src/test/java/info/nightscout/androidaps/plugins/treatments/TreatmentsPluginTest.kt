@@ -61,7 +61,7 @@ class TreatmentsPluginTest : TestBaseWithProfile() {
         `when`(profileFunction.getProfile(ArgumentMatchers.anyLong())).thenReturn(validProfile)
         `when`(activePluginProvider.activeInsulin).thenReturn(insulinOrefRapidActingPlugin)
 
-        sut = TreatmentsPlugin(profileInjector, aapsLogger, rxBus, resourceHelper, context, sp, profileFunction, activePluginProvider, fabricPrivacy, repository)
+        sut = TreatmentsPlugin(profileInjector, aapsLogger, rxBus, resourceHelper, context, sp, profileFunction, activePluginProvider, fabricPrivacy, repository, dateUtil)
         sut.service = treatmentService
     }
 

@@ -33,6 +33,7 @@ class OpenAPSAMAFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var openAPSAMAPlugin: OpenAPSAMAPlugin
     @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -97,7 +98,7 @@ class OpenAPSAMAFragment : DaggerFragment() {
             openapsma_scriptdebugdata.text = determineBasalAdapterAMAJS.scriptDebug
         }
         if (openAPSAMAPlugin.lastAPSRun != 0L) {
-            openapsma_lastrun.text = DateUtil.dateAndTimeString(openAPSAMAPlugin.lastAPSRun)
+            openapsma_lastrun.text = dateUtil.dateAndTimeString(openAPSAMAPlugin.lastAPSRun)
         }
         openAPSAMAPlugin.lastAutosensResult?.let {
             openapsma_autosensdata.text = JSONFormatter.format(it.json())

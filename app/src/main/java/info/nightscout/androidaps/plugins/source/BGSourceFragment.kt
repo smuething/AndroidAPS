@@ -37,6 +37,7 @@ class BGSourceFragment : DaggerFragment() {
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var repository: AppRepository
     @Inject lateinit var aapsSchedulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
 
     private val disposable = CompositeDisposable()
     private val historyInMillis = T.hours(12).msecs()
@@ -91,7 +92,7 @@ class BGSourceFragment : DaggerFragment() {
             val glucoseValue = glucoseValues[position]
             holder.ns.visibility = (glucoseValue.interfaceIDs.nightscoutId != null).toVisibility()
             holder.invalid.visibility = (!glucoseValue.isValid).toVisibility()
-            holder.date.text = DateUtil.dateAndTimeString(glucoseValue.timestamp)
+            holder.date.text = dateUtil.dateAndTimeString(glucoseValue.timestamp)
             holder.value.text = glucoseValue.valueToUnitsString(profileFunction.getUnits())
             holder.direction.text = glucoseValue.trendArrow.symbol
             holder.remove.tag = glucoseValue
@@ -112,7 +113,7 @@ class BGSourceFragment : DaggerFragment() {
                 remove.setOnClickListener { v: View ->
                     val glucoseValue = v.tag as GlucoseValue
                     activity?.let { activity ->
-                        val text = DateUtil.dateAndTimeString(glucoseValue.timestamp) + "\n" + glucoseValue.valueToUnitsString(profileFunction.getUnits())
+                        val text = dateUtil.dateAndTimeString(glucoseValue.timestamp) + "\n" + glucoseValue.valueToUnitsString(profileFunction.getUnits())
                         OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.removerecord), text, Runnable {
                             disposable += repository.runTransaction(InvalidateGlucoseValueTransaction(glucoseValue.id)).subscribe()
                         })

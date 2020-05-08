@@ -89,6 +89,7 @@ public class NSClientService extends DaggerService {
     @Inject NSClientPlugin nsClientPlugin;
     @Inject BuildHelper buildHelper;
     @Inject Config config;
+    @Inject DateUtil dateUtil;
 
     private static Logger log = StacktraceLoggerWrapper.getLogger(LTag.NSCLIENT);
     private CompositeDisposable disposable = new CompositeDisposable();
@@ -733,7 +734,7 @@ public class NSClientService extends DaggerService {
                             broadcastNewSgv(sgvs, isDelta);
                         }
  */
-                        rxBus.send(new EventNSClientNewLog("LAST", DateUtil.dateAndTimeString(latestDateInReceivedData)));
+                        rxBus.send(new EventNSClientNewLog("LAST", dateUtil.dateAndTimeString(latestDateInReceivedData)));
                     } catch (JSONException e) {
                         log.error("Unhandled exception", e);
                     }

@@ -48,6 +48,7 @@ class DanaRHistoryActivity : NoSplashAppCompatActivity() {
     @Inject lateinit var danaRSPlugin: DanaRSPlugin
     @Inject lateinit var commandQueue: CommandQueueProvider
     @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
 
     private val disposable = CompositeDisposable()
 
@@ -144,7 +145,7 @@ class DanaRHistoryActivity : NoSplashAppCompatActivity() {
 
         override fun onBindViewHolder(holder: HistoryViewHolder, position: Int) {
             val record = historyList[position]
-            holder.time.text = DateUtil.dateAndTimeString(record.recordDate)
+            holder.time.text = dateUtil.dateAndTimeString(record.recordDate)
             holder.value.text = DecimalFormatter.to2Decimal(record.recordValue)
             holder.stringValue.text = record.stringRecordValue
             holder.bolusType.text = record.bolusType

@@ -9,7 +9,7 @@ import org.powermock.modules.junit4.PowerMockRunner
 class MsgHistoryDailyInsulinTest : DanaRTestBase() {
 
     @Test fun runTest() {
-        val packet = MsgHistoryDailyInsulin(aapsLogger, RxBusWrapper(aapsSchedulers))
+        val packet = MsgHistoryDailyInsulin(aapsLogger, RxBusWrapper(aapsSchedulers), dateUtil)
         // nothing left to test
     }
 }

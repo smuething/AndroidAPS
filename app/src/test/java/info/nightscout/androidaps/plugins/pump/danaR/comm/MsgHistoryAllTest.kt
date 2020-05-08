@@ -18,7 +18,7 @@ class MsgHistoryAllTest : DanaRTestBase() {
     @Test fun runTest() {
         PowerMockito.mockStatic(MainApp::class.java)
         `when`(MainApp.getDbHelper()).thenReturn(PowerMockito.mock(DatabaseHelper::class.java))
-        val packet = MsgHistoryAll(aapsLogger, RxBusWrapper(aapsSchedulers))
+        val packet = MsgHistoryAll(aapsLogger, RxBusWrapper(aapsSchedulers), dateUtil)
 
         // test message decoding
         val array = ByteArray(100)
