@@ -30,6 +30,7 @@ class LocalAlertUtils @Inject constructor(
     private val profileFunction: ProfileFunction,
     private val iobCobCalculatorPlugin: IobCobCalculatorPlugin,
     private val config: Config,
+    private val nsUpload: NSUpload,
     private val dateUtil: DateUtil
 ) {
 
@@ -52,7 +53,7 @@ class LocalAlertUtils @Inject constructor(
             sp.putLong("nextPumpDisconnectedAlarm", System.currentTimeMillis() + pumpUnreachableThreshold())
             rxBus.send(EventNewNotification(n))
             if (sp.getBoolean(R.string.key_ns_create_announcements_from_errors, true)) {
-                NSUpload.uploadError(n.text)
+                nsUpload.uploadError(n.text)
             }
         }
         if (!isStatusOutdated && !alarmTimeoutExpired) rxBus.send(EventDismissNotification(Notification.PUMP_UNREACHABLE))
@@ -100,7 +101,7 @@ class LocalAlertUtils @Inject constructor(
             sp.putLong("nextMissedReadingsAlarm", System.currentTimeMillis() + missedReadingsThreshold())
             rxBus.send(EventNewNotification(n))
             if (sp.getBoolean(R.string.key_ns_create_announcements_from_errors, true)) {
-                NSUpload.uploadError(n.text)
+                nsUpload.uploadError(n.text)
             }
         }
     }

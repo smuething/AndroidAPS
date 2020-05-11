@@ -20,6 +20,7 @@ import android.view.View.OnLongClickListener
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.text.toSpanned
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jjoe64.graphview.GraphView
 import dagger.android.HasAndroidInjector
@@ -346,8 +347,9 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
                     if (loopPlugin.isEnabled(PluginType.LOOP)) {
                         val lastRun = loopPlugin.lastRun
                         loopPlugin.invoke("Accept temp button", false)
-                        if (lastRun?.lastAPSRun != null && lastRun.constraintsProcessed.isChangeRequested) {
-                            OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.pump_tempbasal_label), lastRun.constraintsProcessed.toSpanned(), Runnable {
+                        if (lastRun?.lastAPSRun != null && lastRun.constraintsProcessed?.isChangeRequested == true) {
+                            OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.tempbasal_label), lastRun.constraintsProcessed?.toSpanned()
+                                ?: "".toSpanned(), Runnable {
                                 aapsLogger.debug("USER ENTRY: ACCEPT TEMP BASAL")
                                 overview_accepttempbutton?.visibility = View.GONE
                                 (context?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(Constants.notificationID)
@@ -444,7 +446,7 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
         val showAcceptButton = !closedLoopEnabled.value() && // Open mode needed
             lastRun != null &&
             (lastRun.lastOpenModeAccept == 0L || lastRun.lastOpenModeAccept < lastRun.lastAPSRun) &&// never accepted or before last result
-            lastRun.constraintsProcessed.isChangeRequested // change is requested
+            lastRun.constraintsProcessed?.isChangeRequested == true // change is requested
 
         if (showAcceptButton && pump.isInitialized && !pump.isSuspended && loopPlugin.isEnabled(PluginType.LOOP)) {
             overview_accepttempbutton?.visibility = View.VISIBLE
@@ -664,16 +666,20 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
         overview_basebasal?.text = activeTemp?.let { if (resourceHelper.shortTextMode()) "T:" + activeTemp.toStringVeryShort() else activeTemp.toStringFull() }
             ?: resourceHelper.gs(R.string.pump_basebasalrate, profile.basal)
         overview_basal_llayout?.setOnClickListener {
-            var fullText = "${resourceHelper.gs(R.string.pump_basebasalrate_label)}: ${resourceHelper.gs(R.string.pump_basebasalrate, profile.basal)}"
+            var fullText = "${resourceHelper.gs(R.string.basebasalrate_label)}: ${resourceHelper.gs(R.string.pump_basebasalrate, profile.basal)}"
             if (activeTemp != null)
-                fullText += "\n" + resourceHelper.gs(R.string.pump_tempbasal_label) + ": " + activeTemp.toStringFull()
+                fullText += "\n" + resourceHelper.gs(R.string.tempbasal_label) + ": " + activeTemp.toStringFull()
             activity?.let {
                 OKDialog.show(it, resourceHelper.gs(R.string.basal), fullText)
             }
         }
         overview_basebasal?.setTextColor(activeTemp?.let { resourceHelper.gc(R.color.basal) }
             ?: resourceHelper.gc(R.color.defaulttextcolor))
-        overview_basebasal_icon.setImageResource(if (activeTemp != null) R.drawable.icon_cp_basal_start else R.drawable.icon_cp_basal_end)
+
+        if (activeTemp != null)
+            overview_basebasal_icon.setImageResource(if (activeTemp.tempBasalConvertedToPercent(System.currentTimeMillis(), profile) > 100) R.drawable.icon_cp_basal_tbr_high else R.drawable.icon_cp_basal_tbr_low)
+        else
+            overview_basebasal_icon.setImageResource( R.drawable.icon_cp_basal_no_tbr )
 
         // Extended bolus
         val extendedBolus = treatmentsPlugin.getExtendedBolusFromHistory(System.currentTimeMillis())

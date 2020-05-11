@@ -266,10 +266,6 @@ public class NSClientPlugin extends PluginBase {
         rxBus.send(new EventPreferenceChange(resourceHelper, R.string.key_nsclient_paused));
     }
 
-    public UploadQueue queue() {
-        return NSClientService.uploadQueue;
-    }
-
     public String url() {
         return NSClientService.nsURL;
     }

@@ -7,14 +7,11 @@ import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 
-import androidx.annotation.StringRes;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 
 import net.danlew.android.joda.JodaTimeAndroid;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -61,6 +58,7 @@ public class MainApp extends DaggerApplication {
     @Inject ActivityMonitor activityMonitor;
     @Inject VersionCheckerUtils versionCheckersUtils;
     @Inject SP sp;
+    @Inject NSUpload nsUpload;
 
     @Inject ConfigBuilderPlugin configBuilderPlugin;
     @Inject KeepAliveReceiver.KeepAliveManager keepAliveManager;
@@ -68,7 +66,7 @@ public class MainApp extends DaggerApplication {
     @Inject CompatDBHelper compatDBHelper;
     @Inject AppRepository repository;
 
-    @Inject StaticInjector staticInjector; // TODO remove , fake only to initialize
+    @Inject StaticInjector staticInjector; // TODO avoid , here fake only to initialize
 
     @Override
     public void onCreate() {
@@ -115,7 +113,7 @@ public class MainApp extends DaggerApplication {
         pluginStore.setPlugins(plugins);
         configBuilderPlugin.initialize();
 
-        NSUpload.uploadAppStart();
+        nsUpload.uploadAppStart();
 
         new Thread(() -> keepAliveManager.setAlarm(this)).start();
         doMigrations();
@@ -123,7 +121,6 @@ public class MainApp extends DaggerApplication {
 
 
     private void doMigrations() {
-
     }
 
     @Override
@@ -166,16 +163,6 @@ public class MainApp extends DaggerApplication {
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         registerReceiver(new BTReceiver(), filter);
-    }
-
-    @Deprecated
-    public static String gs(@StringRes int id) {
-        return sResources.getString(id);
-    }
-
-    @Deprecated
-    public static MainApp instance() {
-        return sInstance;
     }
 
     public static DatabaseHelper getDbHelper() {

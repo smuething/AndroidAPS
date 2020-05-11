@@ -41,6 +41,8 @@ class TreatmentsExtendedBolusesFragment : DaggerFragment() {
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var nsUpload: NSUpload
+    @Inject lateinit var uploadQueue: UploadQueue
     @Inject lateinit var dateUtil: DateUtil
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -117,8 +119,8 @@ class TreatmentsExtendedBolusesFragment : DaggerFragment() {
                 ${resourceHelper.gs(R.string.date)}: ${dateUtil.dateAndTimeString(extendedBolus.date)}
                 """.trimIndent(), DialogInterface.OnClickListener { _: DialogInterface, _: Int ->
                             val id = extendedBolus._id
-                            if (NSUpload.isIdValid(id)) NSUpload.removeCareportalEntryFromNS(id)
-                            else UploadQueue.removeID("dbAdd", id)
+                            if (NSUpload.isIdValid(id)) nsUpload.removeCareportalEntryFromNS(id)
+                            else uploadQueue.removeID("dbAdd", id)
                             MainApp.getDbHelper().delete(extendedBolus)
                         }, null)
                     }

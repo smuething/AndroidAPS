@@ -9,6 +9,10 @@ import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.db.DatabaseHelper
 import info.nightscout.androidaps.db.TemporaryBasal
+<<<<<<< HEAD
+=======
+import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
+>>>>>>> origin/dev
 import info.nightscout.androidaps.plugins.insulin.InsulinOrefRapidActingPlugin
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
@@ -34,7 +38,11 @@ class TreatmentsPluginTest : TestBaseWithProfile() {
     @Mock lateinit var sp: SP
     @Mock lateinit var databaseHelper: DatabaseHelper
     @Mock lateinit var treatmentService: TreatmentService
+<<<<<<< HEAD
     @Mock lateinit var repository: AppRepository
+=======
+    @Mock lateinit var nsUpload: NSUpload
+>>>>>>> origin/dev
 
     val injector = HasAndroidInjector {
         AndroidInjector {
@@ -61,47 +69,75 @@ class TreatmentsPluginTest : TestBaseWithProfile() {
         `when`(profileFunction.getProfile(ArgumentMatchers.anyLong())).thenReturn(validProfile)
         `when`(activePluginProvider.activeInsulin).thenReturn(insulinOrefRapidActingPlugin)
 
+<<<<<<< HEAD
         sut = TreatmentsPlugin(profileInjector, aapsLogger, rxBus, resourceHelper, context, sp, profileFunction, activePluginProvider, fabricPrivacy, repository, dateUtil)
         sut.service = treatmentService
+=======
+        sot = TreatmentsPlugin(profileInjector, aapsLogger, rxBus, resourceHelper, context, sp, profileFunction, activePluginProvider, nsUpload, fabricPrivacy, dateUtil)
+        sot.service = treatmentService
+>>>>>>> origin/dev
     }
 
     @Test
     fun `zero TBR should produce zero absolute insulin`() {
         val now = DateUtil.now()
-        val tbrs : MutableList<TemporaryBasal> = ArrayList()
-        tbrs.add(TemporaryBasal(injector).date(now - T.hours(30). msecs()).duration(10000).percent(0))
+        val tbrs: MutableList<TemporaryBasal> = ArrayList()
+        tbrs.add(TemporaryBasal(injector).date(now - T.hours(30).msecs()).duration(10000).percent(0))
 
         `when`(databaseHelper.getTemporaryBasalsDataFromTime(ArgumentMatchers.anyLong(), ArgumentMatchers.anyBoolean())).thenReturn(tbrs)
+<<<<<<< HEAD
         sut.initializeData(T.hours(30). msecs())
         val iob = sut.getAbsoluteIOBTempBasals(now)
+=======
+        sot.initializeData(T.hours(30).msecs())
+        val iob = sot.getAbsoluteIOBTempBasals(now)
+>>>>>>> origin/dev
         Assert.assertEquals(0.0, iob.iob, 0.0)
     }
 
     @Test
     fun `90% TBR and should produce less absolute insulin`() {
         val now = DateUtil.now()
-        val tbrs : MutableList<TemporaryBasal> = ArrayList()
+        val tbrs: MutableList<TemporaryBasal> = ArrayList()
         `when`(databaseHelper.getTemporaryBasalsDataFromTime(ArgumentMatchers.anyLong(), ArgumentMatchers.anyBoolean())).thenReturn(tbrs)
+<<<<<<< HEAD
         sut.initializeData(T.hours(30). msecs())
         val iob100pct = sut.getAbsoluteIOBTempBasals(now)
 
         tbrs.add(TemporaryBasal(injector).date(now - T.hours(30). msecs()).duration(10000).percent(90))
         sut.initializeData(T.hours(30). msecs())
         val iob90pct = sut.getAbsoluteIOBTempBasals(now)
+=======
+        sot.initializeData(T.hours(30).msecs())
+        val iob100pct = sot.getAbsoluteIOBTempBasals(now)
+
+        tbrs.add(TemporaryBasal(injector).date(now - T.hours(30).msecs()).duration(10000).percent(90))
+        sot.initializeData(T.hours(30).msecs())
+        val iob90pct = sot.getAbsoluteIOBTempBasals(now)
+>>>>>>> origin/dev
         Assert.assertTrue(iob100pct.iob > iob90pct.iob)
     }
 
     @Test
     fun `110% TBR and should produce 10% more absolute insulin`() {
         val now = DateUtil.now()
-        val tbrs : MutableList<TemporaryBasal> = ArrayList()
+        val tbrs: MutableList<TemporaryBasal> = ArrayList()
         `when`(databaseHelper.getTemporaryBasalsDataFromTime(ArgumentMatchers.anyLong(), ArgumentMatchers.anyBoolean())).thenReturn(tbrs)
+<<<<<<< HEAD
         sut.initializeData(T.hours(30). msecs())
         val iob100pct = sut.getAbsoluteIOBTempBasals(now)
 
         tbrs.add(TemporaryBasal(injector).date(now - T.hours(30). msecs()).duration(10000).percent(110))
         sut.initializeData(T.hours(30). msecs())
         val iob110pct = sut.getAbsoluteIOBTempBasals(now)
+=======
+        sot.initializeData(T.hours(30).msecs())
+        val iob100pct = sot.getAbsoluteIOBTempBasals(now)
+
+        tbrs.add(TemporaryBasal(injector).date(now - T.hours(30).msecs()).duration(10000).percent(110))
+        sot.initializeData(T.hours(30).msecs())
+        val iob110pct = sot.getAbsoluteIOBTempBasals(now)
+>>>>>>> origin/dev
         Assert.assertEquals(1.1, iob110pct.iob / iob100pct.iob, 0.0001)
     }
 }

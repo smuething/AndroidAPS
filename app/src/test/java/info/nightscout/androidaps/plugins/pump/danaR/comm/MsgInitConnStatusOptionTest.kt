@@ -1,5 +1,6 @@
 package info.nightscout.androidaps.plugins.pump.danaR.comm
 
+import info.nightscout.androidaps.danar.comm.MsgInitConnStatusOption
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin
@@ -22,13 +23,17 @@ class MsgInitConnStatusOptionTest : DanaRTestBase() {
 
     @Test fun runTest() {
         `when`(activePlugin.activePump).thenReturn(PowerMockito.mock(VirtualPumpPlugin::class.java))
+<<<<<<< HEAD
         val packet = MsgInitConnStatusOption(aapsLogger, RxBusWrapper(aapsSchedulers), resourceHelper, danaRPump, activePlugin)
+=======
+        val packet = MsgInitConnStatusOption(aapsLogger, RxBusWrapper(), resourceHelper, danaPump, activePlugin)
+>>>>>>> origin/dev
 
         // test message decoding
         packet.handleMessage(createArray(20, 1.toByte()))
         Assert.assertEquals(true, packet.failed)
         // message smaller than 21
         packet.handleMessage(createArray(22, 1.toByte()))
-        Assert.assertEquals(false, danaRPump.isPasswordOK)
+        Assert.assertEquals(false, danaPump.isPasswordOK)
     }
 }
