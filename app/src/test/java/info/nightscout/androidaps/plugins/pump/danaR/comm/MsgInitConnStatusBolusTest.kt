@@ -1,25 +1,16 @@
 package info.nightscout.androidaps.plugins.pump.danaR.comm
 
 import info.nightscout.androidaps.danar.comm.MsgInitConnStatusBolus
-import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.utils.resources.ResourceHelper
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mock
 import org.powermock.modules.junit4.PowerMockRunner
 
 @RunWith(PowerMockRunner::class)
 class MsgInitConnStatusBolusTest : DanaRTestBase() {
 
-    @Mock lateinit var resourceHelper: ResourceHelper
-
     @Test fun runTest() {
-<<<<<<< HEAD
-        val packet = MsgInitConnStatusBolus(aapsLogger, RxBusWrapper(aapsSchedulers), resourceHelper, danaRPump)
-=======
-        val packet = MsgInitConnStatusBolus(aapsLogger, RxBusWrapper(), resourceHelper, danaPump)
->>>>>>> origin/dev
+        val packet = MsgInitConnStatusBolus(injector)
 
         // test message decoding
         var array = ByteArray(100)

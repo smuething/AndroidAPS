@@ -230,6 +230,9 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         `when`(resourceHelper.gs(R.string.smscommunicator_mealbolusdelivered_tt)).thenReturn("Target %1\$s for %2\$d minutes")
         `when`(resourceHelper.gs(R.string.sms_actualbg)).thenReturn("BG:")
         `when`(resourceHelper.gs(R.string.sms_lastbg)).thenReturn("Last BG:")
+        `when`(resourceHelper.gs(R.string.smscommunicator_loopdisablereplywithcode)).thenReturn("To disable loop reply with code %1\$s")
+        `when`(resourceHelper.gs(R.string.smscommunicator_loopenablereplywithcode)).thenReturn("To enable loop reply with code %1\$s")
+        `when`(resourceHelper.gs(R.string.smscommunicator_loopresumereplywithcode)).thenReturn("To resume loop reply with code %1\$s")
     }
 
     @Test
@@ -351,7 +354,11 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         smsCommunicatorPlugin.processSms(sms)
         Assert.assertFalse(sms.ignored)
         Assert.assertEquals("LOOP DISABLE", smsCommunicatorPlugin.messages[0].text)
-        Assert.assertEquals("Loop has been disabled Temp basal canceled", smsCommunicatorPlugin.messages[1].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To disable loop reply with code "))
+        var passCode: String = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Loop has been disabled Temp basal canceled", smsCommunicatorPlugin.messages[3].text)
         Assert.assertTrue(hasBeenRun)
 
         //LOOP ENABLE : already enabled
@@ -375,7 +382,11 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         smsCommunicatorPlugin.processSms(sms)
         Assert.assertFalse(sms.ignored)
         Assert.assertEquals("LOOP ENABLE", smsCommunicatorPlugin.messages[0].text)
-        Assert.assertEquals("Loop has been enabled", smsCommunicatorPlugin.messages[1].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To enable loop reply with code "))
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Loop has been enabled", smsCommunicatorPlugin.messages[3].text)
         Assert.assertTrue(hasBeenRun)
 
         //LOOP RESUME : already enabled
@@ -384,7 +395,11 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         smsCommunicatorPlugin.processSms(sms)
         Assert.assertFalse(sms.ignored)
         Assert.assertEquals("LOOP RESUME", smsCommunicatorPlugin.messages[0].text)
-        Assert.assertEquals("Loop resumed", smsCommunicatorPlugin.messages[1].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To resume loop reply with code "))
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Loop resumed", smsCommunicatorPlugin.messages[3].text)
 
         //LOOP SUSPEND 1 2: wrong format
         smsCommunicatorPlugin.messages = ArrayList()
@@ -409,7 +424,7 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         Assert.assertFalse(sms.ignored)
         Assert.assertEquals("LOOP SUSPEND 100", smsCommunicatorPlugin.messages[0].text)
         Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To suspend loop for 100 minutes reply with code "))
-        var passCode: String = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
         smsCommunicatorPlugin.processSms(Sms("1234", passCode))
         Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
         Assert.assertEquals("Loop suspended Temp basal canceled", smsCommunicatorPlugin.messages[3].text)

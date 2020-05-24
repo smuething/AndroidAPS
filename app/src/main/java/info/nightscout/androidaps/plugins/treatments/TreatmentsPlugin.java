@@ -183,7 +183,7 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
         return this.service;
     }
 
-    private long range() {
+    protected long range() {
         double dia = Constants.defaultDIA;
         if (profileFunction.getProfile() != null)
             dia = profileFunction.getProfile().getDia();

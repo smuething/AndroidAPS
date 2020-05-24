@@ -40,7 +40,7 @@ import info.nightscout.androidaps.receivers.NetworkChangeReceiver;
 import info.nightscout.androidaps.receivers.TimeDateOrTZChangeReceiver;
 import info.nightscout.androidaps.services.Intents;
 import info.nightscout.androidaps.utils.ActivityMonitor;
-import info.nightscout.androidaps.utils.LocaleHelper;
+import info.nightscout.androidaps.utils.locale.LocaleHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
 import io.reactivex.disposables.CompositeDisposable;
 
@@ -131,6 +131,7 @@ public class MainApp extends DaggerApplication {
                 .build();
     }
 
+    @SuppressWarnings("deprecation")
     private void registerLocalBroadcastReceiver() {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intents.ACTION_NEW_TREATMENT);

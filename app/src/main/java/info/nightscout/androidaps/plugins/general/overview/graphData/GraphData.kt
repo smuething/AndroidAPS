@@ -35,7 +35,13 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-class GraphData(injector: HasAndroidInjector, private val graph: GraphView, private val iobCobCalculatorPlugin: IobCobCalculatorPlugin) {
+class GraphData(
+    injector: HasAndroidInjector,
+    private val graph: GraphView,
+    private val iobCobCalculatorPlugin: IobCobCalculatorPlugin,
+    private val treatmentsPlugin: TreatmentsInterface
+
+) {
 
     // IobCobCalculatorPlugin  Cannot be injected: HistoryBrowser
     @Inject lateinit var aapsLogger: AAPSLogger
@@ -43,8 +49,6 @@ class GraphData(injector: HasAndroidInjector, private val graph: GraphView, priv
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var injector: HasAndroidInjector
-
-    private val treatmentsPlugin: TreatmentsInterface
 
     var maxY = Double.MIN_VALUE
     private var minY = Double.MAX_VALUE
@@ -55,7 +59,6 @@ class GraphData(injector: HasAndroidInjector, private val graph: GraphView, priv
     init {
         injector.androidInjector().inject(this)
         units = profileFunction.getUnits()
-        treatmentsPlugin = activePlugin.activeTreatments
     }
 
     @Suppress("UNUSED_PARAMETER")

@@ -61,7 +61,6 @@ public class IobCobOref1Thread extends Thread {
     @Inject ProfileFunction profileFunction;
     @Inject Context context;
     @Inject ActivePluginProvider activePluginProvider;
-    @Inject IobCobCalculatorPlugin iobCobCalculatorPlugin;
     @Inject SensitivityAAPSPlugin sensitivityAAPSPlugin;
     @Inject SensitivityWeightedAveragePlugin sensitivityWeightedAveragePlugin;
     @Inject BuildHelper buildHelper;
@@ -70,6 +69,7 @@ public class IobCobOref1Thread extends Thread {
     @Inject DateUtil dateUtil;
 
     private final HasAndroidInjector injector;
+    private final IobCobCalculatorPlugin iobCobCalculatorPlugin; // cannot be injected : HistoryBrowser uses different instance
     private boolean bgDataReload;
     private boolean limitDataToOldestAvailable;
     private String from;
@@ -77,10 +77,11 @@ public class IobCobOref1Thread extends Thread {
 
     private PowerManager.WakeLock mWakeLock;
 
-    IobCobOref1Thread(HasAndroidInjector injector, String from, long end, boolean bgDataReload, boolean limitDataToOldestAvailable, Event cause) {
+    IobCobOref1Thread(HasAndroidInjector injector, IobCobCalculatorPlugin iobCobCalculatorPlugin, String from, long end, boolean bgDataReload, boolean limitDataToOldestAvailable, Event cause) {
         super();
         injector.androidInjector().inject(this);
         this.injector = injector;
+        this.iobCobCalculatorPlugin = iobCobCalculatorPlugin;
 
         this.bgDataReload = bgDataReload;
         this.limitDataToOldestAvailable = limitDataToOldestAvailable;

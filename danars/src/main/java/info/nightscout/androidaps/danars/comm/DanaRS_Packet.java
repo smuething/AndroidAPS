@@ -3,8 +3,9 @@ package info.nightscout.androidaps.danars.comm;
 import android.annotation.TargetApi;
 import android.os.Build;
 
+import org.joda.time.DateTime;
+
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 
 import javax.inject.Inject;
 
@@ -117,14 +118,14 @@ public class DanaRS_Packet {
 
     public static synchronized long dateTimeSecFromBuff(byte[] buff, int offset) {
         return
-                new Date(
-                        100 + intFromBuff(buff, offset, 1),
-                        intFromBuff(buff, offset + 1, 1) - 1,
+                new DateTime(
+                        2000 + intFromBuff(buff, offset, 1),
+                        intFromBuff(buff, offset + 1, 1),
                         intFromBuff(buff, offset + 2, 1),
                         intFromBuff(buff, offset + 3, 1),
                         intFromBuff(buff, offset + 4, 1),
                         intFromBuff(buff, offset + 5, 1)
-                ).getTime();
+                ).getMillis();
     }
 
     protected static int intFromBuff(byte[] b, int srcStart, int srcLength) {
@@ -150,6 +151,29 @@ public class DanaRS_Packet {
         return ret;
     }
 
+    protected static int intFromBuffMsbLsb(byte[] b, int srcStart, int srcLength) {
+        int ret;
+
+        switch (srcLength) {
+            case 1:
+                ret = b[DATA_START + srcStart] & 0x000000FF;
+                break;
+            case 2:
+                ret = ((b[DATA_START + srcStart] & 0x000000FF) << 8) + (b[DATA_START + srcStart + 1] & 0x000000FF);
+                break;
+            case 3:
+                ret = ((b[DATA_START + srcStart] & 0x000000FF) << 16) + ((b[DATA_START + srcStart + 1] & 0x000000FF) << 8) + (b[DATA_START + srcStart + 2] & 0x000000FF);
+                break;
+            case 4:
+                ret = ((b[DATA_START + srcStart] & 0x000000FF) << 24) + ((b[DATA_START + srcStart + 1] & 0x000000FF) << 16) + ((b[DATA_START + srcStart + 2] & 0x000000FF) << 8) + (b[DATA_START + srcStart + 3] & 0x000000FF);
+                break;
+            default:
+                ret = -1;
+                break;
+        }
+        return ret;
+    }
+
     @TargetApi(Build.VERSION_CODES.KITKAT)
     public static String stringFromBuff(byte[] buff, int offset, int length) {
         byte[] strbuff = new byte[length];
@@ -159,11 +183,13 @@ public class DanaRS_Packet {
 
     public long dateFromBuff(byte[] buff, int offset) {
         return
-                new Date(
-                        100 + byteArrayToInt(getBytes(buff, offset, 1)),
-                        byteArrayToInt(getBytes(buff, offset + 1, 1)) - 1,
-                        byteArrayToInt(getBytes(buff, offset + 2, 1))
-                ).getTime();
+                new DateTime(
+                        2000 + byteArrayToInt(getBytes(buff, offset, 1)),
+                        byteArrayToInt(getBytes(buff, offset + 1, 1)),
+                        byteArrayToInt(getBytes(buff, offset + 2, 1)),
+                        0,
+                        0
+                ).getMillis();
     }
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
@@ -171,8 +197,6 @@ public class DanaRS_Packet {
     public String asciiStringFromBuff(byte[] buff, int offset, int length) {
         byte[] strbuff = new byte[length];
         System.arraycopy(buff, offset, strbuff, 0, length);
-        for (int pos = 0; pos < length; pos++)
-            strbuff[pos] += 65; // "A"
         return new String(strbuff, StandardCharsets.UTF_8);
     }
 
@@ -180,7 +204,7 @@ public class DanaRS_Packet {
         if (buff == null)
             return "";
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         int count = 0;
         for (byte element : buff) {

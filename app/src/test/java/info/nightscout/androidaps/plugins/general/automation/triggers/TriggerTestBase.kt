@@ -79,7 +79,6 @@ open class TriggerTestBase : TestBaseWithProfile() {
                 it.resourceHelper = resourceHelper
             }
             if (it is BgReading) {
-                it.dateUtil = dateUtil
             }
         }
     }
