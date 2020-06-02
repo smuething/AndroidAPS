@@ -83,7 +83,7 @@ public class Profile {
             if (units != null)
                 this.units = units;
             else {
-                fabricPrivacy.log("Profile failover failed too");
+                fabricPrivacy.logCustom("Profile failover failed too");
                 this.units = Constants.MGDL;
             }
         }

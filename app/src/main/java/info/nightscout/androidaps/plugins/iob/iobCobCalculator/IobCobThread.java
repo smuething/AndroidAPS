@@ -28,11 +28,13 @@ import info.nightscout.androidaps.interfaces.ProfileFunction;
 import info.nightscout.androidaps.plugins.general.overview.events.EventNewNotification;
 import info.nightscout.androidaps.plugins.general.overview.notifications.Notification;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.data.AutosensData;
+import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensBgLoaded;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventIobCalculationProgress;
 import info.nightscout.androidaps.plugins.sensitivity.SensitivityAAPSPlugin;
 import info.nightscout.androidaps.plugins.sensitivity.SensitivityWeightedAveragePlugin;
 import info.nightscout.androidaps.db.Treatment;
+import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.DecimalFormatter;
 import info.nightscout.androidaps.utils.FabricPrivacy;
@@ -58,7 +60,6 @@ public class IobCobThread extends Thread {
     @Inject ResourceHelper resourceHelper;
     @Inject ProfileFunction profileFunction;
     @Inject Context context;
-    @Inject ActivePluginProvider activePluginProvider;
     @Inject SensitivityAAPSPlugin sensitivityAAPSPlugin;
     @Inject SensitivityWeightedAveragePlugin sensitivityWeightedAveragePlugin;
     @Inject BuildHelper buildHelper;
@@ -68,6 +69,7 @@ public class IobCobThread extends Thread {
 
     private final HasAndroidInjector injector;
     private final IobCobCalculatorPlugin iobCobCalculatorPlugin; // cannot be injected : HistoryBrowser uses different instance
+    private final TreatmentsPlugin treatmentsPlugin;             // cannot be injected : HistoryBrowser uses different instance
     private boolean bgDataReload;
     private boolean limitDataToOldestAvailable;
     private String from;
@@ -75,11 +77,12 @@ public class IobCobThread extends Thread {
 
     private PowerManager.WakeLock mWakeLock;
 
-    @Inject IobCobThread(HasAndroidInjector injector, IobCobCalculatorPlugin iobCobCalculatorPlugin, String from, long end, boolean bgDataReload, boolean limitDataToOldestAvailable, Event cause) {
+    @Inject IobCobThread(HasAndroidInjector injector, IobCobCalculatorPlugin iobCobCalculatorPlugin, TreatmentsPlugin treatmentsPlugin, String from, long end, boolean bgDataReload, boolean limitDataToOldestAvailable, Event cause) {
         super();
         injector.androidInjector().inject(this);
         this.injector = injector;
         this.iobCobCalculatorPlugin = iobCobCalculatorPlugin;
+        this.treatmentsPlugin = treatmentsPlugin;
 
         this.bgDataReload = bgDataReload;
         this.limitDataToOldestAvailable = limitDataToOldestAvailable;
@@ -111,6 +114,7 @@ public class IobCobThread extends Thread {
                 if (bgDataReload) {
                     iobCobCalculatorPlugin.loadBgData(end);
                     iobCobCalculatorPlugin.createBucketedData();
+                    rxBus.send(new EventAutosensBgLoaded(cause));
                 }
                 List<InMemoryGlucoseValue> bucketed_data = iobCobCalculatorPlugin.getBucketedData();
                 LongSparseArray<AutosensData> autosensDataTable = iobCobCalculatorPlugin.getAutosensDataTable();
@@ -237,7 +241,7 @@ public class IobCobThread extends Thread {
                         }
                     }
 
-                    List<Treatment> recentCarbTreatments = activePluginProvider.getActiveTreatments().getCarbTreatments5MinBackFromHistory(bgTime);
+                    List<Treatment> recentCarbTreatments = treatmentsPlugin.getCarbTreatments5MinBackFromHistory(bgTime);
                     for (Treatment recentCarbTreatment : recentCarbTreatments) {
                         autosensData.carbsFromBolus += recentCarbTreatment.carbs;
                         boolean isAAPSOrWeighted = sensitivityAAPSPlugin.isEnabled() || sensitivityWeightedAveragePlugin.isEnabled();

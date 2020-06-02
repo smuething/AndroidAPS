@@ -160,7 +160,7 @@ public class NSClientPlugin extends PluginBase {
                     } else if (event.isChanged(resourceHelper, R.string.key_ns_chargingonly)) {
                         receiverStatusStore.broadcastChargingState();
                     }
-                }, exception -> FabricPrivacy.getInstance().logException(exception))
+                }, fabricPrivacy::logException)
         );
         disposable.add(rxBus
                 .toObservable(EventAppExit.class)

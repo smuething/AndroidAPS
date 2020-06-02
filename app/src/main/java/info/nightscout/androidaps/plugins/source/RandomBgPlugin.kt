@@ -60,7 +60,7 @@ class RandomBgPlugin @Inject constructor(
     }
 
     override fun advancedFilteringSupported(): Boolean {
-        return false
+        return true
     }
 
     override fun onStart() {
@@ -75,7 +75,7 @@ class RandomBgPlugin @Inject constructor(
     }
 
     override fun specialEnableCondition(): Boolean {
-        return isRunningTest() || virtualPumpPlugin.isEnabled(PluginType.PUMP) && buildHelper.isEngineeringMode()
+        return true //isRunningTest() || virtualPumpPlugin.isEnabled(PluginType.PUMP) && buildHelper.isEngineeringMode()
     }
 
     override fun handleNewData(intent: Intent) {

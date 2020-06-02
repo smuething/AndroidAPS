@@ -88,6 +88,7 @@ public class MainApp extends DaggerApplication {
 
         disposable.add(compatDBHelper.dbChangeDisposable());
 
+/*
         Thread.setDefaultUncaughtExceptionHandler((thread, ex) -> {
             if (ex instanceof InternalError) {
                 // usually the app trying to spawn a thread while being killed
@@ -95,7 +96,7 @@ public class MainApp extends DaggerApplication {
             }
             aapsLogger.error("Uncaught exception crashing app", ex);
         });
-
+*/
         registerActivityLifecycleCallbacks(activityMonitor);
 
         JodaTimeAndroid.init(this);
