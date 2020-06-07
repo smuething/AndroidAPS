@@ -44,9 +44,9 @@ class StorageConstraintPluginTest : TestBase() {
         val mocked = MockedStorageConstraintPlugin(HasAndroidInjector { AndroidInjector { } }, aapsLogger, resourceHelper, rxBusWrapper)
         // Set free space under 200(Mb) to disable loop
         mocked.memSize = 150L
-        Assert.assertEquals(false, mocked.isClosedLoopAllowed(Constraint(true)).value())
+        Assert.assertEquals(false, mocked.isClosedLoopEnabled(Constraint(true)).value())
         // Set free space over 200(Mb) to enable loop
         mocked.memSize = 300L
-        Assert.assertEquals(true, mocked.isClosedLoopAllowed(Constraint(true)).value())
+        Assert.assertEquals(true, mocked.isClosedLoopEnabled(Constraint(true)).value())
     }
 }

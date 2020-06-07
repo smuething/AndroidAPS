@@ -91,7 +91,7 @@ class SafetyPluginTest : TestBaseWithProfile() {
         `when`(sp.getString(R.string.key_aps_mode, "open")).thenReturn("closed")
         `when`(buildHelper.isEngineeringModeOrRelease()).thenReturn(false)
         var c = Constraint(true)
-        c = safetyPlugin.isClosedLoopAllowed(c)
+        c = safetyPlugin.isClosedLoopEnabled(c)
         Assert.assertTrue(c.getReasons(aapsLogger).contains("Running dev version. Closed loop is disabled."))
         Assert.assertEquals(false, c.value())
     }
@@ -99,7 +99,7 @@ class SafetyPluginTest : TestBaseWithProfile() {
     @Test fun setOpenLoopInPreferencesShouldLimitClosedLoop() {
         `when`(sp.getString(R.string.key_aps_mode, "open")).thenReturn("open")
         var c = Constraint(true)
-        c = safetyPlugin.isClosedLoopAllowed(c)
+        c = safetyPlugin.isClosedLoopEnabled(c)
         Assert.assertTrue(c.getReasons(aapsLogger).contains("Closed loop mode disabled in preferences"))
         Assert.assertEquals(false, c.value())
     }

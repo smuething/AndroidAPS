@@ -292,7 +292,7 @@ public class LoopPlugin extends PluginBase implements LoopInterface {
     }
 
     public boolean isLGS() {
-        Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopAllowed();
+        Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopEnabled();
         Double MaxIOBallowed = constraintChecker.getMaxIOBAllowed().value();
         String APSmode = sp.getString(R.string.key_aps_mode, "open");
         PumpInterface pump = activePlugin.getActivePump();
@@ -427,7 +427,7 @@ public class LoopPlugin extends PluginBase implements LoopInterface {
                 return;
             }
 
-            Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopAllowed();
+            Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopEnabled();
 
             if (closedLoopEnabled.value()) {
                 if (resultAfterConstraints.isChangeRequested()

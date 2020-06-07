@@ -441,7 +441,7 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
 
         // **** Temp button ****
         val lastRun = loopPlugin.lastRun
-        val closedLoopEnabled = constraintChecker.isClosedLoopAllowed()
+        val closedLoopEnabled = constraintChecker.isClosedLoopEnabled()
 
         val showAcceptButton = !closedLoopEnabled.value() && // Open mode needed
             lastRun != null &&
@@ -584,7 +584,7 @@ class OverviewFragment : DaggerFragment(), View.OnClickListener, OnLongClickList
             overview_timeagoshort?.text = "(" + DateUtil.minAgoShort(lastBG.date) + ")"
 
         }
-        val closedLoopEnabled = constraintChecker.isClosedLoopAllowed()
+        val closedLoopEnabled = constraintChecker.isClosedLoopEnabled()
 
         // open loop mode
         if (config.APS && pump.pumpDescription.isTempBasalCapable) {

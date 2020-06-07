@@ -193,7 +193,7 @@ class APSResultTest : TestBaseWithProfile() {
 
     @Before
     fun prepare() {
-        `when`(constraintChecker.isClosedLoopAllowed()).thenReturn(closedLoopEnabled)
+        `when`(constraintChecker.isClosedLoopEnabled()).thenReturn(closedLoopEnabled)
         `when`(activePluginProvider.activePump).thenReturn(virtualPumpPlugin)
         `when`(sp.getDouble(ArgumentMatchers.anyInt(), ArgumentMatchers.anyDouble())).thenReturn(30.0)
         `when`(virtualPumpPlugin.pumpDescription).thenReturn(pumpDescription)

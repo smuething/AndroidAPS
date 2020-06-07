@@ -63,6 +63,10 @@ class VersionCheckerPlugin @Inject constructor(
             value
     }
 
+    override fun isClosedLoopEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
+        return this.isClosedLoopAllowed(value)
+    }
+
     private fun checkWarning() {
         val now = System.currentTimeMillis()
 

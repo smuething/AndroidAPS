@@ -337,7 +337,7 @@ class MainActivity : NoSplashAppCompatActivity() {
 
     private fun setUserStats() {
         if (!fabricPrivacy.fabricEnabled()) return
-        val closedLoopEnabled = if (constraintChecker.isClosedLoopAllowed().value()) "CLOSED_LOOP_ENABLED" else "CLOSED_LOOP_DISABLED"
+        val closedLoopEnabled = if (constraintChecker.isClosedLoopEnabled().value()) "CLOSED_LOOP_ENABLED" else "CLOSED_LOOP_DISABLED"
         // Size is limited to 36 chars
         val remote = BuildConfig.REMOTE.toLowerCase(Locale.getDefault())
             .replace("https://", "")

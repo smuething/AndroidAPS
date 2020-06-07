@@ -24,7 +24,7 @@ public class Objective5 extends Objective {
             @Override
             public boolean isCompleted() {
                 Constraint<Boolean> closedLoopEnabled = new Constraint<>(true);
-                safetyPlugin.isClosedLoopAllowed(closedLoopEnabled);
+                safetyPlugin.isClosedLoopEnabled(closedLoopEnabled);
                 return closedLoopEnabled.value();
             }
         });

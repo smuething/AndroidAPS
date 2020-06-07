@@ -55,7 +55,7 @@ class ObjectivesPluginTest : TestBase() {
     @Test fun notStartedObjective6ShouldLimitClosedLoop() {
         objectivesPlugin.objectives[ObjectivesPlugin.MAXIOB_ZERO_CL_OBJECTIVE].startedOn = 0
         var c = Constraint(true)
-        c = objectivesPlugin.isClosedLoopAllowed(c)
+        c = objectivesPlugin.isClosedLoopEnabled(c)
         Assert.assertEquals(true, c.getReasons(aapsLogger).contains("Objective 6 not started"))
         Assert.assertEquals(false, c.value())
     }

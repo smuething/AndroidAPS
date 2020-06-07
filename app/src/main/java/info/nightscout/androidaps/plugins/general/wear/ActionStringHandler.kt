@@ -402,7 +402,7 @@ class ActionStringHandler @Inject constructor(
             var ret = ""
             // decide if enabled/disabled closed/open; what Plugin as APS?
             if (loopPlugin.isEnabled(loopPlugin.getType())) {
-                ret += if (constraintChecker.isClosedLoopAllowed().value()) {
+                ret += if (constraintChecker.isClosedLoopEnabled().value()) {
                     "CLOSED LOOP\n"
                 } else {
                     "OPEN LOOP\n"

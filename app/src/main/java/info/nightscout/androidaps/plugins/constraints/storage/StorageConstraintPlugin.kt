@@ -48,6 +48,10 @@ open class StorageConstraintPlugin @Inject constructor(
         return value
     }
 
+    override fun isClosedLoopEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
+        return this.isClosedLoopAllowed(value)
+    }
+
     open fun availableInternalMemorySize(): Long {
         val path = Environment.getDataDirectory()
         val stat = StatFs(path.path)
