@@ -301,7 +301,7 @@ public class APSResult {
     }
 
     public boolean isChangeRequested() {
-        Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopAllowed();
+        Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopEnabled();
         // closed loop mode: handle change at driver level
         if (closedLoopEnabled.value()) {
             aapsLogger.debug(LTag.APS, "DEFAULT: Closed mode");

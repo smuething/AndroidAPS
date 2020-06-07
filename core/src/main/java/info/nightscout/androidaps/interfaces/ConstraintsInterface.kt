@@ -18,6 +18,11 @@ interface ConstraintsInterface {
     }
 
     @JvmDefault
+    fun isClosedLoopEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
+        return value
+    }
+
+    @JvmDefault
     fun isAutosensModeEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
         return value
     }
