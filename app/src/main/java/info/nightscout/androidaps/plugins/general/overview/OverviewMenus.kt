@@ -33,6 +33,7 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin
+import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
 import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.queue.Callback
 import info.nightscout.androidaps.utils.DateUtil
@@ -47,6 +48,7 @@ import javax.inject.Singleton
 @Singleton
 class OverviewMenus @Inject constructor(
     private val aapsLogger: AAPSLogger,
+    private val constraintChecker: ConstraintChecker,
     private val resourceHelper: ResourceHelper,
     private val sp: SP,
     private val rxBus: RxBusWrapper,
@@ -181,6 +183,12 @@ class OverviewMenus @Inject constructor(
                 val pumpDescription: PumpDescription = activePlugin.activePump.pumpDescription
                 if (!profileFunction.isProfileValid("ContextMenuCreation")) return
                 menu.setHeaderTitle(resourceHelper.gs(R.string.loop))
+                if (!loopPlugin.isOpenLoop && loopPlugin.isEnabled(PluginType.LOOP)) {
+                    menu.add(resourceHelper.gs(R.string.openloop))
+                }
+                if (loopPlugin.isOpenLoop && constraintChecker.isClosedLoopAllowed().value() || loopPlugin.isLGS && constraintChecker.isClosedLoopAllowed().value()) {
+                    menu.add(resourceHelper.gs(R.string.closedloop))
+                }
                 if (loopPlugin.isEnabled(PluginType.LOOP)) {
                     menu.add(resourceHelper.gs(R.string.disableloop))
                     if (!loopPlugin.isSuspended) {
@@ -250,6 +258,26 @@ class OverviewMenus @Inject constructor(
                     }
                 })
                 loopPlugin.createOfflineEvent(24 * 60) // upload 24h, we don't know real duration
+                return true
+            }
+
+            resourceHelper.gs(R.string.closedloop)                                    -> {
+                aapsLogger.debug("USER ENTRY: CLOSED LOOP ENABLED")
+                sp.putString(R.string.key_aps_mode, "closed")
+                loopPlugin.setPluginEnabled(PluginType.LOOP, true)
+                loopPlugin.setFragmentVisible(PluginType.LOOP, true)
+                configBuilderPlugin.storeSettings("EnablingLoop")
+                rxBus.send(EventRefreshOverview("suspendmenu"))
+                return true
+            }
+
+            resourceHelper.gs(R.string.openloop)                                    -> {
+                aapsLogger.debug("USER ENTRY: OPEN LOOP ENABLED")
+                sp.putString(R.string.key_aps_mode, "open")
+                loopPlugin.setPluginEnabled(PluginType.LOOP, true)
+                loopPlugin.setFragmentVisible(PluginType.LOOP, true)
+                configBuilderPlugin.storeSettings("EnablingLoop")
+                rxBus.send(EventRefreshOverview("suspendmenu"))
                 return true
             }
 
