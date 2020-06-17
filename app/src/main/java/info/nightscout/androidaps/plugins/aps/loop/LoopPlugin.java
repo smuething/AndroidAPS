@@ -296,6 +296,17 @@ public class LoopPlugin extends PluginBase implements LoopInterface {
         return true;
     }
 
+    public boolean isOpenLoop(){
+        Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopEnabled();
+        PumpInterface pump = activePlugin.getActivePump();
+        boolean isOpenLoop = false;
+        if (!isSuspended() && !pump.isSuspended())
+            if (!closedLoopEnabled.value())
+                isOpenLoop = true;
+
+        return isOpenLoop;
+    }
+
     public boolean isLGS() {
         Constraint<Boolean> closedLoopEnabled = constraintChecker.isClosedLoopEnabled();
         Double MaxIOBallowed = constraintChecker.getMaxIOBAllowed().value();
