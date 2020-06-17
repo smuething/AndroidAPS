@@ -18,9 +18,6 @@ interface CommandQueueProvider {
     fun bolusInQueue(): Boolean
     fun bolus(detailedBolusInfo: DetailedBolusInfo, callback: Callback?): Boolean
     fun cancelAllBoluses()
-    fun stopPump(callback: Callback?)
-    fun startPump(callback: Callback?)
-    fun setTBROverNotification(callback: Callback?, enable: Boolean)
     fun tempBasalAbsolute(absoluteRate: Double, durationInMinutes: Int, enforceNew: Boolean, profile: Profile, callback: Callback?): Boolean
     fun tempBasalPercent(percent: Int, durationInMinutes: Int, enforceNew: Boolean, profile: Profile, callback: Callback?): Boolean
     fun extendedBolus(insulin: Double, durationInMinutes: Int, callback: Callback?): Boolean

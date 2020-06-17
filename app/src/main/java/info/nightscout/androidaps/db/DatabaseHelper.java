@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import info.nightscout.androidaps.Constants;
 import info.nightscout.androidaps.dana.comm.RecordTypes;
 import info.nightscout.androidaps.data.NonOverlappingIntervals;
 import info.nightscout.androidaps.data.Profile;
@@ -50,13 +49,9 @@ import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper;
 import info.nightscout.androidaps.plugins.general.nsclient.NSUpload;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventNewHistoryData;
-import info.nightscout.androidaps.plugins.pump.insight.database.InsightBolusID;
-import info.nightscout.androidaps.plugins.pump.insight.database.InsightHistoryOffset;
-import info.nightscout.androidaps.plugins.pump.insight.database.InsightPumpID;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.db.PodHistory;
 import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin;
 import info.nightscout.androidaps.utils.PercentageSplitter;
-import info.nightscout.androidaps.utils.T;
 
 /**
  * This Helper contains all resource to provide a central DB management functionality. Only methods handling
@@ -120,9 +115,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             TableUtils.createTableIfNotExists(connectionSource, CareportalEvent.class);
             TableUtils.createTableIfNotExists(connectionSource, ProfileSwitch.class);
             TableUtils.createTableIfNotExists(connectionSource, TDD.class);
-            TableUtils.createTableIfNotExists(connectionSource, InsightHistoryOffset.class);
-            TableUtils.createTableIfNotExists(connectionSource, InsightBolusID.class);
-            TableUtils.createTableIfNotExists(connectionSource, InsightPumpID.class);
             TableUtils.createTableIfNotExists(connectionSource, PodHistory.class);
             database.execSQL("INSERT INTO sqlite_sequence (name, seq) SELECT \"" + DATABASE_INSIGHT_BOLUS_IDS + "\", " + System.currentTimeMillis() + " " +
                     "WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = \"" + DATABASE_INSIGHT_BOLUS_IDS + "\")");
@@ -150,16 +142,7 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
                 TableUtils.dropTable(connectionSource, ProfileSwitch.class, true);
                 onCreate(database, connectionSource);
             } else if (oldVersion < 10) {
-                TableUtils.createTableIfNotExists(connectionSource, InsightHistoryOffset.class);
-                TableUtils.createTableIfNotExists(connectionSource, InsightBolusID.class);
-                TableUtils.createTableIfNotExists(connectionSource, InsightPumpID.class);
-                database.execSQL("INSERT INTO sqlite_sequence (name, seq) SELECT \"" + DATABASE_INSIGHT_BOLUS_IDS + "\", " + System.currentTimeMillis() + " " +
-                        "WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = \"" + DATABASE_INSIGHT_BOLUS_IDS + "\")");
-                database.execSQL("INSERT INTO sqlite_sequence (name, seq) SELECT \"" + DATABASE_INSIGHT_PUMP_IDS + "\", " + System.currentTimeMillis() + " " +
-                        "WHERE NOT EXISTS (SELECT 1 FROM sqlite_sequence WHERE name = \"" + DATABASE_INSIGHT_PUMP_IDS + "\")");
             } else if (oldVersion < 11) {
-                database.execSQL("UPDATE sqlite_sequence SET seq = " + System.currentTimeMillis() + " WHERE name = \"" + DATABASE_INSIGHT_BOLUS_IDS + "\"");
-                database.execSQL("UPDATE sqlite_sequence SET seq = " + System.currentTimeMillis() + " WHERE name = \"" + DATABASE_INSIGHT_PUMP_IDS + "\"");
             }
         } catch (SQLException e) {
             aapsLogger.error("Can't drop databases", e);
@@ -311,18 +294,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
     private Dao<ProfileSwitch, Long> getDaoProfileSwitch() throws SQLException {
         return getDao(ProfileSwitch.class);
-    }
-
-    private Dao<InsightPumpID, Long> getDaoInsightPumpID() throws SQLException {
-        return getDao(InsightPumpID.class);
-    }
-
-    private Dao<InsightBolusID, Long> getDaoInsightBolusID() throws SQLException {
-        return getDao(InsightBolusID.class);
-    }
-
-    private Dao<InsightHistoryOffset, String> getDaoInsightHistoryOffset() throws SQLException {
-        return getDao(InsightHistoryOffset.class);
     }
 
     private Dao<PodHistory, Long> getDaoPodHistory() throws SQLException {
@@ -1452,68 +1423,6 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
             } else {
                 return null;
             }
-        } catch (SQLException e) {
-            aapsLogger.error("Unhandled exception", e);
-        }
-        return null;
-    }
-
-    // ---------------- Insight history handling ---------------
-
-    public void createOrUpdate(InsightHistoryOffset offset) {
-        try {
-            getDaoInsightHistoryOffset().createOrUpdate(offset);
-        } catch (SQLException e) {
-            aapsLogger.error("Unhandled exception", e);
-        }
-    }
-
-    public InsightHistoryOffset getInsightHistoryOffset(String pumpSerial) {
-        try {
-            return getDaoInsightHistoryOffset().queryForId(pumpSerial);
-        } catch (SQLException e) {
-            aapsLogger.error("Unhandled exception", e);
-        }
-        return null;
-    }
-
-    public void createOrUpdate(InsightBolusID bolusID) {
-        try {
-            getDaoInsightBolusID().createOrUpdate(bolusID);
-        } catch (SQLException e) {
-            aapsLogger.error("Unhandled exception", e);
-        }
-    }
-
-    public InsightBolusID getInsightBolusID(String pumpSerial, int bolusID, long timestamp) {
-        try {
-            return getDaoInsightBolusID().queryBuilder()
-                    .where().eq("pumpSerial", pumpSerial)
-                    .and().eq("bolusID", bolusID)
-                    .and().between("timestamp", timestamp - 259200000, timestamp + 259200000)
-                    .queryForFirst();
-        } catch (SQLException e) {
-            aapsLogger.error("Unhandled exception", e);
-        }
-        return null;
-    }
-
-    public void createOrUpdate(InsightPumpID pumpID) {
-        try {
-            getDaoInsightPumpID().createOrUpdate(pumpID);
-        } catch (SQLException e) {
-            aapsLogger.error("Unhandled exception", e);
-        }
-    }
-
-    public InsightPumpID getPumpStoppedEvent(String pumpSerial, long before) {
-        try {
-            return getDaoInsightPumpID().queryBuilder()
-                    .orderBy("timestamp", false)
-                    .where().eq("pumpSerial", pumpSerial)
-                    .and().in("eventType", "PumpStopped", "PumpPaused")
-                    .and().lt("timestamp", before)
-                    .queryForFirst();
         } catch (SQLException e) {
             aapsLogger.error("Unhandled exception", e);
         }

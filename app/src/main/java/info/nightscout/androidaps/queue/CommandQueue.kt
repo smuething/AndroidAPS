@@ -20,16 +20,15 @@ import info.nightscout.androidaps.events.EventProfileNeedsUpdate
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.interfaces.CommandQueueProvider
 import info.nightscout.androidaps.interfaces.Constraint
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
-import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.general.overview.events.EventDismissBolusProgressIfRunning
 import info.nightscout.androidaps.plugins.general.overview.events.EventDismissNotification
 import info.nightscout.androidaps.plugins.general.overview.events.EventNewNotification
 import info.nightscout.androidaps.plugins.general.overview.notifications.Notification
-import info.nightscout.androidaps.queue.commands.Command
 import info.nightscout.androidaps.queue.commands.*
 import info.nightscout.androidaps.queue.commands.Command.CommandType
 import info.nightscout.androidaps.utils.FabricPrivacy
@@ -268,21 +267,6 @@ class CommandQueue @Inject constructor(
         }
         notifyAboutNewCommand()
         return true
-    }
-
-    override fun stopPump(callback: Callback?) {
-        add(CommandStopPump(injector, callback))
-        notifyAboutNewCommand()
-    }
-
-    override fun startPump(callback: Callback?) {
-        add(CommandStartPump(injector, callback))
-        notifyAboutNewCommand()
-    }
-
-    override fun setTBROverNotification(callback: Callback?, enable: Boolean) {
-        add(CommandInsightSetTBROverNotification(injector, enable, callback))
-        notifyAboutNewCommand()
     }
 
     @Synchronized

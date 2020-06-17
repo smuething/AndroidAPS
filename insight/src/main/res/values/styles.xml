@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Base.AndroidAPS" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/newColorPrimary</item>
+        <item name="colorSecondary">@color/newColorPrimary</item>
+        <item name="colorOnPrimary">@color/newColorOnPrimary</item>
+        <item name="colorOnSecondary">@color/newColorOnPrimary</item>
+        <item name="colorError">@color/newColorError</item>
+        <item name="colorOnError">@color/newColorOnError</item>
+        <item name="android:windowBackground">@color/newColorBackground</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="colorOnBackground">@color/newColorOnBackground</item>
+        <item name="colorSurface">@color/newColorSurface</item>
+        <item name="colorOnSurface">@color/newColorOnSurface</item>
+        <item name="fontFamily">@font/comfortaa</item>
+        <item name="textAppearanceHeadline1">@style/TextAppearance.AndroidAPS.Headline1</item>
+        <item name="textAppearanceHeadline2">@style/TextAppearance.AndroidAPS.Headline2</item>
+        <item name="textAppearanceHeadline3">@style/TextAppearance.AndroidAPS.Headline3</item>
+        <item name="textAppearanceHeadline4">@style/TextAppearance.AndroidAPS.Headline4</item>
+        <item name="textAppearanceHeadline5">@style/TextAppearance.AndroidAPS.Headline5</item>
+        <item name="textAppearanceHeadline6">@style/TextAppearance.AndroidAPS.Headline6</item>
+        <item name="textAppearanceSubtitle1">@style/TextAppearance.AndroidAPS.Subtitle1</item>
+        <item name="textAppearanceSubtitle2">@style/TextAppearance.AndroidAPS.Subtitle2</item>
+        <item name="textAppearanceBody1">@style/TextAppearance.AndroidAPS.Body1</item>
+        <item name="textAppearanceBody2">@style/TextAppearance.AndroidAPS.Body2</item>
+        <item name="textAppearanceCaption">@style/TextAppearance.AndroidAPS.Caption</item>
+        <item name="textAppearanceButton">@style/TextAppearance.AndroidAPS.Button</item>
+        <item name="textAppearanceOverline">@style/TextAppearance.AndroidAPS.Overline</item>
+    </style>
+
+    <style name="Theme.AndroidAPS.Transparent" parent="Theme.AndroidAPS">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Headline1" parent="TextAppearance.MaterialComponents.Headline1">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Headline2" parent="TextAppearance.MaterialComponents.Headline2">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Headline3" parent="TextAppearance.MaterialComponents.Headline3">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Headline4" parent="TextAppearance.MaterialComponents.Headline4">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Headline5" parent="TextAppearance.MaterialComponents.Headline5">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Headline6" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Subtitle1" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Subtitle2" parent="TextAppearance.MaterialComponents.Subtitle2">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Body1" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Body2" parent="TextAppearance.MaterialComponents.Body2">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Caption" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Button" parent="TextAppearance.MaterialComponents.Button">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.AndroidAPS.Overline" parent="TextAppearance.MaterialComponents.Overline">
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+</resources>

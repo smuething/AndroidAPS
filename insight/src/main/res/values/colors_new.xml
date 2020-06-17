@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="newColorPrimary">#00C1DF</color>
+    <color name="newColorOnPrimary">#000000</color>
+    <color name="newColorError">#FF1800</color>
+    <color name="newColorOnError">#000000</color>
+    <color name="newColorBackground">#121212</color>
+    <color name="newColorOnBackground">#FFFFFF</color>
+    <color name="newColorSurface">#242424</color>
+    <color name="newColorOnSurface">#FFFFFF</color>
+</resources>

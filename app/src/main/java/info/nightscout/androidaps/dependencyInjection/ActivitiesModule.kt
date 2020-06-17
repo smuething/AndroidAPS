@@ -3,7 +3,11 @@ package info.nightscout.androidaps.dependencyInjection
 import dagger.Module
 import dagger.android.ContributesAndroidInjector
 import info.nightscout.androidaps.MainActivity
-import info.nightscout.androidaps.activities.*
+import info.nightscout.androidaps.activities.PreferencesActivity
+import info.nightscout.androidaps.activities.RequestDexcomPermissionActivity
+import info.nightscout.androidaps.activities.SingleFragmentActivity
+import info.nightscout.androidaps.activities.StatsActivity
+import info.nightscout.androidaps.activities.SurveyActivity
 import info.nightscout.androidaps.historyBrowser.HistoryBrowseActivity
 import info.nightscout.androidaps.plugins.general.maintenance.activities.LogSettingActivity
 import info.nightscout.androidaps.plugins.general.maintenance.activities.PrefImportListActivity
@@ -11,9 +15,6 @@ import info.nightscout.androidaps.plugins.general.overview.activities.QuickWizar
 import info.nightscout.androidaps.plugins.general.smsCommunicator.activities.SmsCommunicatorOtpActivity
 import info.nightscout.androidaps.plugins.pump.common.dialog.RileyLinkBLEScanActivity
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.dialog.RileyLinkStatusActivity
-import info.nightscout.androidaps.plugins.pump.insight.activities.InsightAlertActivity
-import info.nightscout.androidaps.plugins.pump.insight.activities.InsightPairingActivity
-import info.nightscout.androidaps.plugins.pump.insight.activities.InsightPairingInformationActivity
 import info.nightscout.androidaps.plugins.pump.medtronic.dialog.MedtronicHistoryActivity
 import info.nightscout.androidaps.setupwizard.SetupWizardActivity
 
@@ -22,9 +23,6 @@ import info.nightscout.androidaps.setupwizard.SetupWizardActivity
 abstract class ActivitiesModule {
 
     @ContributesAndroidInjector abstract fun contributesHistoryBrowseActivity(): HistoryBrowseActivity
-    @ContributesAndroidInjector abstract fun contributesInsightAlertActivity(): InsightAlertActivity
-    @ContributesAndroidInjector abstract fun contributesInsightPairingActivity(): InsightPairingActivity
-    @ContributesAndroidInjector abstract fun contributesInsightPairingInformationActivity(): InsightPairingInformationActivity
     @ContributesAndroidInjector abstract fun contributesLogSettingActivity(): LogSettingActivity
     @ContributesAndroidInjector abstract fun contributeMainActivity(): MainActivity
     @ContributesAndroidInjector abstract fun contributesMedtronicHistoryActivity(): MedtronicHistoryActivity

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.AndroidAPS" parent="Base.AndroidAPS">
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

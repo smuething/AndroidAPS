@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="hmm_that_didnt_go_to_plan">Hmm, that didn\'t go to plan.</string>
+    <string name="searching_for_devices">Searching for devices…</string>
+    <string name="code_compare">Do the codes displayed on this device and on your pump match?</string>
+    <string name="pump_successfully_paired">Your pump has been successfully paired.</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="retry">Retry</string>
+    <string name="accu_chek_insight">Accu-Chek Insight</string>
+    <string name="sight">Sight</string>
+    <string name="accu_chek_insight_description">Pump integration for Accu-Chek Insight pumps</string>
+</resources>

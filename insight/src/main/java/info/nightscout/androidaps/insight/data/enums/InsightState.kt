@@ -1,0 +1,18 @@
+package info.nightscout.androidaps.insight.data.enums
+
+internal enum class InsightState {
+    DISCONNECTED,
+    ENABLING_BLUETOOTH,
+    CONNECTING,
+    RECOVERING,
+    CONNECTION_REQUEST,
+    SYN_REQUEST,
+    KEY_REQUEST,
+    WAITING_FOR_CODE_CONFIRMATION,
+    VERIFY_DISPLAY_REQUEST,
+    VERIFY_CONFIRM_REQUEST,
+    APP_BIND,
+    APP_CONNECT,
+    CONNECTED,
+    APP_DISCONNECT
+}

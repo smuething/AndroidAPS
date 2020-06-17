@@ -14,15 +14,12 @@ abstract class CommandQueueModule {
     @ContributesAndroidInjector abstract fun commandCancelExtendedBolusInjector(): CommandCancelExtendedBolus
     @ContributesAndroidInjector abstract fun commandCancelTempBasalInjector(): CommandCancelTempBasal
     @ContributesAndroidInjector abstract fun commandExtendedBolusInjector(): CommandExtendedBolus
-    @ContributesAndroidInjector abstract fun commandInsightSetTBROverNotificationInjector(): CommandInsightSetTBROverNotification
     @ContributesAndroidInjector abstract fun commandLoadEventsInjector(): CommandLoadEvents
     @ContributesAndroidInjector abstract fun commandLoadHistoryInjector(): CommandLoadHistory
     @ContributesAndroidInjector abstract fun commandLoadTDDsInjector(): CommandLoadTDDs
     @ContributesAndroidInjector abstract fun commandReadStatusInjector(): CommandReadStatus
     @ContributesAndroidInjector abstract fun commandSetProfileInjector(): CommandSetProfile
     @ContributesAndroidInjector abstract fun commandCommandSMBBolusInjector(): CommandSMBBolus
-    @ContributesAndroidInjector abstract fun commandStartPumpInjector(): CommandStartPump
-    @ContributesAndroidInjector abstract fun commandStopPumpInjector(): CommandStopPump
     @ContributesAndroidInjector abstract fun commandTempBasalAbsoluteInjector(): CommandTempBasalAbsolute
     @ContributesAndroidInjector abstract fun commandTempBasalPercentInjector(): CommandTempBasalPercent
     @ContributesAndroidInjector abstract fun commandSetUserSettingsInjector(): CommandSetUserSettings

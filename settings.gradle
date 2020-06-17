@@ -1,1 +1,2 @@
 include ':app', ':wear', ':database', ':core', ':dana', ':danar', ':danars'
+include ':insight'
