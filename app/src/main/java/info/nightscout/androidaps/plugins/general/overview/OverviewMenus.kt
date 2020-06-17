@@ -28,13 +28,13 @@ import info.nightscout.androidaps.events.EventRefreshOverview
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.interfaces.CommandQueueProvider
 import info.nightscout.androidaps.interfaces.PluginType
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.interfaces.PumpDescription
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
-import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.queue.Callback
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.DefaultValueHelper
@@ -65,14 +65,14 @@ class OverviewMenus @Inject constructor(
 
     enum class CharType(@StringRes val nameId: Int, @ColorRes val colorId: Int, val primary: Boolean, val secondary: Boolean, @StringRes val shortnameId: Int) {
         PRE(R.string.overview_show_predictions, R.color.prediction, primary = true, secondary = false, shortnameId = R.string.prediction_shortname),
-        BAS(R.string.overview_show_basals, R.color.basal, primary = true, secondary = false,shortnameId = R.string.basal_shortname),
-        ABS(R.string.overview_show_absinsulin, R.color.iob, primary = false, secondary = true,shortnameId = R.string.abs_insulin_shortname),
-        IOB(R.string.overview_show_iob, R.color.iob, primary = false, secondary = true,shortnameId = R.string.iob),
-        COB(R.string.overview_show_cob, R.color.cob, primary = false, secondary = true,shortnameId = R.string.cob),
-        DEV(R.string.overview_show_deviations, R.color.deviations, primary = false, secondary = true,shortnameId = R.string.deviation_shortname),
-        SEN(R.string.overview_show_sensitivity, R.color.ratio, primary = false, secondary = true,shortnameId = R.string.sensitivity_shortname),
-        ACT(R.string.overview_show_activity, R.color.activity, primary = true, secondary = true,shortnameId = R.string.activity_shortname),
-        DEVSLOPE(R.string.overview_show_deviationslope, R.color.devslopepos, primary = false, secondary = true,shortnameId = R.string.devslope_shortname)
+        BAS(R.string.overview_show_basals, R.color.basal, primary = true, secondary = false, shortnameId = R.string.basal_shortname),
+        ABS(R.string.overview_show_absinsulin, R.color.iob, primary = false, secondary = true, shortnameId = R.string.abs_insulin_shortname),
+        IOB(R.string.overview_show_iob, R.color.iob, primary = false, secondary = true, shortnameId = R.string.iob),
+        COB(R.string.overview_show_cob, R.color.cob, primary = false, secondary = true, shortnameId = R.string.cob),
+        DEV(R.string.overview_show_deviations, R.color.deviations, primary = false, secondary = true, shortnameId = R.string.deviation_shortname),
+        SEN(R.string.overview_show_sensitivity, R.color.ratio, primary = false, secondary = true, shortnameId = R.string.sensitivity_shortname),
+        ACT(R.string.overview_show_activity, R.color.activity, primary = true, secondary = true, shortnameId = R.string.activity_shortname),
+        DEVSLOPE(R.string.overview_show_deviationslope, R.color.devslopepos, primary = false, secondary = true, shortnameId = R.string.devslope_shortname)
     }
 
     companion object {
@@ -183,13 +183,12 @@ class OverviewMenus @Inject constructor(
                 val pumpDescription: PumpDescription = activePlugin.activePump.pumpDescription
                 if (!profileFunction.isProfileValid("ContextMenuCreation")) return
                 menu.setHeaderTitle(resourceHelper.gs(R.string.loop))
-                if (!loopPlugin.isOpenLoop && loopPlugin.isEnabled(PluginType.LOOP)) {
-                    menu.add(resourceHelper.gs(R.string.openloop))
-                }
-                if (loopPlugin.isOpenLoop && constraintChecker.isClosedLoopAllowed().value() || loopPlugin.isLGS && constraintChecker.isClosedLoopAllowed().value()) {
-                    menu.add(resourceHelper.gs(R.string.closedloop))
-                }
                 if (loopPlugin.isEnabled(PluginType.LOOP)) {
+                    menu.add(resourceHelper.gs(R.string.useclosedloop)).also {
+                        it.isCheckable = true
+                        it.isChecked = sp.getString(R.string.key_aps_mode, "open") == "closed"
+                    }
+
                     menu.add(resourceHelper.gs(R.string.disableloop))
                     if (!loopPlugin.isSuspended) {
                         menu.add(resourceHelper.gs(R.string.suspendloopfor1h))
@@ -261,22 +260,11 @@ class OverviewMenus @Inject constructor(
                 return true
             }
 
-            resourceHelper.gs(R.string.closedloop)                                    -> {
-                aapsLogger.debug("USER ENTRY: CLOSED LOOP ENABLED")
-                sp.putString(R.string.key_aps_mode, "closed")
-                loopPlugin.setPluginEnabled(PluginType.LOOP, true)
-                loopPlugin.setFragmentVisible(PluginType.LOOP, true)
-                configBuilderPlugin.storeSettings("EnablingLoop")
-                rxBus.send(EventRefreshOverview("suspendmenu"))
-                return true
-            }
-
-            resourceHelper.gs(R.string.openloop)                                    -> {
-                aapsLogger.debug("USER ENTRY: OPEN LOOP ENABLED")
-                sp.putString(R.string.key_aps_mode, "open")
-                loopPlugin.setPluginEnabled(PluginType.LOOP, true)
-                loopPlugin.setFragmentVisible(PluginType.LOOP, true)
-                configBuilderPlugin.storeSettings("EnablingLoop")
+            resourceHelper.gs(R.string.useclosedloop)                                 -> {
+                val newMode = if (sp.getString(R.string.key_aps_mode, "open") != "closed") "closed" else "open"
+                if (newMode == "closed") aapsLogger.debug("USER ENTRY: CLOSED LOOP ENABLED")
+                else aapsLogger.debug("USER ENTRY: OPEN LOOP ENABLED")
+                sp.putString(R.string.key_aps_mode, newMode)
                 rxBus.send(EventRefreshOverview("suspendmenu"))
                 return true
             }
@@ -369,18 +357,18 @@ class OverviewMenus @Inject constructor(
                 return true
             }
 
-            resourceHelper.gs(R.string.disconnectpumpfor3h)      -> {
+            resourceHelper.gs(R.string.disconnectpumpfor3h)                           -> {
                 aapsLogger.debug("USER ENTRY: DISCONNECT 3h")
                 loopPlugin.disconnectPump(180, profile)
                 rxBus.send(EventRefreshOverview("suspendmenu"))
                 return true
             }
 
-            resourceHelper.gs(R.string.careportal_profileswitch) -> {
+            resourceHelper.gs(R.string.careportal_profileswitch)                      -> {
                 ProfileSwitchDialog().show(manager, "Overview")
             }
 
-            resourceHelper.gs(R.string.viewprofile)              -> {
+            resourceHelper.gs(R.string.viewprofile)                                   -> {
                 val args = Bundle()
                 args.putLong("time", DateUtil.now())
                 args.putInt("mode", ProfileViewerDialog.Mode.RUNNING_PROFILE.ordinal)
@@ -389,7 +377,7 @@ class OverviewMenus @Inject constructor(
                 pvd.show(manager, "ProfileViewDialog")
             }
 
-            resourceHelper.gs(R.string.eatingsoon)               -> {
+            resourceHelper.gs(R.string.eatingsoon)                                    -> {
                 aapsLogger.debug("USER ENTRY: TEMP TARGET EATING SOON")
                 val target = Profile.toMgdl(defaultValueHelper.determineEatingSoonTT(), profileFunction.getUnits())
                 val tempTarget = TempTarget()

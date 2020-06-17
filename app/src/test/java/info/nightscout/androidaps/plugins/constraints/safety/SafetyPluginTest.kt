@@ -106,7 +106,7 @@ class SafetyPluginTest : TestBaseWithProfile() {
 
     @Test fun notEnabledSMBInPreferencesDisablesSMB() {
         `when`(sp.getBoolean(R.string.key_use_smb, false)).thenReturn(false)
-        `when`(constraintChecker.isClosedLoopAllowed()).thenReturn(Constraint(true))
+        `when`(constraintChecker.isClosedLoopEnabled()).thenReturn(Constraint(true))
         var c = Constraint(true)
         c = safetyPlugin.isSMBModeEnabled(c)
         Assert.assertTrue(c.getReasons(aapsLogger).contains("SMB disabled in preferences"))
@@ -115,7 +115,7 @@ class SafetyPluginTest : TestBaseWithProfile() {
 
     @Test fun openLoopPreventsSMB() {
         `when`(sp.getBoolean(R.string.key_use_smb, false)).thenReturn(true)
-        `when`(constraintChecker.isClosedLoopAllowed()).thenReturn(Constraint(false))
+        `when`(constraintChecker.isClosedLoopEnabled()).thenReturn(Constraint(false))
         var c = Constraint(true)
         c = safetyPlugin.isSMBModeEnabled(c)
         Assert.assertTrue(c.getReasons(aapsLogger).contains("SMB not allowed in open loop mode"))

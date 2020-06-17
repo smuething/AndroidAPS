@@ -104,14 +104,6 @@ public class SafetyPlugin extends PluginBase implements ConstraintsInterface {
         if ((mode.equals("open")))
             value.set(getAapsLogger(), false, getResourceHelper().gs(R.string.closedmodedisabledinpreferences), this);
 
-        return this.isClosedLoopAllowed(value);
-
-    }
-
-    @NonNull @Override
-    public Constraint<Boolean> isClosedLoopAllowed(@NonNull Constraint<Boolean> value) {
-        String mode = sp.getString(R.string.key_aps_mode, "open");
-
         if (!buildHelper.isEngineeringModeOrRelease()) {
             if (value.value()) {
                 Notification n = new Notification(Notification.TOAST_ALARM, getResourceHelper().gs(R.string.closed_loop_disabled_on_dev_branch), Notification.NORMAL);

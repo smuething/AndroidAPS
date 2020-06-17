@@ -13,11 +13,6 @@ interface ConstraintsInterface {
     }
 
     @JvmDefault
-    fun isClosedLoopAllowed(value: Constraint<Boolean>): Constraint<Boolean> {
-        return value
-    }
-
-    @JvmDefault
     fun isClosedLoopEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
         return value
     }

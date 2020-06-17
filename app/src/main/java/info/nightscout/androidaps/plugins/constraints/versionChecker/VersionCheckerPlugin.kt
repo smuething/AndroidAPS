@@ -54,17 +54,13 @@ class VersionCheckerPlugin @Inject constructor(
             get() = TimeUnit.DAYS.toMillis(1)
     }
 
-    override fun isClosedLoopAllowed(value: Constraint<Boolean>): Constraint<Boolean> {
+    override fun isClosedLoopEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
         checkWarning()
         versionCheckerUtils.triggerCheckVersion()
         return if (isOldVersion(gracePeriod.veryOld.daysToMillis()))
-            value.set(aapsLogger,false, resourceHelper.gs(R.string.very_old_version), this)
+            value.set(aapsLogger, false, resourceHelper.gs(R.string.very_old_version), this)
         else
             value
-    }
-
-    override fun isClosedLoopEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
-        return this.isClosedLoopAllowed(value)
     }
 
     private fun checkWarning() {

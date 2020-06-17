@@ -162,14 +162,10 @@ class ObjectivesPlugin @Inject constructor(
         return value
     }
 
-    override fun isClosedLoopAllowed(value: Constraint<Boolean>): Constraint<Boolean> {
+    override fun isClosedLoopEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
         if (!objectives[MAXIOB_ZERO_CL_OBJECTIVE].isStarted)
             value.set(aapsLogger, false, String.format(resourceHelper.gs(R.string.objectivenotstarted), MAXIOB_ZERO_CL_OBJECTIVE + 1), this)
         return value
-    }
-
-    override fun isClosedLoopEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
-        return this.isClosedLoopAllowed(value);
     }
 
     override fun isAutosensModeEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
