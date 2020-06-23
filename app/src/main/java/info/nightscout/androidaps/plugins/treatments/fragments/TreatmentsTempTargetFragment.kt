@@ -42,8 +42,8 @@ class TreatmentsTempTargetFragment : DaggerFragment() {
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var aapsSchedulers: AapsSchedulers
     @Inject lateinit var dateUtil: DateUtil
-    @Inject lateinit var repository: AppRepository
     @Inject lateinit var fabricPrivacy: FabricPrivacy
+    @Inject lateinit var repository: AppRepository
 
     private val disposable = CompositeDisposable()
     private val historyInMillis = T.days(10).msecs()

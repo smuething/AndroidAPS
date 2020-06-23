@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.dana.comm.RecordTypes;
 import info.nightscout.androidaps.data.NonOverlappingIntervals;
 import info.nightscout.androidaps.data.Profile;
@@ -56,7 +55,6 @@ import info.nightscout.androidaps.plugins.pump.insight.database.InsightPumpID;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.db.PodHistory;
 import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin;
 import info.nightscout.androidaps.utils.PercentageSplitter;
-import info.nightscout.androidaps.utils.T;
 
 /**
  * This Helper contains all resource to provide a central DB management functionality. Only methods handling

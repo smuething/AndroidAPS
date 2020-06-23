@@ -19,8 +19,6 @@ import javax.inject.Inject;
 
 import dagger.android.AndroidInjector;
 import dagger.android.DaggerApplication;
-import dagger.android.HasAndroidInjector;
-import info.nightscout.androidaps.data.Profile;
 import info.nightscout.androidaps.database.AppRepository;
 import info.nightscout.androidaps.database.transactions.VersionChangeTransaction;
 import info.nightscout.androidaps.db.CompatDBHelper;
@@ -140,7 +138,7 @@ public class MainApp extends DaggerApplication {
         filter.addAction(Intents.ACTION_NEW_TREATMENT);
         filter.addAction(Intents.ACTION_CHANGED_TREATMENT);
         filter.addAction(Intents.ACTION_REMOVED_TREATMENT);
- //       filter.addAction(Intents.ACTION_NEW_SGV);
+        //       filter.addAction(Intents.ACTION_NEW_SGV);
         filter.addAction(Intents.ACTION_NEW_PROFILE);
         filter.addAction(Intents.ACTION_NEW_MBG);
         filter.addAction(Intents.ACTION_NEW_CAL);

@@ -50,7 +50,6 @@ class DataBroadcastPlugin @Inject constructor(
     private val activePlugin: ActivePluginProvider,
     private var receiverStatusStore: ReceiverStatusStore,
     private val config: Config
-
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .pluginName(R.string.databroadcaster)

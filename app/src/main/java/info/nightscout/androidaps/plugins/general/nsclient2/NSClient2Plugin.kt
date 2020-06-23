@@ -80,9 +80,9 @@ class NSClient2Plugin @Inject constructor(
     private val nightscoutService: NightscoutService,
     private val fabricPrivacy: FabricPrivacy,
     private val aapsSchedulers: AapsSchedulers,
-    private val config: Config,
     private val repository: AppRepository,
-    private val nsClientSourcePlugin: NSClientSourcePlugin
+    private val nsClientSourcePlugin: NSClientSourcePlugin,
+    private val config: Config
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .fragmentClass(NSClient2Fragment::class.java.name)

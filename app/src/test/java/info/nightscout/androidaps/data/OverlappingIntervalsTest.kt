@@ -2,7 +2,6 @@ package info.nightscout.androidaps.data
 
 import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.db.TempTarget
-import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.T
 import org.junit.Assert
 import org.junit.Test

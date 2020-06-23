@@ -25,6 +25,7 @@ import javax.inject.Singleton
         NetModule::class,
         ReceiversModule::class,
         ServicesModule::class,
+        DatabaseModule::class,
         AutomationModule::class,
         CommandQueueModule::class,
         ObjectivesModule::class,

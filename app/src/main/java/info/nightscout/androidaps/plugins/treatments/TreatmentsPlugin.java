@@ -128,9 +128,9 @@ public class TreatmentsPlugin extends PluginBase implements TreatmentsInterface 
         this.profileFunction = profileFunction;
         this.activePlugin = activePlugin;
         this.fabricPrivacy = fabricPrivacy;
+        this.repository = repository;
         this.dateUtil = dateUtil;
         this.nsUpload = nsUpload;
-        this.repository = repository;
     }
 
     @Override
