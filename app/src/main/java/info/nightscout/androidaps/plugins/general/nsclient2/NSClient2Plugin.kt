@@ -80,6 +80,7 @@ class NSClient2Plugin @Inject constructor(
     private val nightscoutService: NightscoutService,
     private val fabricPrivacy: FabricPrivacy,
     private val aapsSchedulers: AapsSchedulers,
+    private val config: Config,
     private val repository: AppRepository,
     private val nsClientSourcePlugin: NSClientSourcePlugin
 ) : PluginBase(PluginDescription()
@@ -146,7 +147,7 @@ class NSClient2Plugin @Inject constructor(
 
     override fun preprocessPreferences(preferenceFragment: PreferenceFragmentCompat) {
         super.preprocessPreferences(preferenceFragment)
-        if (Config.NSCLIENT) { // TODO needed?
+        if (config.NSCLIENT) { // TODO needed?
             val screenAdvancedSettings: PreferenceScreen? = preferenceFragment.findPreference(resourceHelper.gs(R.string.key_advancedsettings))
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_statuslights_res_warning)))
             screenAdvancedSettings?.removePreference(preferenceFragment.findPreference(resourceHelper.gs(R.string.key_statuslights_res_critical)))

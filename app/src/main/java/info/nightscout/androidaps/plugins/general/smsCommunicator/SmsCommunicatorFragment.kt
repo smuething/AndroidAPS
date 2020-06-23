@@ -11,19 +11,20 @@ import info.nightscout.androidaps.plugins.general.smsCommunicator.events.EventSm
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.HtmlHelper
-import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.smscommunicator_fragment.*
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.max
 
 class SmsCommunicatorFragment : DaggerFragment() {
-    @Inject lateinit var fabricPrivacy : FabricPrivacy
+    @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var rxBus: RxBusWrapper
     @Inject lateinit var smsCommunicatorPlugin: SmsCommunicatorPlugin
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
 
@@ -37,7 +38,7 @@ class SmsCommunicatorFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventSmsCommunicatorUpdateGui::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({ updateGui() }) { fabricPrivacy.logException(it) }
         updateGui()
     }
@@ -62,15 +63,15 @@ class SmsCommunicatorFragment : DaggerFragment() {
             val sms = smsCommunicatorPlugin.messages[x]
             when {
                 sms.ignored  -> {
-                    logText += DateUtil.timeString(sms.date) + " &lt;&lt;&lt; " + "░ " + sms.phoneNumber + " <b>" + sms.text + "</b><br>"
+                    logText += dateUtil.timeString(sms.date) + " &lt;&lt;&lt; " + "░ " + sms.phoneNumber + " <b>" + sms.text + "</b><br>"
                 }
 
                 sms.received -> {
-                    logText += DateUtil.timeString(sms.date) + " &lt;&lt;&lt; " + (if (sms.processed) "● " else "○ ") + sms.phoneNumber + " <b>" + sms.text + "</b><br>"
+                    logText += dateUtil.timeString(sms.date) + " &lt;&lt;&lt; " + (if (sms.processed) "● " else "○ ") + sms.phoneNumber + " <b>" + sms.text + "</b><br>"
                 }
 
                 sms.sent     -> {
-                    logText += DateUtil.timeString(sms.date) + " &gt;&gt;&gt; " + (if (sms.processed) "● " else "○ ") + sms.phoneNumber + " <b>" + sms.text + "</b><br>"
+                    logText += dateUtil.timeString(sms.date) + " &gt;&gt;&gt; " + (if (sms.processed) "● " else "○ ") + sms.phoneNumber + " <b>" + sms.text + "</b><br>"
                 }
             }
         }

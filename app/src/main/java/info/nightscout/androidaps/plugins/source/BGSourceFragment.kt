@@ -14,8 +14,8 @@ import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.database.transactions.InvalidateGlucoseValueTransaction
 import info.nightscout.androidaps.events.EventNewBG
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.T
@@ -37,6 +37,7 @@ class BGSourceFragment : DaggerFragment() {
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var repository: AppRepository
     @Inject lateinit var aapsSchedulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
 
     private val disposable = CompositeDisposable()
     private val historyInMillis = T.hours(12).msecs()
@@ -91,7 +92,7 @@ class BGSourceFragment : DaggerFragment() {
             val glucoseValue = glucoseValues[position]
             holder.ns.visibility = (glucoseValue.interfaceIDs.nightscoutId != null).toVisibility()
             holder.invalid.visibility = (!glucoseValue.isValid).toVisibility()
-            holder.date.text = DateUtil.dateAndTimeString(glucoseValue.timestamp)
+            holder.date.text = dateUtil.dateAndTimeString(glucoseValue.timestamp)
             holder.value.text = glucoseValue.valueToUnitsString(profileFunction.getUnits())
             holder.direction.text = glucoseValue.trendArrow.symbol
             holder.remove.tag = glucoseValue
@@ -112,7 +113,7 @@ class BGSourceFragment : DaggerFragment() {
                 remove.setOnClickListener { v: View ->
                     val glucoseValue = v.tag as GlucoseValue
                     activity?.let { activity ->
-                        val text = DateUtil.dateAndTimeString(glucoseValue.timestamp) + "\n" + glucoseValue.valueToUnitsString(profileFunction.getUnits())
+                        val text = dateUtil.dateAndTimeString(glucoseValue.timestamp) + "\n" + glucoseValue.valueToUnitsString(profileFunction.getUnits())
                         OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.removerecord), text, Runnable {
                             disposable += repository.runTransaction(InvalidateGlucoseValueTransaction(glucoseValue.id)).subscribe()
                         })

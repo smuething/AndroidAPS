@@ -6,7 +6,7 @@ import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.Profile
 import info.nightscout.androidaps.database.AppRepository
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.HtmlHelper
 import info.nightscout.androidaps.utils.MidnightTime
@@ -19,6 +19,7 @@ import javax.inject.Singleton
 class TirCalculator @Inject constructor(
     private val resourceHelper: ResourceHelper,
     private val profileFunction: ProfileFunction,
+    private val dateUtil: DateUtil,
     private val repository: AppRepository
 ) {
 
@@ -92,7 +93,7 @@ class TirCalculator @Inject constructor(
     fun toText(resourceHelper: ResourceHelper, tirs: LongSparseArray<TIR>): String {
         var t = ""
         for (i in 0 until tirs.size()) {
-            t += "${tirs.valueAt(i).toText(resourceHelper)}<br>"
+            t += "${tirs.valueAt(i).toText(resourceHelper, dateUtil)}<br>"
         }
         return t
     }

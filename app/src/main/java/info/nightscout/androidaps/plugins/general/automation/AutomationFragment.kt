@@ -47,7 +47,7 @@ class AutomationFragment : DaggerFragment(), OnStartDragListener {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var automationPlugin: AutomationPlugin
     @Inject lateinit var mainApp : MainApp
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
     private lateinit var eventListAdapter: EventListAdapter
@@ -73,7 +73,7 @@ class AutomationFragment : DaggerFragment(), OnStartDragListener {
             args.putString("event", AutomationEvent(mainApp).toJSON())
             args.putInt("position", -1) // New event
             dialog.arguments = args
-            fragmentManager?.let { dialog.show(it, "EditEventDialog") }
+            dialog.show(childFragmentManager, "EditEventDialog")
         }
 
         val callback: ItemTouchHelper.Callback = SimpleItemTouchHelperCallback(eventListAdapter)
@@ -87,13 +87,13 @@ class AutomationFragment : DaggerFragment(), OnStartDragListener {
         super.onResume()
         disposable += rxBus
             .toObservable(EventAutomationUpdateGui::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 updateGui()
             }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventAutomationDataChanged::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 eventListAdapter.notifyDataSetChanged()
             }, { fabricPrivacy.logException(it) })
@@ -183,7 +183,7 @@ class AutomationFragment : DaggerFragment(), OnStartDragListener {
                 args.putString("event", event.toJSON())
                 args.putInt("position", position)
                 dialog.arguments = args
-                fragmentManager?.let { dialog.show(it, "EditEventDialog") }
+                dialog.show(childFragmentManager, "EditEventDialog")
             }
             // Start a drag whenever the handle view it touched
             holder.iconSort.setOnTouchListener { v: View, motionEvent: MotionEvent ->

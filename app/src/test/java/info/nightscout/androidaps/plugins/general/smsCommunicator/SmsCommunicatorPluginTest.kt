@@ -1,8 +1,10 @@
 package info.nightscout.androidaps.plugins.general.smsCommunicator
 
+import android.content.Context
 import android.telephony.SmsManager
 import dagger.android.AndroidInjector
 import dagger.android.HasAndroidInjector
+import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.TestBaseWithProfile
@@ -19,7 +21,6 @@ import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.interfaces.PumpDescription
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.general.smsCommunicator.otp.OneTimePassword
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.CobInfo
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
@@ -30,7 +31,6 @@ import info.nightscout.androidaps.plugins.treatments.TreatmentService
 import info.nightscout.androidaps.queue.Callback
 import info.nightscout.androidaps.queue.CommandQueue
 import info.nightscout.androidaps.utils.DateUtil
-import info.nightscout.androidaps.utils.DefaultValueHelper
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.XdripCalibrations
@@ -55,6 +55,7 @@ import java.util.*
 @PrepareForTest(ConstraintChecker::class, FabricPrivacy::class, VirtualPumpPlugin::class, XdripCalibrations::class, SmsManager::class, CommandQueue::class, LocalProfilePlugin::class, DateUtil::class, IobCobCalculatorPlugin::class, OneTimePassword::class, AppRepository::class)
 class SmsCommunicatorPluginTest : TestBaseWithProfile() {
 
+    @Mock lateinit var context: Context
     @Mock lateinit var sp: SP
     @Mock lateinit var constraintChecker: ConstraintChecker
     @Mock lateinit var activePlugin: ActivePluginProvider
@@ -115,7 +116,7 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         `when`(SmsManager.getDefault()).thenReturn(smsManager)
         `when`(sp.getString(R.string.key_smscommunicator_allowednumbers, "")).thenReturn("1234;5678")
 
-        smsCommunicatorPlugin = SmsCommunicatorPlugin(injector, aapsLogger, resourceHelper, sp, constraintChecker, rxBus, profileFunction, fabricPrivacy, activePlugin, commandQueue, loopPlugin, iobCobCalculatorPlugin, xdripCalibrations, otp, repository)
+        smsCommunicatorPlugin = SmsCommunicatorPlugin(injector, aapsLogger, resourceHelper, sp, constraintChecker, rxBus, profileFunction, fabricPrivacy, activePlugin, commandQueue, loopPlugin, iobCobCalculatorPlugin, xdripCalibrations, otp, Config(), DateUtil(context, resourceHelper), repository)
         smsCommunicatorPlugin.setPluginEnabled(PluginType.GENERAL, true)
         Mockito.doAnswer { invocation: InvocationOnMock ->
             val callback = invocation.getArgument<Callback>(1)
@@ -229,6 +230,15 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         `when`(resourceHelper.gs(R.string.smscommunicator_mealbolusdelivered_tt)).thenReturn("Target %1\$s for %2\$d minutes")
         `when`(resourceHelper.gs(R.string.sms_actualbg)).thenReturn("BG:")
         `when`(resourceHelper.gs(R.string.sms_lastbg)).thenReturn("Last BG:")
+        `when`(resourceHelper.gs(R.string.smscommunicator_loopdisablereplywithcode)).thenReturn("To disable loop reply with code %1\$s")
+        `when`(resourceHelper.gs(R.string.smscommunicator_loopenablereplywithcode)).thenReturn("To enable loop reply with code %1\$s")
+        `when`(resourceHelper.gs(R.string.smscommunicator_loopresumereplywithcode)).thenReturn("To resume loop reply with code %1\$s")
+        `when`(resourceHelper.gs(R.string.smscommunicator_pumpdisconnectwithcode)).thenReturn("To disconnect pump for %1d minutes reply with code %2\$s")
+        `when`(resourceHelper.gs(R.string.smscommunicator_pumpconnectwithcode)).thenReturn("To connect pump reply with code %1\$s")
+        `when`(resourceHelper.gs(R.string.smscommunicator_reconnect)).thenReturn("Pump reconnected")
+        `when`(resourceHelper.gs(R.string.smscommunicator_pumpconnectfail)).thenReturn("Connection to pump failed")
+        `when`(resourceHelper.gs(R.string.smscommunicator_pumpdisconnected)).thenReturn("Pump disconnected")
+
     }
 
     @Test
@@ -350,7 +360,11 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         smsCommunicatorPlugin.processSms(sms)
         Assert.assertFalse(sms.ignored)
         Assert.assertEquals("LOOP DISABLE", smsCommunicatorPlugin.messages[0].text)
-        Assert.assertEquals("Loop has been disabled Temp basal canceled", smsCommunicatorPlugin.messages[1].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To disable loop reply with code "))
+        var passCode: String = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Loop has been disabled Temp basal canceled", smsCommunicatorPlugin.messages[3].text)
         Assert.assertTrue(hasBeenRun)
 
         //LOOP ENABLE : already enabled
@@ -374,7 +388,11 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         smsCommunicatorPlugin.processSms(sms)
         Assert.assertFalse(sms.ignored)
         Assert.assertEquals("LOOP ENABLE", smsCommunicatorPlugin.messages[0].text)
-        Assert.assertEquals("Loop has been enabled", smsCommunicatorPlugin.messages[1].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To enable loop reply with code "))
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Loop has been enabled", smsCommunicatorPlugin.messages[3].text)
         Assert.assertTrue(hasBeenRun)
 
         //LOOP RESUME : already enabled
@@ -383,7 +401,11 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         smsCommunicatorPlugin.processSms(sms)
         Assert.assertFalse(sms.ignored)
         Assert.assertEquals("LOOP RESUME", smsCommunicatorPlugin.messages[0].text)
-        Assert.assertEquals("Loop resumed", smsCommunicatorPlugin.messages[1].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To resume loop reply with code "))
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Loop resumed", smsCommunicatorPlugin.messages[3].text)
 
         //LOOP SUSPEND 1 2: wrong format
         smsCommunicatorPlugin.messages = ArrayList()
@@ -408,7 +430,7 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         Assert.assertFalse(sms.ignored)
         Assert.assertEquals("LOOP SUSPEND 100", smsCommunicatorPlugin.messages[0].text)
         Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To suspend loop for 100 minutes reply with code "))
-        var passCode: String = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
         smsCommunicatorPlugin.processSms(Sms("1234", passCode))
         Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
         Assert.assertEquals("Loop suspended Temp basal canceled", smsCommunicatorPlugin.messages[3].text)
@@ -505,6 +527,74 @@ class SmsCommunicatorPluginTest : TestBaseWithProfile() {
         smsCommunicatorPlugin.processSms(sms)
         Assert.assertEquals("PUMP", smsCommunicatorPlugin.messages[0].text)
         Assert.assertEquals("Virtual Pump", smsCommunicatorPlugin.messages[1].text)
+
+        //PUMP CONNECT 1 2: wrong format
+        smsCommunicatorPlugin.messages = ArrayList()
+        sms = Sms("1234", "PUMP CONNECT 1 2")
+        smsCommunicatorPlugin.processSms(sms)
+        Assert.assertFalse(sms.ignored)
+        Assert.assertEquals("PUMP CONNECT 1 2", smsCommunicatorPlugin.messages[0].text)
+        Assert.assertEquals("Wrong format", smsCommunicatorPlugin.messages[1].text)
+
+        //PUMP CONNECT BLABLA
+        smsCommunicatorPlugin.messages = ArrayList()
+        sms = Sms("1234", "PUMP BLABLA")
+        smsCommunicatorPlugin.processSms(sms)
+        Assert.assertFalse(sms.ignored)
+        Assert.assertEquals("PUMP BLABLA", smsCommunicatorPlugin.messages[0].text)
+        Assert.assertEquals("Wrong format", smsCommunicatorPlugin.messages[1].text)
+
+        //PUMP CONNECT
+        PowerMockito.`when`(loopPlugin.isEnabled(PluginType.LOOP)).thenReturn(true)
+        smsCommunicatorPlugin.messages = ArrayList()
+        sms = Sms("1234", "PUMP CONNECT")
+        smsCommunicatorPlugin.processSms(sms)
+        Assert.assertFalse(sms.ignored)
+        Assert.assertEquals("PUMP CONNECT", smsCommunicatorPlugin.messages[0].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To connect pump reply with code "))
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Pump reconnected", smsCommunicatorPlugin.messages[3].text)
+
+        //PUMP DISCONNECT 1 2: wrong format
+        smsCommunicatorPlugin.messages = ArrayList()
+        sms = Sms("1234", "PUMP DISCONNECT 1 2")
+        smsCommunicatorPlugin.processSms(sms)
+        Assert.assertFalse(sms.ignored)
+        Assert.assertEquals("PUMP DISCONNECT 1 2", smsCommunicatorPlugin.messages[0].text)
+        Assert.assertEquals("Wrong format", smsCommunicatorPlugin.messages[1].text)
+
+        //PUMP DISCONNECT 0
+        smsCommunicatorPlugin.messages = ArrayList()
+        sms = Sms("1234", "PUMP DISCONNECT 0")
+        smsCommunicatorPlugin.processSms(sms)
+        Assert.assertFalse(sms.ignored)
+        Assert.assertEquals("Wrong duration", smsCommunicatorPlugin.messages[1].text)
+
+        //PUMP DISCONNECT 30
+        smsCommunicatorPlugin.messages = ArrayList()
+        sms = Sms("1234", "PUMP DISCONNECT 30")
+        smsCommunicatorPlugin.processSms(sms)
+        Assert.assertFalse(sms.ignored)
+        Assert.assertEquals("PUMP DISCONNECT 30", smsCommunicatorPlugin.messages[0].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To disconnect pump for"))
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Pump disconnected", smsCommunicatorPlugin.messages[3].text)
+
+        //PUMP DISCONNECT 30
+        smsCommunicatorPlugin.messages = ArrayList()
+        sms = Sms("1234", "PUMP DISCONNECT 200")
+        smsCommunicatorPlugin.processSms(sms)
+        Assert.assertFalse(sms.ignored)
+        Assert.assertEquals("PUMP DISCONNECT 200", smsCommunicatorPlugin.messages[0].text)
+        Assert.assertTrue(smsCommunicatorPlugin.messages[1].text.contains("To disconnect pump for"))
+        passCode = smsCommunicatorPlugin.messageToConfirm?.confirmCode!!
+        smsCommunicatorPlugin.processSms(Sms("1234", passCode))
+        Assert.assertEquals(passCode, smsCommunicatorPlugin.messages[2].text)
+        Assert.assertEquals("Pump disconnected", smsCommunicatorPlugin.messages[3].text)
 
         //HELP
         smsCommunicatorPlugin.messages = ArrayList()

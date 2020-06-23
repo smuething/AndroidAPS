@@ -15,7 +15,6 @@ import androidx.annotation.StringRes
 import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.FragmentManager
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.activities.ErrorHelperActivity
@@ -24,8 +23,6 @@ import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.database.transactions.CancelCurrentTemporaryTargetIfAnyTransaction
 import info.nightscout.androidaps.database.transactions.InsertTemporaryTargetAndCancelCurrentTransaction
-import info.nightscout.androidaps.db.Source
-import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.dialogs.ProfileSwitchDialog
 import info.nightscout.androidaps.dialogs.ProfileViewerDialog
 import info.nightscout.androidaps.dialogs.TempTargetDialog
@@ -33,12 +30,12 @@ import info.nightscout.androidaps.events.EventRefreshOverview
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.interfaces.CommandQueueProvider
 import info.nightscout.androidaps.interfaces.PluginType
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.interfaces.PumpDescription
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ConfigBuilderPlugin
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.queue.Callback
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.DefaultValueHelper
@@ -48,7 +45,6 @@ import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import java.lang.reflect.Type
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -67,21 +63,22 @@ class OverviewMenus @Inject constructor(
     private val commandQueue: CommandQueueProvider,
     private val configBuilderPlugin: ConfigBuilderPlugin,
     private val loopPlugin: LoopPlugin,
+    private val config: Config,
     private val repository: AppRepository
 ) {
 
     val compositeDisposable = CompositeDisposable()
 
-    enum class CharType(@StringRes val nameId: Int, @ColorRes val colorId: Int, val primary: Boolean, val secondary: Boolean) {
-        PRE(R.string.overview_show_predictions, R.color.prediction, primary = true, secondary = false),
-        BAS(R.string.overview_show_basals, R.color.basal, primary = true, secondary = false),
-        IOB(R.string.overview_show_iob, R.color.iob, primary = false, secondary = true),
-        COB(R.string.overview_show_cob, R.color.cob, primary = false, secondary = true),
-        DEV(R.string.overview_show_deviations, R.color.deviations, primary = false, secondary = true),
-        SEN(R.string.overview_show_sensitivity, R.color.ratio, primary = false, secondary = true),
-        ACT(R.string.overview_show_activity, R.color.activity, primary = true, secondary = true),
-        ABS(R.string.overview_show_absinsulin, R.color.iob, primary = false, secondary = true),
-        DEVSLOPE(R.string.overview_show_deviationslope, R.color.devslopepos, primary = false, secondary = true)
+    enum class CharType(@StringRes val nameId: Int, @ColorRes val colorId: Int, val primary: Boolean, val secondary: Boolean, @StringRes val shortnameId: Int) {
+        PRE(R.string.overview_show_predictions, R.color.prediction, primary = true, secondary = false, shortnameId = R.string.prediction_shortname),
+        BAS(R.string.overview_show_basals, R.color.basal, primary = true, secondary = false, shortnameId = R.string.basal_shortname),
+        ABS(R.string.overview_show_absinsulin, R.color.iob, primary = false, secondary = true, shortnameId = R.string.abs_insulin_shortname),
+        IOB(R.string.overview_show_iob, R.color.iob, primary = false, secondary = true, shortnameId = R.string.iob),
+        COB(R.string.overview_show_cob, R.color.cob, primary = false, secondary = true, shortnameId = R.string.cob),
+        DEV(R.string.overview_show_deviations, R.color.deviations, primary = false, secondary = true, shortnameId = R.string.deviation_shortname),
+        SEN(R.string.overview_show_sensitivity, R.color.ratio, primary = false, secondary = true, shortnameId = R.string.sensitivity_shortname),
+        ACT(R.string.overview_show_activity, R.color.activity, primary = true, secondary = true, shortnameId = R.string.activity_shortname),
+        DEVSLOPE(R.string.overview_show_deviationslope, R.color.devslopepos, primary = false, secondary = true, shortnameId = R.string.devslope_shortname)
     }
 
     companion object {
@@ -91,7 +88,7 @@ class OverviewMenus @Inject constructor(
     fun enabledTypes(graph: Int): String {
         val r = StringBuilder()
         for (type in CharType.values()) if (setting[graph][type.ordinal]) {
-            r.append(type.name)
+            r.append(resourceHelper.gs(type.shortnameId))
             r.append(" ")
         }
         return r.toString()
@@ -127,8 +124,8 @@ class OverviewMenus @Inject constructor(
 
         chartButton.setOnClickListener { v: View ->
             val predictionsAvailable: Boolean = when {
-                Config.APS      -> loopPlugin.lastRun?.request?.hasPredictions ?: false
-                Config.NSCLIENT -> true
+                config.APS      -> loopPlugin.lastRun?.request?.hasPredictions ?: false
+                config.NSCLIENT -> true
                 else            -> false
             }
             val popup = PopupMenu(v.context, v)
@@ -217,7 +214,7 @@ class OverviewMenus @Inject constructor(
 
             R.id.overview_activeprofile -> {
                 menu.setHeaderTitle(resourceHelper.gs(R.string.profile))
-                menu.add(resourceHelper.gs(R.string.danar_viewprofile))
+                menu.add(resourceHelper.gs(R.string.viewprofile))
                 if (activePlugin.activeProfileInterface.profile != null) {
                     menu.add(resourceHelper.gs(R.string.careportal_profileswitch))
                 }
@@ -363,7 +360,7 @@ class OverviewMenus @Inject constructor(
                 ProfileSwitchDialog().show(manager, "Overview")
             }
 
-            resourceHelper.gs(R.string.danar_viewprofile)                             -> {
+            resourceHelper.gs(R.string.viewprofile)                                   -> {
                 val args = Bundle()
                 args.putLong("time", DateUtil.now())
                 args.putInt("mode", ProfileViewerDialog.Mode.RUNNING_PROFILE.ordinal)

@@ -25,7 +25,7 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin
@@ -36,7 +36,6 @@ import info.nightscout.androidaps.utils.ToastUtils
 import info.nightscout.androidaps.utils.extensions.toVisibility
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
-import info.nightscout.androidaps.utils.valueToUnits
 import info.nightscout.androidaps.utils.wizard.BolusWizard
 import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -60,7 +59,7 @@ class WizardDialog : DaggerDialogFragment() {
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var iobCobCalculatorPlugin: IobCobCalculatorPlugin
     @Inject lateinit var injector: HasAndroidInjector
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private var wizard: BolusWizard? = null
 
@@ -171,7 +170,7 @@ class WizardDialog : DaggerDialogFragment() {
         // bus
         disposable.add(rxBus
             .toObservable(EventAutosensCalculationFinished::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 activity?.runOnUiThread { calculateInsulin() }
             }, { fabricPrivacy.logException(it) })
@@ -243,7 +242,7 @@ class WizardDialog : DaggerDialogFragment() {
         val lastBg = iobCobCalculatorPlugin.actualBg()
 
         if (lastBg != null) {
-            treatments_wizard_bg_input.value = lastBg.valueToUnits(units)
+            treatments_wizard_bg_input.value = BgReading(injector, lastBg).valueToUnits(units)
         } else {
             treatments_wizard_bg_input.value = 0.0
         }

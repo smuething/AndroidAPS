@@ -32,6 +32,7 @@ import info.nightscout.androidaps.plugins.pump.common.defs.PumpType;
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.InstanceId;
+import info.nightscout.androidaps.utils.TimeChangeType;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 
 
@@ -226,14 +227,14 @@ public class MDIPlugin extends PumpPluginBase implements PumpInterface {
     }
 
     @NonNull @Override
-    public JSONObject getJSONStatus(Profile profile, String profileName) {
+    public JSONObject getJSONStatus(Profile profile, String profileName, String version) {
         long now = System.currentTimeMillis();
         JSONObject pump = new JSONObject();
         JSONObject status = new JSONObject();
         JSONObject extended = new JSONObject();
         try {
             status.put("status", "normal");
-            extended.put("Version", BuildConfig.VERSION_NAME + "-" + BuildConfig.BUILDVERSION);
+            extended.put("Version", version);
             try {
                 extended.put("ActiveProfile", profileName);
             } catch (Exception e) {
@@ -289,7 +290,7 @@ public class MDIPlugin extends PumpPluginBase implements PumpInterface {
     }
 
     @Override
-    public void timeDateOrTimeZoneChanged() {
+    public void timezoneOrDSTChanged(TimeChangeType changeType) {
 
     }
 

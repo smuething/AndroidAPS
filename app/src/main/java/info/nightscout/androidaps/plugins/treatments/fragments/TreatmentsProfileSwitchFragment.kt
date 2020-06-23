@@ -43,7 +43,10 @@ class TreatmentsProfileSwitchFragment : DaggerFragment() {
     @Inject lateinit var localProfilePlugin: LocalProfilePlugin
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var fabricPrivacy: FabricPrivacy
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var nsUpload: NSUpload
+    @Inject lateinit var uploadQueue: UploadQueue
+    @Inject lateinit var dateUtil: DateUtil
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -72,7 +75,7 @@ class TreatmentsProfileSwitchFragment : DaggerFragment() {
         super.onResume()
         disposable.add(rxBus
             .toObservable(EventProfileNeedsUpdate::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({ updateGUI() }) { fabricPrivacy.logException(it) }
         )
         updateGUI()
@@ -96,7 +99,7 @@ class TreatmentsProfileSwitchFragment : DaggerFragment() {
             val profileSwitch = profileSwitchList[position]
             holder.ph.visibility = (profileSwitch.source == Source.PUMP).toVisibility()
             holder.ns.visibility = NSUpload.isIdValid(profileSwitch._id).toVisibility()
-            holder.date.text = DateUtil.dateAndTimeString(profileSwitch.date)
+            holder.date.text = dateUtil.dateAndTimeString(profileSwitch.date)
             if (!profileSwitch.isEndingEvent) {
                 holder.duration.text = resourceHelper.gs(R.string.format_mins, profileSwitch.durationInMinutes)
             } else {
@@ -133,19 +136,19 @@ class TreatmentsProfileSwitchFragment : DaggerFragment() {
                         activity?.let { activity ->
                             OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.removerecord),
                                 resourceHelper.gs(R.string.careportal_profileswitch) + ": " + profileSwitch.profileName +
-                                    "\n" + resourceHelper.gs(R.string.date) + ": " + DateUtil.dateAndTimeString(profileSwitch.date), Runnable {
+                                    "\n" + resourceHelper.gs(R.string.date) + ": " + dateUtil.dateAndTimeString(profileSwitch.date), Runnable {
                                 val id = profileSwitch._id
-                                if (NSUpload.isIdValid(id)) NSUpload.removeCareportalEntryFromNS(id)
-                                else UploadQueue.removeID("dbAdd", id)
+                                if (NSUpload.isIdValid(id)) nsUpload.removeCareportalEntryFromNS(id)
+                                else uploadQueue.removeID("dbAdd", id)
                                 MainApp.getDbHelper().delete(profileSwitch)
                             })
                         }
                     R.id.profileswitch_clone                         ->
                         activity?.let { activity ->
-                            OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.careportal_profileswitch), resourceHelper.gs(R.string.copytolocalprofile) + "\n" + profileSwitch.customizedName + "\n" + DateUtil.dateAndTimeString(profileSwitch.date), Runnable {
+                            OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.careportal_profileswitch), resourceHelper.gs(R.string.copytolocalprofile) + "\n" + profileSwitch.customizedName + "\n" + dateUtil.dateAndTimeString(profileSwitch.date), Runnable {
                                 profileSwitch.profileObject?.let {
                                     val nonCustomized = it.convertToNonCustomizedProfile()
-                                    localProfilePlugin.addProfile(LocalProfilePlugin.SingleProfile().copyFrom(localProfilePlugin.rawProfile, nonCustomized, profileSwitch.customizedName + " " + DateUtil.dateAndTimeString(profileSwitch.date).replace(".", "_")))
+                                    localProfilePlugin.addProfile(LocalProfilePlugin.SingleProfile().copyFrom(localProfilePlugin.rawProfile, nonCustomized, profileSwitch.customizedName + " " + dateUtil.dateAndTimeString(profileSwitch.date).replace(".", "_")))
                                     rxBus.send(EventLocalProfileChanged())
                                 }
                             })
@@ -154,10 +157,10 @@ class TreatmentsProfileSwitchFragment : DaggerFragment() {
                     R.id.profileswitch_date, R.id.profileswitch_name -> {
                         val args = Bundle()
                         args.putLong("time", (v.tag as ProfileSwitch).date)
-                        args.putInt("mode", ProfileViewerDialog.Mode.RUNNING_PROFILE.ordinal)
+                        args.putInt("mode", ProfileViewerDialog.Mode.DB_PROFILE.ordinal)
                         val pvd = ProfileViewerDialog()
                         pvd.arguments = args
-                        fragmentManager?.let { pvd.show(it, "ProfileViewDialog") }
+                        pvd.show(childFragmentManager, "ProfileViewDialog")
                     }
                 }
             }

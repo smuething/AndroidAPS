@@ -8,7 +8,7 @@ import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.plugins.sensitivity.SensitivityAAPSPlugin
 import info.nightscout.androidaps.plugins.sensitivity.SensitivityOref1Plugin
@@ -44,6 +44,7 @@ class IobCobCalculatorPluginTest : TestBase() {
     @Mock lateinit var sensitivityWeightedAveragePlugin: SensitivityWeightedAveragePlugin
     @Mock lateinit var defaultValueHelper: DefaultValueHelper
     @Mock lateinit var fabricPrivacy: FabricPrivacy
+    @Mock lateinit var dateUtil: DateUtil
     @Mock lateinit var repository: AppRepository
 
     lateinit var iobCobCalculatorPlugin: IobCobCalculatorPlugin
@@ -59,7 +60,7 @@ class IobCobCalculatorPluginTest : TestBase() {
         }
     }
 
-    class GV(val timestamp: Long, val value: Double) {
+    class GV(private val timestamp: Long, val value: Double) {
 
         constructor(date: Date, value: Double) : this(date.time, value)
 
@@ -76,7 +77,7 @@ class IobCobCalculatorPluginTest : TestBase() {
 
     @Before
     fun mock() {
-        iobCobCalculatorPlugin = IobCobCalculatorPlugin(injector, aapsLogger, rxBus, sp, resourceHelper, profileFunction, activePlugin, treatmentsPlugin, sensitivityOref1Plugin, sensitivityAAPSPlugin, sensitivityWeightedAveragePlugin, fabricPrivacy, repository)
+        iobCobCalculatorPlugin = IobCobCalculatorPlugin(injector, aapsLogger, rxBus, sp, resourceHelper, profileFunction, activePlugin, treatmentsPlugin, sensitivityOref1Plugin, sensitivityAAPSPlugin, sensitivityWeightedAveragePlugin, fabricPrivacy, dateUtil, repository)
     }
 
     @Test

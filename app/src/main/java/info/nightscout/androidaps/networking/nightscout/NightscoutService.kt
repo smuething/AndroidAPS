@@ -29,7 +29,8 @@ class NightscoutService(
     private val nsRetrofitFactory: NSRetrofitFactory,
     private val resourceHelper: ResourceHelper,
     private val sp: SP,
-    private val nsClientSourcePlugin: NSClientSourcePlugin
+    private val nsClientSourcePlugin: NSClientSourcePlugin,
+    private val config: Config
 ) {
 
     fun testConnection(): Single<SetupState> = nsRetrofitFactory.getNSService().statusVerbose().map {
@@ -67,7 +68,7 @@ class NightscoutService(
                 NightscoutCollection.EXTENDED_BOLUS   -> statusResponse.mapRequiredPermissionToError(R.string.key_ns_extendedbolus, collection, errors)
 
                 NightscoutCollection.DEVICE_STATUS    ->
-                    if (!Config.NSCLIENT)
+                    if (!config.NSCLIENT)
                         if (!statusResponse.apiPermissions.deviceStatus.readCreate)
                             errors.add(PERMISSIONS_INSUFFICIENT.format(NightscoutCollection.DEVICE_STATUS.collection))
 

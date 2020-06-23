@@ -12,15 +12,14 @@ import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
-import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.pump.virtual.VirtualPumpPlugin
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.T
 import info.nightscout.androidaps.utils.buildHelper.BuildHelper
 import info.nightscout.androidaps.utils.extensions.isRunningTest
-import io.reactivex.rxkotlin.plusAssign
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -40,6 +39,7 @@ class RandomBgPlugin @Inject constructor(
     .fragmentClass(BGSourceFragment::class.java.name)
     .pluginName(R.string.randombg)
     .shortName(R.string.randombg_short)
+    .preferencesId(R.xml.pref_bgsource)
     .description(R.string.description_source_randombg),
     aapsLogger, resourceHelper, injector
 ), BgSourceInterface {
@@ -60,7 +60,7 @@ class RandomBgPlugin @Inject constructor(
     }
 
     override fun advancedFilteringSupported(): Boolean {
-        return false
+        return true
     }
 
     override fun onStart() {
@@ -85,7 +85,7 @@ class RandomBgPlugin @Inject constructor(
 
         val cal = GregorianCalendar()
         val currentMinute = cal.get(Calendar.MINUTE) + (cal.get(Calendar.HOUR_OF_DAY) % 2) * 60
-        val bgMgdl = min + (max - min) + (max - min) * sin(currentMinute / 120.0 * 2 * PI)
+        val bgMgdl = min + ((max - min) + (max - min) * sin(currentMinute / 120.0 * 2 * PI)) / 2
 
         val glucoseValue = CgmSourceTransaction.TransactionGlucoseValue(
             timestamp = DateUtil.now(),

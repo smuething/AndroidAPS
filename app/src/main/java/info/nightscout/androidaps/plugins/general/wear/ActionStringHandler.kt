@@ -7,6 +7,7 @@ import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
+import info.nightscout.androidaps.dana.DanaPump
 import info.nightscout.androidaps.data.DetailedBolusInfo
 import info.nightscout.androidaps.data.Profile
 import info.nightscout.androidaps.database.AppRepository
@@ -24,14 +25,13 @@ import info.nightscout.androidaps.interfaces.PluginBase
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.configBuilder.ConstraintChecker
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.general.overview.events.EventDismissNotification
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
-import info.nightscout.androidaps.plugins.pump.danaR.DanaRPlugin
-import info.nightscout.androidaps.plugins.pump.danaR.DanaRPump
-import info.nightscout.androidaps.plugins.pump.danaRKorean.DanaRKoreanPlugin
-import info.nightscout.androidaps.plugins.pump.danaRS.DanaRSPlugin
-import info.nightscout.androidaps.plugins.pump.danaRv2.DanaRv2Plugin
+import info.nightscout.androidaps.danar.DanaRPlugin
+import info.nightscout.androidaps.danaRKorean.DanaRKoreanPlugin
+import info.nightscout.androidaps.danars.DanaRSPlugin
+import info.nightscout.androidaps.danaRv2.DanaRv2Plugin
 import info.nightscout.androidaps.plugins.pump.insight.LocalInsightPlugin
 import info.nightscout.androidaps.plugins.treatments.CarbsGenerator
 import info.nightscout.androidaps.queue.Callback
@@ -68,9 +68,11 @@ class ActionStringHandler @Inject constructor(
     private val danaRKoreanPlugin: DanaRKoreanPlugin,
     private val danaRv2Plugin: DanaRv2Plugin,
     private val danaRSPlugin: DanaRSPlugin,
-    private val danaRPump: DanaRPump,
+    private val danaPump: DanaPump,
     private val hardLimits: HardLimits,
     private val carbsGenerator: CarbsGenerator,
+    private val dateUtil: DateUtil,
+    private val config: Config,
     private val repository: AppRepository
 ) {
 
@@ -89,7 +91,7 @@ class ActionStringHandler @Inject constructor(
         var rMessage = ""
         var rAction = ""
         // do the parsing and check constraints
-        val act = actionString.split("\\s+").toTypedArray()
+        val act = actionString.split("\\s+".toRegex()).toTypedArray()
         if ("fillpreset" == act[0]) { ///////////////////////////////////// PRIME/FILL
             val amount: Double = if ("1" == act[1]) {
                 sp.getDouble("fill_button1", 0.3)
@@ -283,7 +285,7 @@ class ActionStringHandler @Inject constructor(
             val starttimestamp = System.currentTimeMillis() + starttime * 60 * 1000
             val carbsAfterConstraints = constraintChecker.applyCarbsConstraints(Constraint(carbs)).value()
             rMessage += resourceHelper.gs(R.string.carbs) + ": " + carbsAfterConstraints + "g"
-            rMessage += "\n" + resourceHelper.gs(R.string.time) + ": " + DateUtil.timeString(starttimestamp)
+            rMessage += "\n" + resourceHelper.gs(R.string.time) + ": " + dateUtil.timeString(starttimestamp)
             rMessage += "\n" + resourceHelper.gs(R.string.duration) + ": " + duration + "h"
             if (carbsAfterConstraints - carbs != 0) {
                 rMessage += "\n" + resourceHelper.gs(R.string.constraintapllied)
@@ -329,7 +331,7 @@ class ActionStringHandler @Inject constructor(
             message += "Today: " + DecimalFormatter.to2Decimal(tdd) + "U " + (DecimalFormatter.to0Decimal(100 * tdd / refTDD) + "%") + "\n"
             message += "\n"
         } else if (pump is DanaRPlugin) {
-            val tdd = danaRPump.dailyTotalUnits
+            val tdd = danaPump.dailyTotalUnits
             message += "Today: " + DecimalFormatter.to2Decimal(tdd) + "U " + (DecimalFormatter.to0Decimal(100 * tdd / refTDD) + "%") + "\n"
             message += "\n"
         }
@@ -414,8 +416,8 @@ class ActionStringHandler @Inject constructor(
                 ret += "APS: " + (aps as PluginBase).name
                 val lastRun = loopPlugin.lastRun
                 if (lastRun != null) {
-                    ret += "\nLast Run: " + DateUtil.timeString(lastRun.lastAPSRun)
-                    if (lastRun.lastTBREnact != 0L) ret += "\nLast Enact: " + DateUtil.timeString(lastRun.lastTBREnact)
+                    ret += "\nLast Run: " + dateUtil.timeString(lastRun.lastAPSRun)
+                    if (lastRun.lastTBREnact != 0L) ret += "\nLast Enact: " + dateUtil.timeString(lastRun.lastTBREnact)
                 }
             } else {
                 ret += "LOOP DISABLED\n"
@@ -427,7 +429,7 @@ class ActionStringHandler @Inject constructor(
     private val targetsStatus: String
         get() {
             var ret = ""
-            if (!Config.APS) {
+            if (!config.APS) {
                 return "Targets only apply in APS mode!"
             }
             val profile = profileFunction.getProfile() ?: return "No profile set :("
@@ -435,7 +437,7 @@ class ActionStringHandler @Inject constructor(
             val tempTarget = activePlugin.activeTreatments.tempTargetFromHistory
             if (tempTarget != null) {
                 ret += "Temp Target: " + Profile.toTargetRangeString(tempTarget.data.lowTarget, tempTarget.data.highTarget, Constants.MGDL, profileFunction.getUnits())
-                ret += "\nuntil: " + DateUtil.timeString(tempTarget.originalEnd())
+                ret += "\nuntil: " + dateUtil.timeString(tempTarget.originalEnd())
                 ret += "\n\n"
             }
             ret += "DEFAULT RANGE: "
@@ -447,7 +449,7 @@ class ActionStringHandler @Inject constructor(
     private val oAPSResultStatus: String
         get() {
             var ret = ""
-            if (!Config.APS)
+            if (!config.APS)
                 return "Only apply in APS mode!"
             val usedAPS = activePlugin.activeAPS
             val result = usedAPS.lastAPSResult ?: return "Last result not available!"
@@ -473,7 +475,7 @@ class ActionStringHandler @Inject constructor(
         if (System.currentTimeMillis() - lastSentTimestamp > TIMEOUT) return
         lastConfirmActionString = null
         // do the parsing, check constraints and enact!
-        val act = actionString.split("\\s+").toTypedArray()
+        val act = actionString.split("\\s+".toRegex()).toTypedArray()
         if ("fill" == act[0]) {
             val amount = SafeParse.stringToDouble(act[1])
             val insulinAfterConstraints = constraintChecker.applyBolusConstraints(Constraint(amount)).value()

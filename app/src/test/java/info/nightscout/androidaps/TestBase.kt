@@ -1,13 +1,7 @@
 package info.nightscout.androidaps
 
-import dagger.android.AndroidInjector
-import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.data.Profile
-import info.nightscout.androidaps.data.ProfileStore
 import info.nightscout.androidaps.logging.AAPSLoggerTest
-import info.nightscout.androidaps.utils.rx.AapsSchedulers
 import info.nightscout.androidaps.utils.rx.TestAapsSchedulers
-import org.json.JSONObject
 import org.junit.Before
 import org.junit.Rule
 import org.mockito.Mockito
@@ -43,7 +37,7 @@ open class TestBase {
     fun <T> uninitialized(): T = null as T
 
     @Suppress("Unchecked_Cast")
-    fun <T> anyObject(type : Class<T>): T {
+    fun <T> anyObject(type: Class<T>): T {
         Mockito.any(type)
         return null as T
     }

@@ -4,6 +4,7 @@ import dagger.android.AndroidInjector
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.TestBase
 import info.nightscout.androidaps.database.entities.GlucoseValue
+import info.nightscout.androidaps.db.BgReading
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.utils.DateUtil
@@ -26,6 +27,7 @@ import java.util.*
 @PrepareForTest(IobCobCalculatorPlugin::class, DateUtil::class)
 class GlucoseStatusTest : TestBase() {
 
+    @Mock lateinit var dateUtil: DateUtil
     @Mock lateinit var iobCobCalculatorPlugin: IobCobCalculatorPlugin
 
     val injector = HasAndroidInjector {
@@ -33,6 +35,8 @@ class GlucoseStatusTest : TestBase() {
             if (it is GlucoseStatus) {
                 it.aapsLogger = aapsLogger
                 it.iobCobCalculatorPlugin = iobCobCalculatorPlugin
+            }
+            if (it is BgReading) {
             }
         }
     }

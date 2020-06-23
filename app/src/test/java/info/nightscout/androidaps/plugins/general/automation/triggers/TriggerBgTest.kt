@@ -4,7 +4,7 @@ import com.google.common.base.Optional
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.entities.GlucoseValue
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.general.automation.elements.Comparator
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.utils.DateUtil
@@ -89,7 +89,7 @@ class TriggerBgTest : TriggerTestBase() {
 
     @Test
     fun iconTest() {
-        Assert.assertEquals(Optional.of(R.drawable.icon_cp_bgcheck), TriggerBg(injector).icon())
+        Assert.assertEquals(Optional.of(R.drawable.ic_cp_bgcheck), TriggerBg(injector).icon())
     }
 
     private fun generateOneCurrentRecordBgData(): List<GlucoseValue> {

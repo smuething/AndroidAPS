@@ -35,7 +35,8 @@ class FoodFragment : DaggerFragment() {
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var foodPlugin: FoodPlugin
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var nsUpload: NSUpload
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
     private lateinit var unfiltered: List<Food>
@@ -59,7 +60,7 @@ class FoodFragment : DaggerFragment() {
             filterData()
         }
         food_category.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 fillSubcategories()
                 filterData()
             }
@@ -70,7 +71,7 @@ class FoodFragment : DaggerFragment() {
             }
         }
         food_subcategory.setOnItemSelectedListener(object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 filterData()
             }
 
@@ -96,7 +97,7 @@ class FoodFragment : DaggerFragment() {
         super.onResume()
         disposable.add(rxBus
             .toObservable(EventFoodDatabaseChanged::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({ updateGui() }) { fabricPrivacy.logException(it) }
         )
         updateGui()
@@ -201,7 +202,7 @@ class FoodFragment : DaggerFragment() {
                     activity?.let { activity ->
                         showConfirmation(activity, resourceHelper.gs(R.string.confirmation), resourceHelper.gs(R.string.removerecord) + "\n" + food.name, DialogInterface.OnClickListener { _: DialogInterface?, _: Int ->
                             if (food._id != null && food._id != "") {
-                                NSUpload.removeFoodFromNS(food._id)
+                                nsUpload.removeFoodFromNS(food._id)
                             }
                             foodPlugin.service?.delete(food)
                         }, null)

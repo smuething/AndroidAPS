@@ -27,7 +27,7 @@ class VirtualPumpFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var virtualPumpPlugin: VirtualPumpPlugin
     @Inject lateinit var treatmentsPlugin: TreatmentsPlugin
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private val disposable = CompositeDisposable()
 
@@ -50,15 +50,15 @@ class VirtualPumpFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventVirtualPumpUpdateGui::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({ updateGui() }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventTempBasalChange::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({ updateGui() }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventExtendedBolusChange::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({ updateGui() }, { fabricPrivacy.logException(it) })
         loopHandler.postDelayed(refreshLoop, T.mins(1).msecs())
         updateGui()
@@ -85,6 +85,6 @@ class VirtualPumpFragment : DaggerFragment() {
         val pumpType = virtualPumpPlugin.pumpType
 
         virtualpump_type?.text = pumpType?.description
-        virtualpump_type_def?.text = pumpType?.getFullDescription(resourceHelper.gs(R.string.virtualpump_pump_def), pumpType.hasExtendedBasals())
+        virtualpump_type_def?.text = pumpType?.getFullDescription(resourceHelper.gs(R.string.virtualpump_pump_def), pumpType.hasExtendedBasals(), resourceHelper)
     }
 }

@@ -26,7 +26,7 @@ class TidepoolFragment : DaggerFragment() {
     @Inject lateinit var tidepoolUploader: TidepoolUploader
     @Inject lateinit var sp: SP
     @Inject lateinit var fabricPrivacy: FabricPrivacy
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -47,7 +47,7 @@ class TidepoolFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventTidepoolUpdateGUI::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 tidepoolPlugin.updateLog()
                 tidepool_log?.text = tidepoolPlugin.textLog

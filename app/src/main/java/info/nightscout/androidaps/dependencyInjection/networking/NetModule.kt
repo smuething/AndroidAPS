@@ -7,6 +7,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.Reusable
 import info.nightscout.androidaps.BuildConfig
+import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.networking.nightscout.NightscoutService
 import info.nightscout.androidaps.plugins.source.NSClientSourcePlugin
@@ -26,8 +27,8 @@ class NetModule {
 
     @Provides
     @Singleton
-    internal fun providesNightscoutService(nsRetrofitFactory: NSRetrofitFactory, resourceHelper: ResourceHelper, sp: SP, nsClientSourcePlugin: NSClientSourcePlugin): NightscoutService {
-        return NightscoutService(nsRetrofitFactory, resourceHelper, sp, nsClientSourcePlugin)
+    internal fun providesNightscoutService(nsRetrofitFactory: NSRetrofitFactory, resourceHelper: ResourceHelper, sp: SP, nsClientSourcePlugin: NSClientSourcePlugin, config: Config): NightscoutService {
+        return NightscoutService(nsRetrofitFactory, resourceHelper, sp, nsClientSourcePlugin, config)
     }
 
     @Provides

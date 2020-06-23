@@ -8,10 +8,10 @@ import info.nightscout.androidaps.database.AppRepository
 import info.nightscout.androidaps.db.ProfileSwitch
 import info.nightscout.androidaps.db.TemporaryBasal
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.general.tidepool.elements.*
 import info.nightscout.androidaps.plugins.general.tidepool.events.EventTidepoolStatus
 import info.nightscout.androidaps.plugins.general.tidepool.utils.GsonInstance
@@ -34,6 +34,7 @@ class UploadChunk @Inject constructor(
     private val profileFunction: ProfileFunction,
     private val treatmentsPlugin: TreatmentsPlugin,
     private val activePlugin: ActivePluginProvider,
+    private val dateUtil: DateUtil,
     private val repository: AppRepository,
     private val injector: HasAndroidInjector
 ) {
@@ -57,9 +58,9 @@ class UploadChunk @Inject constructor(
 
     operator fun get(start: Long, end: Long): String {
 
-        aapsLogger.debug(LTag.TIDEPOOL, "Syncing data between: " + DateUtil.dateAndTimeString(start) + " -> " + DateUtil.dateAndTimeString(end))
+        aapsLogger.debug(LTag.TIDEPOOL, "Syncing data between: " + dateUtil.dateAndTimeString(start) + " -> " + dateUtil.dateAndTimeString(end))
         if (end <= start) {
-            aapsLogger.debug(LTag.TIDEPOOL, "End is <= start: " + DateUtil.dateAndTimeString(start) + " " + DateUtil.dateAndTimeString(end))
+            aapsLogger.debug(LTag.TIDEPOOL, "End is <= start: " + dateUtil.dateAndTimeString(start) + " " + dateUtil.dateAndTimeString(end))
             return ""
         }
         if (end - start > MAX_UPLOAD_SIZE) {
@@ -91,11 +92,11 @@ class UploadChunk @Inject constructor(
     fun setLastEnd(time: Long) {
         if (time > getLastEnd()) {
             sp.putLong(R.string.key_tidepool_last_end, time)
-            val friendlyEnd = DateUtil.dateAndTimeString(time)
+            val friendlyEnd = dateUtil.dateAndTimeString(time)
             rxBus.send(EventTidepoolStatus(("Marking uploaded data up to $friendlyEnd")))
-            aapsLogger.debug(LTag.TIDEPOOL, "Updating last end to: " + DateUtil.dateAndTimeString(time))
+            aapsLogger.debug(LTag.TIDEPOOL, "Updating last end to: " + dateUtil.dateAndTimeString(time))
         } else {
-            aapsLogger.debug(LTag.TIDEPOOL, "Cannot set last end to: " + DateUtil.dateAndTimeString(time) + " vs " + DateUtil.dateAndTimeString(getLastEnd()))
+            aapsLogger.debug(LTag.TIDEPOOL, "Cannot set last end to: " + dateUtil.dateAndTimeString(time) + " vs " + dateUtil.dateAndTimeString(getLastEnd()))
         }
     }
 

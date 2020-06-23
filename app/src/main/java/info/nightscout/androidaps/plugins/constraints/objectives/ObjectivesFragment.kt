@@ -22,8 +22,8 @@ import info.nightscout.androidaps.R
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.constraints.objectives.activities.ObjectivesExamDialog
-import info.nightscout.androidaps.plugins.constraints.objectives.dialogs.NtpProgressDialog
-import info.nightscout.androidaps.plugins.constraints.objectives.events.EventNtpStatus
+import info.nightscout.androidaps.dialogs.NtpProgressDialog
+import info.nightscout.androidaps.events.EventNtpStatus
 import info.nightscout.androidaps.plugins.constraints.objectives.events.EventObjectivesUpdateGui
 import info.nightscout.androidaps.plugins.constraints.objectives.objectives.Objective.ExamTask
 import info.nightscout.androidaps.receivers.ReceiverStatusStore
@@ -49,7 +49,9 @@ class ObjectivesFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var objectivesPlugin: ObjectivesPlugin
     @Inject lateinit var receiverStatusStore: ReceiverStatusStore
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
+    @Inject lateinit var sntpClient: SntpClient
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private val objectivesAdapter = ObjectivesAdapter()
     private val handler = Handler(Looper.getMainLooper())
@@ -87,7 +89,7 @@ class ObjectivesFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventObjectivesUpdateGui::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 objectives_recyclerview.adapter?.notifyDataSetChanged()
             }, { fabricPrivacy.logException(it) }
@@ -213,7 +215,7 @@ class ObjectivesFragment : DaggerFragment() {
                             bundle.putInt("currentTask", taskPosition)
                             dialog.arguments = bundle
                             ObjectivesExamDialog.objective = objective
-                            fragmentManager?.let { dialog.show(it, "ObjectivesFragment") }
+                            dialog.show(childFragmentManager, "ObjectivesFragment")
                         }
                     }
                     // horizontal line
@@ -222,7 +224,7 @@ class ObjectivesFragment : DaggerFragment() {
                     holder.progress.addView(separator, LinearLayout.LayoutParams.MATCH_PARENT, 2)
                 }
             }
-            holder.accomplished.text = resourceHelper.gs(R.string.accomplished, DateUtil.dateAndTimeString(objective.accomplishedOn))
+            holder.accomplished.text = resourceHelper.gs(R.string.accomplished, dateUtil.dateAndTimeString(objective.accomplishedOn))
             holder.accomplished.setTextColor(-0x3e3e3f)
             holder.verify.setOnClickListener {
                 receiverStatusStore.updateNetworkStatus()
@@ -237,7 +239,7 @@ class ObjectivesFragment : DaggerFragment() {
                     Thread {
                         NtpProgressDialog().show((context as AppCompatActivity).supportFragmentManager, "NtpCheck")
                         rxBus.send(EventNtpStatus(resourceHelper.gs(R.string.timedetection), 0))
-                        SntpClient.ntpTime(object : SntpClient.Callback() {
+                        sntpClient.ntpTime(object : SntpClient.Callback() {
                             override fun run() {
                                 aapsLogger.debug("NTP time: $time System time: ${DateUtil.now()}")
                                 SystemClock.sleep(300)
@@ -276,7 +278,7 @@ class ObjectivesFragment : DaggerFragment() {
                     Thread {
                         NtpProgressDialog().show((context as AppCompatActivity).supportFragmentManager, "NtpCheck")
                         rxBus.send(EventNtpStatus(resourceHelper.gs(R.string.timedetection), 0))
-                        SntpClient.ntpTime(object : SntpClient.Callback() {
+                        sntpClient.ntpTime(object : SntpClient.Callback() {
                             override fun run() {
                                 aapsLogger.debug("NTP time: $time System time: ${DateUtil.now()}")
                                 SystemClock.sleep(300)

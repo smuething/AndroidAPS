@@ -36,7 +36,7 @@ class ConfigBuilderFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var protectionCheck: ProtectionCheck
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
     private val pluginViewHolders = ArrayList<PluginViewHolder>()
@@ -71,7 +71,7 @@ class ConfigBuilderFragment : DaggerFragment() {
         super.onResume()
         disposable += rxBus
             .toObservable(EventConfigBuilderUpdateGui::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 for (pluginViewHolder in pluginViewHolders) pluginViewHolder.update()
             }, { fabricPrivacy.logException(it) })

@@ -6,6 +6,7 @@ import android.content.ServiceConnection;
 
 import androidx.annotation.NonNull;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -20,6 +21,7 @@ import info.nightscout.androidaps.data.PumpEnactResult;
 import info.nightscout.androidaps.db.ExtendedBolus;
 import info.nightscout.androidaps.db.TemporaryBasal;
 import info.nightscout.androidaps.events.EventAppExit;
+import info.nightscout.androidaps.events.EventCustomActionsChanged;
 import info.nightscout.androidaps.interfaces.ActivePluginProvider;
 import info.nightscout.androidaps.interfaces.CommandQueueProvider;
 import info.nightscout.androidaps.interfaces.ConstraintsInterface;
@@ -30,16 +32,18 @@ import info.nightscout.androidaps.interfaces.PumpPluginBase;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper;
+import info.nightscout.androidaps.plugins.common.ManufacturerType;
 import info.nightscout.androidaps.plugins.general.overview.events.EventOverviewBolusProgress;
 import info.nightscout.androidaps.plugins.pump.common.data.PumpStatus;
 import info.nightscout.androidaps.plugins.pump.common.defs.PumpDriverState;
 import info.nightscout.androidaps.plugins.pump.common.defs.PumpType;
 import info.nightscout.androidaps.plugins.pump.medtronic.data.MedtronicHistoryData;
-import info.nightscout.androidaps.plugins.treatments.Treatment;
+import info.nightscout.androidaps.db.Treatment;
 import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.DecimalFormatter;
 import info.nightscout.androidaps.utils.FabricPrivacy;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
+import info.nightscout.androidaps.utils.sharedPreferences.SP;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
@@ -52,11 +56,16 @@ import io.reactivex.schedulers.Schedulers;
 public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpInterface, ConstraintsInterface {
     private CompositeDisposable disposable = new CompositeDisposable();
 
+    protected HasAndroidInjector injector;
     protected AAPSLogger aapsLogger;
     protected RxBusWrapper rxBus;
     protected ActivePluginProvider activePlugin;
     protected Context context;
     protected FabricPrivacy fabricPrivacy;
+    protected ResourceHelper resourceHelper;
+    protected CommandQueueProvider commandQueue;
+    protected SP sp;
+    protected DateUtil dateUtil;
 
     /*
         protected static final PumpEnactResult OPERATION_NOT_SUPPORTED = new PumpEnactResult().success(false)
@@ -65,12 +74,12 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
                 .enacted(false).comment(MainApp.gs(R.string.pump_operation_not_yet_supported_by_pump));
     */
     protected PumpDescription pumpDescription = new PumpDescription();
-    protected PumpStatus pumpStatus;
     protected ServiceConnection serviceConnection = null;
     protected boolean serviceRunning = false;
     // protected boolean isInitialized = false;
     protected PumpDriverState pumpState = PumpDriverState.NotInitialized;
     protected boolean displayConnectionMessages = false;
+    protected PumpType pumpType;
 
 
     protected PumpPluginAbstract(
@@ -82,8 +91,10 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
             CommandQueueProvider commandQueue,
             RxBusWrapper rxBus,
             ActivePluginProvider activePlugin,
+            SP sp,
             Context context,
-            FabricPrivacy fabricPrivacy
+            FabricPrivacy fabricPrivacy,
+            DateUtil dateUtil
     ) {
 
         super(pluginDescription, injector, aapsLogger, resourceHelper, commandQueue);
@@ -92,14 +103,17 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
         this.activePlugin = activePlugin;
         this.context = context;
         this.fabricPrivacy = fabricPrivacy;
+        this.resourceHelper = resourceHelper;
+        this.sp = sp;
+        this.commandQueue = commandQueue;
 
         pumpDescription.setPumpDescription(pumpType);
-
+        this.pumpType = pumpType;
+        this.dateUtil = dateUtil;
     }
 
 
     public abstract void initPumpStatusData();
-
 
     @Override
     protected void onStart() {
@@ -115,7 +129,7 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
         disposable.add(rxBus
                 .toObservable(EventAppExit.class)
                 .observeOn(Schedulers.io())
-                .subscribe(event -> context.unbindService(serviceConnection), exception -> fabricPrivacy.logException(exception))
+                .subscribe(event -> context.unbindService(serviceConnection), fabricPrivacy::logException)
         );
         onStartCustomActions();
     }
@@ -144,9 +158,7 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
      */
     public abstract Class getServiceClass();
 
-    public PumpStatus getPumpStatusData() {
-        return pumpStatus;
-    }
+    public abstract PumpStatus getPumpStatusData();
 
 
     public boolean isInitialized() {
@@ -210,12 +222,6 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
             aapsLogger.debug(LTag.PUMP, "finishHandshaking [PumpPluginAbstract] - default (empty) implementation.");
     }
 
-
-    public void getPumpStatus() {
-        aapsLogger.debug(LTag.PUMP, "getPumpStatus [PumpPluginAbstract] - Not implemented.");
-    }
-
-
     // Upload to pump new basal profile
     @NonNull public PumpEnactResult setNewBasalProfile(Profile profile) {
         aapsLogger.debug(LTag.PUMP, "setNewBasalProfile [PumpPluginAbstract] - Not implemented.");
@@ -231,7 +237,7 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
 
     public long lastDataTime() {
         aapsLogger.debug(LTag.PUMP, "lastDataTime [PumpPluginAbstract].");
-        return pumpStatus.lastConnection;
+        return getPumpStatusData().lastConnection;
     }
 
 
@@ -318,9 +324,9 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
 
 
     @NonNull @Override
-    public JSONObject getJSONStatus(Profile profile, String profileName) {
+    public JSONObject getJSONStatus(Profile profile, String profileName, String version) {
 
-        if ((pumpStatus.lastConnection + 5 * 60 * 1000L) < System.currentTimeMillis()) {
+        if ((getPumpStatusData().lastConnection + 5 * 60 * 1000L) < System.currentTimeMillis()) {
             return new JSONObject();
         }
 
@@ -329,9 +335,9 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
         JSONObject status = new JSONObject();
         JSONObject extended = new JSONObject();
         try {
-            battery.put("percent", pumpStatus.batteryRemaining);
-            status.put("status", pumpStatus.pumpStatusType != null ? pumpStatus.pumpStatusType.getStatus() : "normal");
-            extended.put("Version", BuildConfig.VERSION_NAME + "-" + BuildConfig.BUILDVERSION);
+            battery.put("percent", getPumpStatusData().batteryRemaining);
+            status.put("status", getPumpStatusData().pumpStatusType != null ? getPumpStatusData().pumpStatusType.getStatus() : "normal");
+            extended.put("Version", version);
             try {
                 extended.put("ActiveProfile", profileName);
             } catch (Exception ignored) {
@@ -341,14 +347,14 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
             if (tb != null) {
                 extended.put("TempBasalAbsoluteRate",
                         tb.tempBasalConvertedToAbsolute(System.currentTimeMillis(), profile));
-                extended.put("TempBasalStart", DateUtil.dateAndTimeString(tb.date));
+                extended.put("TempBasalStart", dateUtil.dateAndTimeString(tb.date));
                 extended.put("TempBasalRemaining", tb.getPlannedRemainingMinutes());
             }
 
             ExtendedBolus eb = activePlugin.getActiveTreatments().getExtendedBolusFromHistory(System.currentTimeMillis());
             if (eb != null) {
                 extended.put("ExtendedBolusAbsoluteRate", eb.absoluteRate());
-                extended.put("ExtendedBolusStart", DateUtil.dateAndTimeString(eb.date));
+                extended.put("ExtendedBolusStart", dateUtil.dateAndTimeString(eb.date));
                 extended.put("ExtendedBolusRemaining", eb.getPlannedRemainingMinutes());
             }
 
@@ -357,7 +363,7 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
             pump.put("battery", battery);
             pump.put("status", status);
             pump.put("extended", extended);
-            pump.put("reservoir", pumpStatus.reservoirRemainingUnits);
+            pump.put("reservoir", getPumpStatusData().reservoirRemainingUnits);
             pump.put("clock", DateUtil.toISOString(new Date()));
         } catch (JSONException e) {
             aapsLogger.error("Unhandled exception", e);
@@ -370,14 +376,14 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
     @NonNull @Override
     public String shortStatus(boolean veryShort) {
         String ret = "";
-        if (pumpStatus.lastConnection != 0) {
-            long agoMsec = System.currentTimeMillis() - pumpStatus.lastConnection;
+        if (getPumpStatusData().lastConnection != 0) {
+            long agoMsec = System.currentTimeMillis() - getPumpStatusData().lastConnection;
             int agoMin = (int) (agoMsec / 60d / 1000d);
             ret += "LastConn: " + agoMin + " min ago\n";
         }
-        if (pumpStatus.lastBolusTime != null && pumpStatus.lastBolusTime.getTime() != 0) {
-            ret += "LastBolus: " + DecimalFormatter.to2Decimal(pumpStatus.lastBolusAmount) + "U @" + //
-                    android.text.format.DateFormat.format("HH:mm", pumpStatus.lastBolusTime) + "\n";
+        if (getPumpStatusData().lastBolusTime != null && getPumpStatusData().lastBolusTime.getTime() != 0) {
+            ret += "LastBolus: " + DecimalFormatter.to2Decimal(getPumpStatusData().lastBolusAmount) + "U @" + //
+                    android.text.format.DateFormat.format("HH:mm", getPumpStatusData().lastBolusTime) + "\n";
         }
         TemporaryBasal activeTemp = activePlugin.getActiveTreatments().getRealTempBasalFromHistory(System.currentTimeMillis());
         if (activeTemp != null) {
@@ -392,9 +398,9 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
         // ret += "TDD: " + DecimalFormatter.to0Decimal(pumpStatus.dailyTotalUnits) + " / "
         // + pumpStatus.maxDailyTotalUnits + " U\n";
         // }
-        ret += "IOB: " + pumpStatus.iob + "U\n";
-        ret += "Reserv: " + DecimalFormatter.to0Decimal(pumpStatus.reservoirRemainingUnits) + "U\n";
-        ret += "Batt: " + pumpStatus.batteryRemaining + "\n";
+        ret += "IOB: " + getPumpStatusData().iob + "U\n";
+        ret += "Reserv: " + DecimalFormatter.to0Decimal(getPumpStatusData().reservoirRemainingUnits) + "U\n";
+        ret += "Batt: " + getPumpStatusData().batteryRemaining + "\n";
         return ret;
     }
 
@@ -407,7 +413,7 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
                 // neither carbs nor bolus requested
                 aapsLogger.error("deliverTreatment: Invalid input");
                 return new PumpEnactResult(getInjector()).success(false).enacted(false).bolusDelivered(0d).carbsDelivered(0d)
-                        .comment(getResourceHelper().gs(R.string.danar_invalidinput));
+                        .comment(getResourceHelper().gs(R.string.invalidinput));
             } else if (detailedBolusInfo.insulin > 0) {
                 // bolus needed, ask pump to deliver it
                 return deliverBolus(detailedBolusInfo);
@@ -434,6 +440,38 @@ public abstract class PumpPluginAbstract extends PumpPluginBase implements PumpI
         }
 
     }
+
+
+    protected void refreshCustomActionsList() {
+        rxBus.send(new EventCustomActionsChanged());
+    }
+
+
+    public ManufacturerType manufacturer() {
+        return pumpType.getManufacturer();
+    }
+
+    @NotNull
+    public PumpType model() {
+        return pumpType;
+    }
+
+
+    public PumpType getPumpType() {
+        return pumpType;
+    }
+
+
+    public void setPumpType(PumpType pumpType) {
+        this.pumpType = pumpType;
+        this.pumpDescription.setPumpDescription(pumpType);
+    }
+
+
+    public boolean canHandleDST() {
+        return false;
+    }
+
 
     protected abstract PumpEnactResult deliverBolus(DetailedBolusInfo detailedBolusInfo);
 

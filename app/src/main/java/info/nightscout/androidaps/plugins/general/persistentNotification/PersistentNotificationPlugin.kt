@@ -12,22 +12,19 @@ import androidx.core.app.TaskStackBuilder
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.MainActivity
-import info.nightscout.androidaps.MainApp
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.Profile
 import info.nightscout.androidaps.events.*
-import info.nightscout.androidaps.interfaces.ActivePluginProvider
-import info.nightscout.androidaps.interfaces.PluginBase
-import info.nightscout.androidaps.interfaces.PluginDescription
-import info.nightscout.androidaps.interfaces.PluginType
+import info.nightscout.androidaps.interfaces.*
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished
 import info.nightscout.androidaps.utils.DecimalFormatter
 import info.nightscout.androidaps.utils.FabricPrivacy
+import info.nightscout.androidaps.utils.androidNotification.NotificationHolder
+import info.nightscout.androidaps.utils.resources.IconsProvider
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.valueToUnitsString
 import io.reactivex.disposables.CompositeDisposable
@@ -46,7 +43,8 @@ class PersistentNotificationPlugin @Inject constructor(
     private var iobCobCalculatorPlugin: IobCobCalculatorPlugin,
     private var rxBus: RxBusWrapper,
     private var context: Context,
-    private var mainApp: MainApp
+    private var notificationHolder: NotificationHolder,
+    private val iconsProvider: IconsProvider
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.GENERAL)
     .neverVisible(true)
@@ -110,7 +108,7 @@ class PersistentNotificationPlugin @Inject constructor(
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val mNotificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channel = NotificationChannel(mainApp.channelId(), mainApp.channelId() as CharSequence, NotificationManager.IMPORTANCE_HIGH)
+            val channel = NotificationChannel(notificationHolder.channelID, notificationHolder.channelID as CharSequence, NotificationManager.IMPORTANCE_HIGH)
             mNotificationManager.createNotificationChannel(channel)
         }
     }
@@ -177,20 +175,20 @@ class PersistentNotificationPlugin @Inject constructor(
             val msgReadIntent = Intent()
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 .setAction(READ_ACTION)
-                .putExtra(CONVERSATION_ID, mainApp.notificationId())
+                .putExtra(CONVERSATION_ID, notificationHolder.notificationID)
                 .setPackage(PACKAGE)
             val msgReadPendingIntent = PendingIntent.getBroadcast(context,
-                mainApp.notificationId(),
+                notificationHolder.notificationID,
                 msgReadIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
             val msgReplyIntent = Intent()
                 .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
                 .setAction(REPLY_ACTION)
-                .putExtra(CONVERSATION_ID, mainApp.notificationId())
+                .putExtra(CONVERSATION_ID, notificationHolder.notificationID)
                 .setPackage(PACKAGE)
             val msgReplyPendingIntent = PendingIntent.getBroadcast(
                 context,
-                mainApp.notificationId(),
+                notificationHolder.notificationID,
                 msgReplyIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
             // Build a RemoteInput for receiving voice input from devices
@@ -206,12 +204,12 @@ class PersistentNotificationPlugin @Inject constructor(
         } else {
             line1 = resourceHelper.gs(R.string.noprofileset)
         }
-        val builder = NotificationCompat.Builder(context, mainApp.channelId())
+        val builder = NotificationCompat.Builder(context, notificationHolder.channelID)
         builder.setOngoing(true)
         builder.setOnlyAlertOnce(true)
         builder.setCategory(NotificationCompat.CATEGORY_STATUS)
-        builder.setSmallIcon(resourceHelper.getNotificationIcon())
-        builder.setLargeIcon(resourceHelper.decodeResource(resourceHelper.getIcon()))
+        builder.setSmallIcon(iconsProvider.getNotificationIcon())
+        builder.setLargeIcon(resourceHelper.decodeResource(iconsProvider.getIcon()))
         if (line1 != null) builder.setContentTitle(line1)
         if (line2 != null) builder.setContentText(line2)
         if (line3 != null) builder.setSubText(line3)
@@ -232,7 +230,7 @@ class PersistentNotificationPlugin @Inject constructor(
         builder.setContentIntent(resultPendingIntent)
         val mNotificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = builder.build()
-        mNotificationManager.notify(mainApp.notificationId(), notification)
-        mainApp.notification = notification
+        mNotificationManager.notify(notificationHolder.notificationID, notification)
+        notificationHolder.notification = notification
     }
 }

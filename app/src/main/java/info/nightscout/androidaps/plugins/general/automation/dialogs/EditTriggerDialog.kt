@@ -27,7 +27,7 @@ class EditTriggerDialog : DialogFragmentWithDate() {
     @Inject lateinit var rxBus: RxBusWrapper
     @Inject lateinit var mainApp: MainApp
     @Inject lateinit var fabricPrivacy: FabricPrivacy
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     private var disposable: CompositeDisposable = CompositeDisposable()
 
@@ -49,14 +49,14 @@ class EditTriggerDialog : DialogFragmentWithDate() {
 
         disposable += rxBus
             .toObservable(EventTriggerChanged::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 automation_layoutTrigger.removeAllViews()
                 triggers?.generateDialog(automation_layoutTrigger)
             }, { fabricPrivacy.logException(it) })
         disposable += rxBus
             .toObservable(EventTriggerRemove::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 findParent(triggers, it.trigger)?.list?.remove(it.trigger)
                 automation_layoutTrigger.removeAllViews()
@@ -65,7 +65,7 @@ class EditTriggerDialog : DialogFragmentWithDate() {
 
         disposable += rxBus
             .toObservable(EventTriggerClone::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({
                 findParent(triggers, it.trigger)?.list?.add(it.trigger.duplicate())
                 automation_layoutTrigger.removeAllViews()

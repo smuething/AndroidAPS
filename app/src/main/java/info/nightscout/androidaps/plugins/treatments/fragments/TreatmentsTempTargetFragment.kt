@@ -17,8 +17,8 @@ import info.nightscout.androidaps.database.entities.TemporaryTarget
 import info.nightscout.androidaps.database.transactions.InvalidateTemporaryTargetTransaction
 import info.nightscout.androidaps.db.TempTarget
 import info.nightscout.androidaps.events.EventTempTargetChange
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.treatments.fragments.TreatmentsTempTargetFragment.RecyclerViewAdapter.TempTargetsViewHolder
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
@@ -41,6 +41,7 @@ class TreatmentsTempTargetFragment : DaggerFragment() {
     @Inject lateinit var profileFunction: ProfileFunction
     @Inject lateinit var resourceHelper: ResourceHelper
     @Inject lateinit var aapsSchedulers: AapsSchedulers
+    @Inject lateinit var dateUtil: DateUtil
     @Inject lateinit var repository: AppRepository
     @Inject lateinit var fabricPrivacy: FabricPrivacy
 
@@ -100,13 +101,13 @@ class TreatmentsTempTargetFragment : DaggerFragment() {
             val tempTarget = TempTarget(tempTargetList[position])
             holder.ns.visibility = (tempTarget.data.interfaceIDs.nightscoutId != null).toVisibility()
             if (!tempTarget.isEndingEvent) {
-                holder.date.text = DateUtil.dateAndTimeString(tempTarget.data.timestamp) + " - " + DateUtil.timeString(tempTarget.originalEnd())
+                holder.date.text = dateUtil.dateAndTimeString(tempTarget.data.timestamp) + " - " + dateUtil.timeString(tempTarget.originalEnd())
                 holder.duration.text = resourceHelper.gs(R.string.format_mins, TimeUnit.MILLISECONDS.toMinutes(tempTarget.data.duration))
                 holder.low.text = tempTarget.lowValueToUnitsToString(units)
                 holder.high.text = tempTarget.highValueToUnitsToString(units)
                 holder.reason.text = tempTarget.data.reason.text
             } else {
-                holder.date.text = DateUtil.dateAndTimeString(tempTarget.data.timestamp)
+                holder.date.text = dateUtil.dateAndTimeString(tempTarget.data.timestamp)
                 holder.duration.setText(R.string.cancel)
                 holder.low.text = ""
                 holder.high.text = ""
@@ -140,7 +141,7 @@ class TreatmentsTempTargetFragment : DaggerFragment() {
                     activity?.let { activity ->
                         val text = resourceHelper.gs(R.string.careportal_temporarytarget) + "\n" +
                             tempTarget.friendlyDescription(profileFunction.getUnits(), resourceHelper) + "\n" +
-                            DateUtil.dateAndTimeString(tempTarget.data.timestamp)
+                            dateUtil.dateAndTimeString(tempTarget.data.timestamp)
                         OKDialog.showConfirmation(activity, resourceHelper.gs(R.string.removerecord), text, Runnable {
                             disposable.add(repository.runTransaction(InvalidateTemporaryTargetTransaction(tempTarget.data.id)).subscribe())
                         })

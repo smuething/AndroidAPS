@@ -43,13 +43,13 @@ import info.nightscout.androidaps.interfaces.PluginType;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.aps.loop.LoopPlugin;
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction;
+import info.nightscout.androidaps.interfaces.ProfileFunction;
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSDeviceStatus;
 import info.nightscout.androidaps.plugins.general.wear.ActionStringHandler;
 import info.nightscout.androidaps.plugins.general.wear.WearPlugin;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.GlucoseStatus;
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.IobCobCalculatorPlugin;
-import info.nightscout.androidaps.plugins.treatments.Treatment;
+import info.nightscout.androidaps.db.Treatment;
 import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin;
 import info.nightscout.androidaps.receivers.ReceiverStatusStore;
 import info.nightscout.androidaps.utils.DecimalFormatter;
@@ -75,6 +75,7 @@ public class WatchUpdaterService extends WearableListenerService implements Goog
     @Inject public ActionStringHandler actionStringHandler;
     @Inject public AppRepository repository;
     @Inject ReceiverStatusStore receiverStatusStore;
+    @Inject Config config;
 
     public static final String ACTION_RESEND = WatchUpdaterService.class.getName().concat(".Resend");
     public static final String ACTION_OPEN_SETTINGS = WatchUpdaterService.class.getName().concat(".OpenSettings");
@@ -305,9 +306,9 @@ public class WatchUpdaterService extends WearableListenerService implements Goog
         double highLine = defaultValueHelper.determineHighLine();
 
         long sgvLevel = 0L;
-        if (lastBG.getValue() > highLine) {
+        if (new BgReading(injector, lastBG).valueToUnits(units) > highLine) {
             sgvLevel = 1;
-        } else if (lastBG.getValue() < lowLine) {
+        } else if (new BgReading(injector, lastBG).valueToUnits(units) < lowLine) {
             sgvLevel = -1;
         }
 
@@ -325,7 +326,7 @@ public class WatchUpdaterService extends WearableListenerService implements Goog
             dataMap.putString("avgDelta", deltastring(glucoseStatus.avgdelta, glucoseStatus.avgdelta * Constants.MGDL_TO_MMOLL, units));
         }
         dataMap.putLong("sgvLevel", sgvLevel);
-        dataMap.putDouble("sgvDouble", lastBG.getValue());
+        dataMap.putDouble("sgvDouble", new BgReading(injector, lastBG).valueToUnits(units));
         dataMap.putDouble("high", highLine);
         dataMap.putDouble("low", lowLine);
         return dataMap;
@@ -533,14 +534,15 @@ public class WatchUpdaterService extends WearableListenerService implements Goog
 
         }
 
-        final LoopPlugin.LastRun finalLastRun = loopPlugin.lastRun;
-        if (sp.getBoolean("wear_predictions", true) && finalLastRun != null && finalLastRun.request.hasPredictions && finalLastRun.constraintsProcessed != null) {
-            List<BgReading> predArray = finalLastRun.constraintsProcessed.getPredictions();
+        final LoopPlugin.LastRun finalLastRun = loopPlugin.getLastRun();
+        if (sp.getBoolean("wear_predictions", true) && finalLastRun != null && finalLastRun.getRequest().hasPredictions && finalLastRun.getConstraintsProcessed() != null) {
+            List<BgReading> predArray = finalLastRun.getConstraintsProcessed().getPredictions();
 
             if (!predArray.isEmpty()) {
+                final String units = profileFunction.getUnits();
                 for (BgReading bg : predArray) {
                     if (bg.getValue() < 40) continue;
-                    predictions.add(predictionMap(bg.getDate(), bg.getValue(), bg.getPredictionColor()));
+                    predictions.add(predictionMap(bg.getDate(), bg.valueToUnits(units), bg.getPredictionColor()));
                 }
             }
         }
@@ -715,9 +717,9 @@ public class WatchUpdaterService extends WearableListenerService implements Goog
 
             long openApsStatus;
             //OpenAPS status
-            if (Config.APS) {
+            if (config.getAPS()) {
                 //we are AndroidAPS
-                openApsStatus = loopPlugin.lastRun != null && loopPlugin.lastRun.lastTBREnact != 0 ? loopPlugin.lastRun.lastTBREnact : -1;
+                openApsStatus = loopPlugin.getLastRun() != null && loopPlugin.getLastRun().getLastTBREnact() != 0 ? loopPlugin.getLastRun().getLastTBREnact() : -1;
             } else {
                 //NSClient or remote
                 openApsStatus = NSDeviceStatus.getOpenApsTimestamp();

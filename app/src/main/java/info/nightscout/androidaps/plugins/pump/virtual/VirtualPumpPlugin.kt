@@ -2,7 +2,6 @@ package info.nightscout.androidaps.plugins.pump.virtual
 
 import android.os.SystemClock
 import dagger.android.HasAndroidInjector
-import info.nightscout.androidaps.BuildConfig
 import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.data.DetailedBolusInfo
@@ -17,7 +16,6 @@ import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.logging.LTag
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
 import info.nightscout.androidaps.plugins.common.ManufacturerType
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.general.actions.defs.CustomAction
 import info.nightscout.androidaps.plugins.general.actions.defs.CustomActionType
 import info.nightscout.androidaps.plugins.general.overview.events.EventNewNotification
@@ -29,10 +27,11 @@ import info.nightscout.androidaps.plugins.treatments.TreatmentsPlugin
 import info.nightscout.androidaps.utils.DateUtil
 import info.nightscout.androidaps.utils.FabricPrivacy
 import info.nightscout.androidaps.utils.InstanceId.instanceId
-import io.reactivex.rxkotlin.plusAssign
+import info.nightscout.androidaps.utils.TimeChangeType
 import info.nightscout.androidaps.utils.resources.ResourceHelper
 import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import org.json.JSONException
 import org.json.JSONObject
@@ -50,29 +49,21 @@ class VirtualPumpPlugin @Inject constructor(
     private val sp: SP,
     private val profileFunction: ProfileFunction,
     private val treatmentsPlugin: TreatmentsPlugin,
-    commandQueue: CommandQueueProvider
+    commandQueue: CommandQueueProvider,
+    private val config: Config,
+    private val dateUtil: DateUtil
 ) : PumpPluginBase(PluginDescription()
     .mainType(PluginType.PUMP)
     .fragmentClass(VirtualPumpFragment::class.java.name)
     .pluginName(R.string.virtualpump)
     .shortName(R.string.virtualpump_shortname)
     .preferencesId(R.xml.pref_virtualpump)
-    .neverVisible(Config.NSCLIENT)
+    .neverVisible(config.NSCLIENT)
     .description(R.string.description_pump_virtual)
     .setDefault(),
     injector, aapsLogger, resourceHelper, commandQueue
 ), PumpInterface {
 
-
-    companion object {
-        private lateinit var virtualPumpPlugin: VirtualPumpPlugin
-
-        @Deprecated("Use dagger to get an instance")
-        fun getPlugin(): VirtualPumpPlugin {
-            checkNotNull(virtualPumpPlugin) { "Accessing VirtualPumpPlugin before first instantiation" }
-            return virtualPumpPlugin
-        }
-    }
 
     private val disposable = CompositeDisposable()
     var batteryPercent = 50
@@ -84,7 +75,6 @@ class VirtualPumpPlugin @Inject constructor(
     private val pumpDescription = PumpDescription()
 
     init {
-        virtualPumpPlugin = this
         pumpDescription.isBolusCapable = true
         pumpDescription.bolusStep = 0.1
         pumpDescription.isExtendedBolusCapable = true
@@ -130,7 +120,7 @@ class VirtualPumpPlugin @Inject constructor(
     }
 
     override fun isFakingTempsByExtendedBoluses(): Boolean {
-        return Config.NSCLIENT && getFakingStatus()
+        return config.NSCLIENT && getFakingStatus()
     }
 
     override fun loadTDDs(): PumpEnactResult { //no result, could read DB in the future?
@@ -282,7 +272,7 @@ class VirtualPumpPlugin @Inject constructor(
     override fun setExtendedBolus(insulin: Double, durationInMinutes: Int): PumpEnactResult {
         val result = cancelExtendedBolus()
         if (!result.success) return result
-        val extendedBolus = ExtendedBolus()
+        val extendedBolus = ExtendedBolus(injector)
             .date(System.currentTimeMillis())
             .insulin(insulin)
             .durationInMinutes(durationInMinutes)
@@ -320,7 +310,7 @@ class VirtualPumpPlugin @Inject constructor(
     override fun cancelExtendedBolus(): PumpEnactResult {
         val result = PumpEnactResult(injector)
         if (treatmentsPlugin.isInHistoryExtendedBoluslInProgress) {
-            val exStop = ExtendedBolus(System.currentTimeMillis())
+            val exStop = ExtendedBolus(injector, System.currentTimeMillis())
             exStop.source = Source.USER
             treatmentsPlugin.addToHistoryExtendedBolus(exStop)
         }
@@ -334,7 +324,7 @@ class VirtualPumpPlugin @Inject constructor(
         return result
     }
 
-    override fun getJSONStatus(profile: Profile, profileName: String): JSONObject {
+    override fun getJSONStatus(profile: Profile, profileName: String, version: String): JSONObject {
         val now = System.currentTimeMillis()
         if (!sp.getBoolean("virtualpump_uploadstatus", false)) {
             return JSONObject()
@@ -346,7 +336,7 @@ class VirtualPumpPlugin @Inject constructor(
         try {
             battery.put("percent", batteryPercent)
             status.put("status", "normal")
-            extended.put("Version", BuildConfig.VERSION_NAME + "-" + BuildConfig.BUILDVERSION)
+            extended.put("Version", version)
             try {
                 extended.put("ActiveProfile", profileName)
             } catch (ignored: Exception) {
@@ -354,13 +344,13 @@ class VirtualPumpPlugin @Inject constructor(
             val tb = treatmentsPlugin.getTempBasalFromHistory(now)
             if (tb != null) {
                 extended.put("TempBasalAbsoluteRate", tb.tempBasalConvertedToAbsolute(now, profile))
-                extended.put("TempBasalStart", DateUtil.dateAndTimeString(tb.date))
+                extended.put("TempBasalStart", dateUtil.dateAndTimeString(tb.date))
                 extended.put("TempBasalRemaining", tb.plannedRemainingMinutes)
             }
             val eb = treatmentsPlugin.getExtendedBolusFromHistory(now)
             if (eb != null) {
                 extended.put("ExtendedBolusAbsoluteRate", eb.absoluteRate())
-                extended.put("ExtendedBolusStart", DateUtil.dateAndTimeString(eb.date))
+                extended.put("ExtendedBolusStart", dateUtil.dateAndTimeString(eb.date))
                 extended.put("ExtendedBolusRemaining", eb.plannedRemainingMinutes)
             }
             status.put("timestamp", DateUtil.toISOString(now))
@@ -409,5 +399,6 @@ class VirtualPumpPlugin @Inject constructor(
         pumpType = pumpTypeNew
     }
 
-    override fun timeDateOrTimeZoneChanged() {}
+    override fun timezoneOrDSTChanged(timeChangeType: TimeChangeType?) {}
+
 }

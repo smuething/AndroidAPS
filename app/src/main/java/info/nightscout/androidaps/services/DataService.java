@@ -15,10 +15,12 @@ import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.db.CareportalEvent;
 import info.nightscout.androidaps.events.EventNsTreatment;
+import info.nightscout.androidaps.interfaces.ActivePluginProvider;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.BundleLogger;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper;
+import info.nightscout.androidaps.plugins.general.nsclient.NSUpload;
 import info.nightscout.androidaps.plugins.general.nsclient.data.NSMbg;
 import info.nightscout.androidaps.plugins.general.overview.events.EventNewNotification;
 import info.nightscout.androidaps.plugins.general.overview.notifications.Notification;
@@ -39,6 +41,7 @@ public class DataService extends DaggerIntentService {
     @Inject AAPSLogger aapsLogger;
     @Inject SP sp;
     @Inject RxBusWrapper rxBus;
+    @Inject NSUpload nsUpload;
     @Inject SmsCommunicatorPlugin smsCommunicatorPlugin;
     @Inject DexcomPlugin dexcomPlugin;
     @Inject GlimpPlugin glimpPlugin;
@@ -47,6 +50,7 @@ public class DataService extends DaggerIntentService {
     @Inject TomatoPlugin tomatoPlugin;
     @Inject XdripPlugin xdripPlugin;
     @Inject NSProfilePlugin nsProfilePlugin;
+    @Inject ActivePluginProvider activePlugin;
 
     public DataService() {
         super("DataService");
@@ -200,7 +204,7 @@ public class DataService extends DaggerIntentService {
         } else if (eventType.equals(CareportalEvent.COMBOBOLUS)) {
             MainApp.getDbHelper().createExtendedBolusFromJsonIfNotExists(json);
         } else if (eventType.equals(CareportalEvent.PROFILESWITCH)) {
-            MainApp.getDbHelper().createProfileSwitchFromJsonIfNotExists(json);
+            MainApp.getDbHelper().createProfileSwitchFromJsonIfNotExists(activePlugin, nsUpload, json);
         } else if (eventType.equals(CareportalEvent.SITECHANGE) ||
                 eventType.equals(CareportalEvent.INSULINCHANGE) ||
                 eventType.equals(CareportalEvent.SENSORCHANGE) ||

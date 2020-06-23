@@ -20,7 +20,7 @@ import info.nightscout.androidaps.db.TemporaryBasal
 import info.nightscout.androidaps.events.EventTempBasalChange
 import info.nightscout.androidaps.interfaces.ActivePluginProvider
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.plugins.general.nsclient.NSUpload
 import info.nightscout.androidaps.plugins.general.nsclient.UploadQueue
 import info.nightscout.androidaps.plugins.iob.iobCobCalculator.events.EventAutosensCalculationFinished
@@ -44,7 +44,10 @@ class TreatmentsTemporaryBasalsFragment : DaggerFragment() {
     @Inject lateinit var fabricPrivacy: FabricPrivacy
     @Inject lateinit var activePlugin: ActivePluginProvider
     @Inject lateinit var profileFunction: ProfileFunction
-    @Inject lateinit var aapsSchedlulers: AapsSchedulers
+    @Inject lateinit var nsUpload: NSUpload
+    @Inject lateinit var uploadQueue: UploadQueue
+    @Inject lateinit var dateUtil: DateUtil
+    @Inject lateinit var aapsSchedulers: AapsSchedulers
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -62,12 +65,12 @@ class TreatmentsTemporaryBasalsFragment : DaggerFragment() {
         super.onResume()
         disposable.add(rxBus
             .toObservable(EventTempBasalChange::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({ updateGui() }) { fabricPrivacy.logException(it) }
         )
         disposable.add(rxBus
             .toObservable(EventAutosensCalculationFinished::class.java)
-            .observeOn(aapsSchedlulers.main)
+            .observeOn(aapsSchedulers.main)
             .subscribe({ updateGui() }) { fabricPrivacy.logException(it) }
         )
         updateGui()
@@ -89,7 +92,7 @@ class TreatmentsTemporaryBasalsFragment : DaggerFragment() {
             holder.ph.visibility = if (tempBasal.source == Source.PUMP) View.VISIBLE else View.GONE
             holder.ns.visibility = if (NSUpload.isIdValid(tempBasal._id)) View.VISIBLE else View.GONE
             if (tempBasal.isEndingEvent) {
-                holder.date.text = DateUtil.dateAndTimeString(tempBasal.date)
+                holder.date.text = dateUtil.dateAndTimeString(tempBasal.date)
                 holder.duration.text = resourceHelper.gs(R.string.cancel)
                 holder.absolute.text = ""
                 holder.percent.text = ""
@@ -101,10 +104,10 @@ class TreatmentsTemporaryBasalsFragment : DaggerFragment() {
                 holder.iob.setTextColor(holder.netRatio.currentTextColor)
             } else {
                 if (tempBasal.isInProgress) {
-                    holder.date.text = DateUtil.dateAndTimeString(tempBasal.date)
+                    holder.date.text = dateUtil.dateAndTimeString(tempBasal.date)
                     holder.date.setTextColor(resourceHelper.gc(R.color.colorActive))
                 } else {
-                    holder.date.text = DateUtil.dateAndTimeRangeString(tempBasal.date, tempBasal.end())
+                    holder.date.text = dateUtil.dateAndTimeRangeString(tempBasal.date, tempBasal.end())
                     holder.date.setTextColor(holder.netRatio.currentTextColor)
                 }
                 holder.duration.text = resourceHelper.gs(R.string.format_mins, tempBasal.durationInMinutes)
@@ -160,13 +163,13 @@ class TreatmentsTemporaryBasalsFragment : DaggerFragment() {
                     context?.let {
                         showConfirmation(it, resourceHelper.gs(R.string.removerecord),
                             """
-                ${resourceHelper.gs(R.string.pump_tempbasal_label)}: ${tempBasal.toStringFull()}
-                ${resourceHelper.gs(R.string.date)}: ${DateUtil.dateAndTimeString(tempBasal.date)}
+                ${resourceHelper.gs(R.string.tempbasal_label)}: ${tempBasal.toStringFull()}
+                ${resourceHelper.gs(R.string.date)}: ${dateUtil.dateAndTimeString(tempBasal.date)}
                 """.trimIndent(),
                             DialogInterface.OnClickListener { _: DialogInterface?, _: Int ->
                                 val id = tempBasal._id
-                                if (NSUpload.isIdValid(id)) NSUpload.removeCareportalEntryFromNS(id)
-                                else UploadQueue.removeID("dbAdd", id)
+                                if (NSUpload.isIdValid(id)) nsUpload.removeCareportalEntryFromNS(id)
+                                else uploadQueue.removeID("dbAdd", id)
                                 MainApp.getDbHelper().delete(tempBasal)
                             }, null)
                     }
