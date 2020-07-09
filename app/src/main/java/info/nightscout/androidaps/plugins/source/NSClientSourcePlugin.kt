@@ -2,6 +2,7 @@ package info.nightscout.androidaps.plugins.source
 
 import android.content.Intent
 import dagger.android.HasAndroidInjector
+import info.nightscout.androidaps.Config
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.entities.GlucoseValue
 import info.nightscout.androidaps.interfaces.BgSourceInterface
@@ -10,6 +11,7 @@ import info.nightscout.androidaps.interfaces.PluginDescription
 import info.nightscout.androidaps.interfaces.PluginType
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.utils.resources.ResourceHelper
+import info.nightscout.androidaps.utils.sharedPreferences.SP
 import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -18,7 +20,9 @@ import javax.inject.Singleton
 class NSClientSourcePlugin @Inject constructor(
     injector: HasAndroidInjector,
     resourceHelper: ResourceHelper,
-    aapsLogger: AAPSLogger
+    aapsLogger: AAPSLogger,
+    private val sp: SP,
+    config: Config
 ) : PluginBase(PluginDescription()
     .mainType(PluginType.BGSOURCE)
     .fragmentClass(BGSourceFragment::class.java.name)
@@ -36,6 +40,14 @@ class NSClientSourcePlugin @Inject constructor(
 
     private var lastBGTimeStamp: Long = 0
     private var isAdvancedFilteringEnabled = false
+
+    init {
+        if (config.NSCLIENT) {
+            pluginDescription
+                .alwaysEnabled(true)
+                .setDefault()
+        }
+    }
 
     override fun advancedFilteringSupported(): Boolean {
         return isAdvancedFilteringEnabled

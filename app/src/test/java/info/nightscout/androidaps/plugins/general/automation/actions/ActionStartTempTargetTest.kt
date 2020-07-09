@@ -1,5 +1,6 @@
 package info.nightscout.androidaps.plugins.general.automation.actions
 
+import com.google.firebase.database.Transaction
 import info.nightscout.androidaps.Constants
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository

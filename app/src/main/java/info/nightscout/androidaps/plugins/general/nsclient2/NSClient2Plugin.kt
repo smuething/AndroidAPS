@@ -617,7 +617,7 @@ class NSClient2Plugin @Inject constructor(
             return false
         }
         if (wifiOnly && allowedSSIDs.trim { it <= ' ' }.isNotEmpty()) {
-            if (!allowedSSIDs.contains(eventNetworkChange.connectedSsid()) && !allowedSSIDs.contains(eventNetworkChange.ssid)) {
+            if (allowedSSIDs.contains(eventNetworkChange.ssid)) {
                 _liveData.postValue(NSClient2LiveData.State(resourceHelper.gs(R.string.ssidnotmatch)))
                 return false
             }

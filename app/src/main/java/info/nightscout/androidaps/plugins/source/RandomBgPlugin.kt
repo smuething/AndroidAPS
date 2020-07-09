@@ -2,6 +2,7 @@ package info.nightscout.androidaps.plugins.source
 
 import android.content.Intent
 import android.os.Handler
+import android.os.HandlerThread
 import dagger.android.HasAndroidInjector
 import info.nightscout.androidaps.R
 import info.nightscout.androidaps.database.AppRepository
@@ -45,7 +46,7 @@ class RandomBgPlugin @Inject constructor(
 ), BgSourceInterface {
 
     private val disposable = CompositeDisposable()
-    private val loopHandler = Handler()
+    private val loopHandler : Handler = Handler(HandlerThread(RandomBgPlugin::class.java.simpleName + "Handler").also { it.start() }.looper)
     private lateinit var refreshLoop: Runnable
 
     companion object {
