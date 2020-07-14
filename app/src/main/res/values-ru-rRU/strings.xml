@@ -1225,7 +1225,6 @@ Context | Edit Context</string>
     <string name="clone_label">Клонировать</string>
     <string name="saveorresetchangesfirst">Сначала сохраните или сбросьте текущие изменения</string>
     <string name="deletecurrentprofile">Удалить текущий профиль?</string>
-    <string name="copytolocalprofile">Создать новый локальный профиль из этого?</string>
     <string name="profilenamecontainsdot">Имя профиля содержит точки.\nЭто не поддерживается NS.\nПрофиль не выгружен в NS.</string>
     <string name="low_mark_comment">Меньшее значение диапазона целевых значений (только для дисплея)</string>
     <string name="high_mark_comment">Большее значение диапазона целевых значений (только для дисплея)</string>
@@ -1407,6 +1406,5 @@ Context | Edit Context</string>
     <string name="omnipod_bolus_failed_uncertain">Не удалось проверить правильность подачи болюса. Убедитесь, что Pod подает болюс или отмените его.</string>
     <string name="omnipod_rl_stats">Статистика RL</string>
     <string name="omnipod_read_pulse_log_short">Журнал Pulse </string>
-    <string name="comapareprofile">Сравнить с текущим профилем</string>
     <string name="nav_profilehelper">Помощник профиля</string>
 </resources>
