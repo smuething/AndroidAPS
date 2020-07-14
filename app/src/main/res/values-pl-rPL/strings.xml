@@ -796,6 +796,7 @@
     <string name="permission">Uprawnienia</string>
     <string name="askforpermission">Zapytaj o uprawnienia</string>
     <string name="needsystemwindowpermission">Aplikacja wymaga uprawnienia systemowego okna dla powiadomień</string>
+    <string name="needlocationpermission">Aplikacja wymaga dostępu do lokalizacji dla zarządzania bluetoothem i identyfikacją Wi-Fi</string>
     <string name="needstoragepermission">Aplikacja wymaga dostępu do magazynu plików, aby móc przechować pliki logów</string>
     <string name="request">Żądanie</string>
     <string name="insulinsourcesetup">Skonfiguruj wtyczkę insuliny</string>
@@ -867,6 +868,10 @@
     <string name="log_alerts">Melduj ostrzeżenia</string>
     <string name="enable_tbr_emulation">Włącz emulację TBR</string>
     <string name="enable_tbr_emulation_summary">Użyj rozszerzonych bolusów zamiast TBR by ominąć limit 250%% bazy</string>
+    <string name="disable_vibration">Wyłącz wibracje przy ręcznym podawaniu bolusa</string>
+    <string name="disable_vibration_summary">Dotyczy bolusa i rozszerzonego bolusa (dostępne tylko z pompami Insight z firmware 3.x)</string>
+    <string name="disable_vibration_auto">Wyłącz wibracje przy automatycznym podawaniu bolusa</string>
+    <string name="disable_vibration_auto_summary">Dla SMB i Bazy Tymczasowej z emulacją TBR (tylko z firmware w wersji 3.x pompy Insight)</string>
     <string name="disconnect_delay">Opóźnienie rozłączenie [s]</string>
     <string name="serial_number">Numer seryjny</string>
     <string name="release_software_version">Wersja oprogramowania</string>
@@ -1224,6 +1229,7 @@
     <string name="high_mark_comment">Górna wartość zakresu docelowego (tylko do wyświetlania)</string>
     <string name="reorder_label">Zmień kolejność</string>
     <string name="age">Wiek:</string>
+    <string name="weight_label">Waga:</string>
     <string name="id">ID:</string>
     <string name="submit">Wyślij</string>
     <string name="mostcommonprofile">Najczęściej używany profil:</string>
@@ -1287,17 +1293,24 @@
     <string name="statuslights">Wskaźniki stanu</string>
     <string name="statuslights_copy_ns">Kopiowanie ustawień z NS</string>
     <string name="copyexistingvalues">Czy skopiować ustawienia NS (jeśli istnieją)?</string>
+    <string name="classic_description">Motyw oryginalny</string>
+    <string name="buttonson_description">Przyciski są zawsze wyświetlane na dole ekranu</string>
+    <string name="largedisplay_description">Duży ekran</string>
+    <string name="skin">Motyw</string>
     <!-- Omnipod -->
     <!-- Omnipod - Base -->
     <!-- Omnipod Configuration -->
     <!-- Omnipod - Fragment -->
+    <string name="omnipod_pod_name_no_info">Brak informacji</string>
     <!-- Omnipod - Dialogs -->
     <!-- Omnipod - Error -->
+    <string name="omnipod_driver_error_communication_failed_timeout">Komunikacja nie powiodła się: przekroczono limit czasu.</string>
     <!-- Omnipod - Pod Mgmt -->
     <string name="omnipod_cmd_set_bolus">Podanie bolusa</string>
     <string name="omnipod_cmd_cancel_bolus">Anulowanie bolusa</string>
     <string name="omnipod_cmd_set_tbr">Ustaw tymczasową dawkę bazową</string>
     <string name="omnipod_init_pod_set_basal_profile">Ustaw profil dawki bazowej</string>
+    <string name="omnipod_deactivate_pod_cancel_delivery">Anulowanie podawania</string>
     <!-- Omnipod Dash -->
     <!-- Omnipod - Base -->
 </resources>
