@@ -256,6 +256,8 @@
     <string name="smscommunicator_pumpconnectwithcode">Aby podłączyć pompę odpowiedz kodem %1$s</string>
     <string name="smscommunicator_pumpconnectfail">Połączenie z pompą nie powiodło się</string>
     <string name="smscommunicator_pumpdisconnectwithcode">Aby odłączyć pompę na %1d minut odpowiedz kodem %2$s</string>
+    <string name="smscommunicator_pumpdisconnected">Pompa odłączona</string>
+    <string name="smscommunicator_reconnect">Pompa ponownie podłączona</string>
     <string name="smscommunicator_remotecommandnotallowed">Zdalne komendy nie są dozwolone</string>
     <string name="smscommunicator_remotebolusnotallowed">Bolus zdalny niedostępny. Spróbuj ponownie później.</string>
     <string name="smscommunicator_basalreplywithcode">Aby rozpocząć bazę %1$.2fU/h przez %2$d min. odpowiedz kodem %3$s</string>
@@ -264,6 +266,9 @@
     <string name="smscommunicator_carbsreplywithcode">Aby wprowadzić %1$dg o %2$s odeślij w SMS kod %3$s</string>
     <string name="smscommunicator_basalpctreplywithcode">Aby rozpocząć bolus przedłużony %1$d%% przez %2$d min. odpowiedz kodem %3$s</string>
     <string name="smscommunicator_suspendreplywithcode">Aby wstrzymać pętle na %1$d minut odpowiedz kodem %2$s</string>
+    <string name="smscommunicator_loopresumereplywithcode">Aby wznowić pętlę odpowiedz kodem %1$s</string>
+    <string name="smscommunicator_loopenablereplywithcode">Aby włączyć pętlę odpowiedz kodem %1$s</string>
+    <string name="smscommunicator_loopdisablereplywithcode">Aby wyłączyć pętlę odpowiedz kodem %1$s</string>
     <string name="smscommunicator_tempbasalset">Tymczasowa baza %1$.2fU/h przez %2$d min rozpoczęta</string>
     <string name="smscommunicator_extendedset">Bolus przedłużony %1$.2fU na %2$d min. rozpoczęty pomyślnie</string>
     <string name="smscommunicator_carbsset">Pomyślnie wprowadzono %1$dg węglowodanów</string>
@@ -295,6 +300,7 @@
     <string name="primefill">Rozpocznij/Wypełnij</string>
     <string name="fillwarning">Proszę upewnij się, że ilość wypełnienia odpowiada ilości właściwej dla twojego wkłucia!</string>
     <string name="othersettings_title">Inne</string>
+    <string name="fillbolus_title">Rozpocznij/Wypełnij standardowe ilości insuliny</string>
     <string name="button1">Przycisk 1</string>
     <string name="button2">Przycisk 2</string>
     <string name="button3">Przycisk 3</string>
@@ -353,6 +359,7 @@
     <string name="openapsama_current_basal_safety_multiplier_summary">Wartość domyślna: 4 To jest drugi kluczowy współczynnik bezpieczeństwa OpenAPS, i druga wartość z “3x max dzienna; 4x aktualna”. To oznacza, że Twoja dawka bazowa niezależnie od maksymalnej bazy ustawionej na pompie nie może być większa niż ta ustawiona wartość razy twoja aktualna dawka bazowa. To ma na celu przestrzec ludzi przed ustawieniem zbyt wysokiej dawki maksymalnej przed zrozumieniem jak działa algorytm. Ponownie, wartość domyślna to 4x; większość ludzi nie będzie potrzebowała tego zmienić i raczej będą potrzebować dostosować inne ustawienia, jeśli czują, że zbliżają się do współczynnika bezpieczeństwa.</string>
     <string name="openapsama_autosens_max_summary">Wartość domyślna: 1.2\nTo jest mnożnik dla autosens (wkrótce autotune), ustawia 20%% maks. limit dla najwyższej wartości jaką autosens może przyjąć, co z kolei określa jak wysoko autosens może zwiększyć bazę, jak nisko może ustawić współczynnik wrażliwości insuliny ISF, i jak nisko może ustawić docelową wartość glikemii.</string>
     <string name="openapsama_autosens_min_summary">Wartość domyślna: 0.7\nDruga strona limitu bezpieczeństwa dla autosens, ustawia mnożnik minimalny dla wartości, do jakiej autosens może obniżyć bazę, i jak wysoko może ustawić ISF i wartość docelową BG.</string>
+    <string name="openapsama_autosens_adjusttargets">Autosens dostosowuje również wartości docelowe</string>
     <string name="openapsama_autosens_adjusttargets_summary">Domyślnie włączone\nTa funkcja pozwala wpływać na zmianę wartości docelowe BG, wartości bazy i oraz współczynnika wrażliwości na insulinę ISF.</string>
     <string name="openapsama_bolussnooze_dia_divisor_summary">Wartość domyślna: 2\nBolus snooze jest uruchamiany po wykonaniu bolusa posiłkowego, tak by pętla nie przeciwdziałała niskim wartościom tymczasowym zaraz po posiłku. Jako przykład: wartość domyślna ustawiona jest 2; więc 3 godzinne DIA oznacza, że bolus snooze będzie stopniowo wycofany po 1.5 godziny (3DIA/2).</string>
     <string name="openapsama_min_5m_carbimpact_summary">Wartość domyślna: 3.0 (AMA) lub 8.0 (SMB). To jest ustawienie domyślnego wpływu wchłaniania węglowodanów w czasie 5 min. Wartością domyślną jest spodziewane 3mg/dl/5min. Ma to wpływ na szybkość zaniku COB, oraz jak duże wchłanianie węglowodanów będzie przyjęte do obliczeń przyszłych przewidywanych wartości BG, jeżeli BG obniża się bardziej niż w założono, lub nie wzrasta tak szybko jak się spodziewano.</string>
@@ -447,8 +454,14 @@
     <string name="statuslights_res_critical">Próg ostrzeżenia o krytycznym poziomie zbiornika [U]</string>
     <string name="statuslights_bat_warning">Próg ostrzeżenia o poziomie baterii [%]</string>
     <string name="statuslights_bat_critical">Próg ostrzeżenia o krytycznym poziomie baterii [%]</string>
+    <string name="prediction_shortname">PRED</string>
     <string name="iob">IOB</string>
     <string name="cob">COB</string>
+    <string name="basal_shortname">BAZ</string>
+    <string name="deviation_shortname">ODCH</string>
+    <string name="activity_shortname">AKT</string>
+    <string name="abs_insulin_shortname">ABS</string>
+    <string name="devslope_shortname">KRZOD</string>
     <string name="nav_about">O programie</string>
     <string name="smscommunicator_missingsmspermission">Brak uprawnień SMS</string>
     <string name="smscommunicator_missingphonestatepermission">Brak uprawnień do wykrywania stanu telefonu</string>
@@ -467,6 +480,8 @@
     <string name="doprofileswitch">Zmień profil</string>
     <string name="careportal_pbage_label">Czas baterii pompy</string>
     <string name="ns_alarmoptions">Opcje alarmu</string>
+    <string name="ns_alarms">Utwórz powiadomienia z alarmów NS</string>
+    <string name="ns_announcements">Utwórz powiadomienia z komunikatów NS</string>
     <string name="nsalarm_staledatavalue_label">Próg nieaktualne dane [min]</string>
     <string name="nsalarm_urgent_staledatavalue_label">Próg uwaga nieaktualne dane [min]</string>
     <string name="openapsama_autosens_period">Przedział czasowy dla autosens [h]</string>
@@ -547,6 +562,7 @@
     <string name="enable_missed_bg_readings_alert">Alarm, jeśli nie są odbierane odczyty BG</string>
     <string name="enable_pump_unreachable_alert">Alarm, gdy pompa jest nieosiągalna</string>
     <string name="pump_unreachable_threshold">Pompa nieosiągalna próg [min]</string>
+    <string name="enable_carbs_req_alert">Alarm gdy wymagane jest podanie węglowodanów</string>
     <string name="urgent_alarm">Pilny alarm</string>
     <string name="info">INFO</string>
     <string name="eversense">Apka Eversense (spatchowana)</string>
@@ -559,6 +575,8 @@
     <string name="smbmaxminutes_summary">Maks. ilość minut dawki bazowej do ograniczenia SMB</string>
     <string name="uamsmbmaxminutes">Maksymalna liczba minut UAM SMB</string>
     <string name="uamsmbmaxminutes_summary">Maks. ilość minut dawki bazowej do ograniczenia SMB dla UAM</string>
+    <string name="carbsReqThreshold">Minimalna sugestia węglowodanów (dosłodzenia)</string>
+    <string name="carbsReqThreshold_summary">Minimalna ilość węglowodanów, w gramach, niezbędna dla pokazania sugestii dosłodzenia. Sugestie dosłodzenia poniżej tej wartości będą ignorowane - powiadomienie nie będzie pokazywane.</string>
     <string name="dexcomg5_xdripupload_title">Prześlij dane BG do xDrip+</string>
     <string name="dexcomg5_xdripupload_summary">W xDrip+ wybierz źródło danych 640g/Eversense</string>
     <string name="nsclientbg">NSClient BG</string>
@@ -617,6 +635,8 @@
     <string name="extendedbolusdeliveryerror">Błąd dostarczania bolusa przedłużonego</string>
     <string name="insightpump_shortname">Sight</string>
     <string name="ago">temu</string>
+    <string name="set_neutral_temps_title">Ustawiaj neutralne bazy tymczasowe</string>
+    <string name="set_neutral_temps_summary">Jeśli ta opcja jest włączona, anuluje tymczasową wartość bazową przed końcem każdej godziny. Może to pomóc wyciszyć alarmy/wibracje związane z TBR występujące co godzinę w niektórych pompach.</string>
     <string name="enablesmbalways">Włącz SMB (Super Mikro Bolusy) zawsze</string>
     <string name="enablesmbalways_summary">Włącz SMB (Super Mikro Bolusy) zawsze, niezależnie od bolusów. Możliwe jedynie ze źródłem BG (poziomu cukru) z dobrym filtrowaniem, jak aplikacja G5</string>
     <string name="enablesmbaftercarbs">Włącz SMB po węglowodanach</string>
@@ -636,11 +656,17 @@
     <string name="insulin_increment_button_message">Ilość insuliny do dodania po wciśnięciu przycisku</string>
     <string name="error_starting_cgm">Nie można uruchomić aplikacji CGM. Upewnij się, że została zainstalowana.</string>
     <string name="overview_cgm">CGM</string>
+    <string name="ignore5m">Ignoruj 5 min</string>
+    <string name="ignore15m">Ignoruj 15 min</string>
+    <string name="ignore30m">Ignoruj 30 min</string>
+    <string name="required">wym</string>
     <string name="nav_historybrowser">Przegląd historii</string>
     <string name="wear_notifysmb_title">Powiadom na SMB</string>
     <string name="wear_notifysmb_summary">Pokaż SMB na zegarku jak bolus standardowy.</string>
     <string name="ns_create_announcements_from_errors_title">Twórz powiadomienia o błędach</string>
+    <string name="ns_create_announcements_from_carbs_req_title">Twórz powiadomienia z wymaganych dodatkowych węglowodanów (sugestii dosłodzenia)</string>
     <string name="ns_create_announcements_from_errors_summary">Twórz powiadomienia Nightscout o błędach i lokalnych alarmach (również widoczne w PortaluOpieki w ramach Leczenia)</string>
+    <string name="ns_create_announcements_from_carbs_req_summary">Twórz powiadomienia w Nighstcout na podstawie sugestii dosłodzenia</string>
     <string name="wear_predictions_summary">Pokaż prognozę poziomu na zegarku.</string>
     <string name="wear_predictions_title">Prognozy</string>
     <string name="data_choices">Wybór Danych</string>
