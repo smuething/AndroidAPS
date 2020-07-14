@@ -1377,8 +1377,41 @@
     <string name="omnipod_init_pod_wizard_step3_desc">\nPrzygotowanie miejsca do infuzji. Zdjąć osłonkę igły i zabezpieczenie plastra i przykleić Pod do skóry w miejscu wkłucia.\n\nJeśli kaniula odkleja się, proszę wcisnąć <b>Anuluj</b> i odczepić Pod.\n\nNaciśnij <b>Następny</b> w celu wprowadzenia kaniuli i rozpoczęcia podawania bazy.</string>
     <string name="omnipod_init_pod_wizard_step4_title">Wprowadzanie kaniuli</string>
     <string name="omnipod_init_pod_wizard_step4_action_header">Próba ustawienia początkowego planu bazowego i wprowadzeia kaniuli.\n\nKiedy wszystkie elementy są sprawdzane, można nacisnąć <b>Następny</b>.</string>
+    <string name="omnipod_init_pod_wizard_pod_info_title">Informacje o Podzie</string>
+    <string name="omnipod_init_pod_wizard_pod_info_init_pod_description">\nPod jest teraz aktywny.\n\nTwój plan dawki bazowej został zaprogramowany i wprowadzono kaniulę w miejsce wkłucia.\n\nSprawdź, czy kaniula została prawidłowo włożona i wymień swój Pod, jeśli czujesz, że nie.</string>
+    <string name="omnipod_remove_pod_wizard_step1_title">Odłącz Pod</string>
+    <string name="omnipod_remove_pod_wizard_step1_desc">\nNaciśnij <b>Następny</b> w celu odłączenia Poda.\n\n<b>Uwaga:</b> To spowoduje zawieszenie wszystkich dostaw insuliny i dezaktywację Poda.</string>
+    <string name="omnipod_remove_pod_wizard_step2_title">Odłączanie Poda</string>
+    <string name="omnipod_remove_pod_wizard_step2_action_header">Deaktywacja Pod.\n\nKiedy wszystkie elementy są zaznaczone, możesz nacisnąć <b>Następna</b>.\n\n<b>Uwaga:</b> Jeśli deaktywacja w sposób ciągły nie powodzi się, należy nacisnąć <b>Anuluj</b> i użyć opcji <b>Reset Pod</b>, aby wymusić zresetowanie stanu Pod.</string>
+    <string name="omnipod_init_pod_wizard_pod_info_remove_pod_description">Pod odłączony.\n\nProszę odkleić Pod od ciała i wyrzucić go.</string>
+    <string name="omnipod_init_pod_pair_pod">Sparuj Pod</string>
+    <string name="omnipod_init_pod_prime_pod">Wypełnij Pod</string>
+    <string name="omnipod_init_pod_fill_cannula">Wypełnij kaniulę</string>
     <string name="omnipod_init_pod_set_basal_profile">Ustaw profil dawki bazowej</string>
     <string name="omnipod_deactivate_pod_cancel_delivery">Anulowanie podawania</string>
+    <string name="omnipod_deactivate_pod_deactivate_pod">Odłącz Pod</string>
     <!-- Omnipod Dash -->
     <!-- Omnipod - Base -->
+    <string name="description_pump_omnipod_dash">Integracja pompy dla Omnipod Dash.</string>
+    <string name="omnipod_alert_finish_pairing_reminder">Zakończ przypomnienie parowania</string>
+    <string name="omnipod_alert_finish_setup_reminder_reminder">Zakończ przypomnienie o konfiguracji</string>
+    <string name="omnipod_alert_expiration">Pod wkrótce straci ważność</string>
+    <string name="omnipod_alert_expiration_advisory">Pod wkrótce straci ważność</string>
+    <string name="omnipod_alert_shutdown_imminent">Wyłączenie jest nieuchronne</string>
+    <string name="omnipod_alert_low_reservoir">Niski poziom w zbiorniku</string>
+    <string name="omnipod_alert_unknown_alert">Nieznany alarm</string>
+    <string name="omnipod_error_set_basal_failed_uncertain">Ustawienie profilu podstawowego mogło się nie powieść. Podawanie mogło zostać zawieszone! Odśwież status Pod.</string>
+    <string name="omnipod_error_set_temp_basal_failed_uncertain">Ustawienie bazy tymczasowej mogło się nie powieść. Jeśli była już uruchomiona baza tymczasowa, to mogła zostać odwołana! Odśwież status Pod.</string>
+    <string name="omnipod_error_set_time_failed_uncertain">Ustawienie czasu mogło się nie powieść. Podawanie mogło zostać zawieszone! Odśwież status Pod.</string>
+    <string name="omnipod_bolus_failed_uncertain">Nie można sprawdzić, czy podano bolus. Upewnij się, że Twój Pod podaje bolus lub odwołaj go.</string>
+    <string name="omnipod_rl_stats">Statystyki RL</string>
+    <string name="omnipod_read_pulse_log_short">Logi pulsów omnipod</string>
+    <string name="comapareprofile">Porównaj profile</string>
+    <string name="nav_profilehelper">Pomocnik profilu</string>
+    <string name="motoldefaultprofile">Profil domyślny</string>
+    <string name="currentprofile">Bieżący profil</string>
+    <string name="availableprofile">Dostępny profil</string>
+    <string name="profiletype">Typ profilu</string>
+    <string name="formatwithtdd">Wiek: %1$.0f TDD: %2$.0f U</string>
+    <string name="formatwithweight">Wiek: %1$.0f Waga: %2$.0f kg</string>
 </resources>
