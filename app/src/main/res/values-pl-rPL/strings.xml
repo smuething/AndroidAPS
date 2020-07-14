@@ -1359,6 +1359,24 @@
     <string name="omnipod_cmd_get_pod_status">Pobierz status Pod</string>
     <string name="omnipod_cmd_get_pod_info">Pobierz informacje o Pod</string>
     <string name="omnipod_cmd_set_time">Ustaw czas</string>
+    <string name="omnipod_cmd_configure_alerts">Konfigurowanie alertów</string>
+    <string name="omnipod_cmd_acknowledge_alerts">Potwierdź alerty</string>
+    <string name="omnipod_cmd_suspend_delivery">Wstrzymaj podawanie</string>
+    <string name="omnipod_cmd_resume_delivery">Wznów podawanie</string>
+    <string name="omnipod_cmd_unknown_entry">Nieznany Wpis</string>
+    <string name="omnipod_cmd_bolus_value">%1$.1f U</string>
+    <string name="omnipod_cmd_bolus_value_with_carbs">%1$.1f U, CH=%2$.1f g</string>
+    <string name="omnipod_cmd_tbr_value">Dawka: %1$.1f U, Czas: %2$d min</string>
+    <string name="omnipod_cmd_reset_pod_desc">Jeśli naciśniesz <b>OK</b>, stan Pod zostanie wyzerowany i nie będziesz mógł więcej komunikować się z tym Podem. Zrób to tylko wtedy, gdy nie możesz się z nim skmunikować. Jeśli nadal można komunikować się z Podem, skorzystaj z opcji <b>Odłącz Pod</b>.</string>
+    <string name="omnipod_cmd_pod_history_na">Historia Pod nie jest dostępna w tej chwili.</string>
+    <string name="omnipod_init_pod_wizard_step1_title">Napełnij Pod</string>
+    <string name="omnipod_init_pod_wizard_step1_desc">\nNapełnij nowego Poda z wystarczającą ilością insuliny przez 3 dni.\n\nNasłuchuj dwóch sygnałów dźwiękowych z Poda podczas procesu napełniania. Wskazują one, że minimalna ilość 85U została wypełniona. Należy upewnić się, że ampułkostrzykawka jest całkowicie pusta, nawet po odsłuchaniu dwóch sygnałów dźwiękowych.\n\nPo napełnieniu Poda, należy nacisnąć <b>Dalej</b>.\n\n<b>Uwaga:</b> nie usuwaj w tym czasie osłonki igłowej Poda.</string>
+    <string name="omnipod_init_pod_wizard_step2_title">Wypełnianie</string>
+    <string name="omnipod_init_pod_wizard_step2_action_header">Próba sparowania z nowym Podem i wypełnienia go.\n\nKiedy wszystkie elementy są sprawdzone, można nacisnąć <b>Następny</b>.\n\n<b>Uwaga:</b> prosimy o trzymanie w tym czasie Poda bardzo blisko RileyLink.</string>
+    <string name="omnipod_init_pod_wizard_step3_title">Przymocuj Poda</string>
+    <string name="omnipod_init_pod_wizard_step3_desc">\nPrzygotowanie miejsca do infuzji. Zdjąć osłonkę igły i zabezpieczenie plastra i przykleić Pod do skóry w miejscu wkłucia.\n\nJeśli kaniula odkleja się, proszę wcisnąć <b>Anuluj</b> i odczepić Pod.\n\nNaciśnij <b>Następny</b> w celu wprowadzenia kaniuli i rozpoczęcia podawania bazy.</string>
+    <string name="omnipod_init_pod_wizard_step4_title">Wprowadzanie kaniuli</string>
+    <string name="omnipod_init_pod_wizard_step4_action_header">Próba ustawienia początkowego planu bazowego i wprowadzeia kaniuli.\n\nKiedy wszystkie elementy są sprawdzane, można nacisnąć <b>Następny</b>.</string>
     <string name="omnipod_init_pod_set_basal_profile">Ustaw profil dawki bazowej</string>
     <string name="omnipod_deactivate_pod_cancel_delivery">Anulowanie podawania</string>
     <!-- Omnipod Dash -->
