@@ -1224,7 +1224,6 @@ Unerwartetes Verhalten.</string>
     <string name="clone_label">Klonen</string>
     <string name="saveorresetchangesfirst">Speichere oder verwerfe die aktuellen Änderungen zuerst</string>
     <string name="deletecurrentprofile">Aktuelles Profil löschen?</string>
-    <string name="copytolocalprofile">Neues lokales Profil auf Basis dieses Profilwechsels erstellen?</string>
     <string name="profilenamecontainsdot">Profilname enthält Punkte.\nDies wird von NS nicht unterstützt.\nProfil wird nicht zu NS hochgeladen.</string>
     <string name="low_mark_comment">Unterer Wert des Zielbereichs (nur Anzeige)</string>
     <string name="high_mark_comment">Oberer Wert des Zielbereichs (nur Anzeige)</string>
