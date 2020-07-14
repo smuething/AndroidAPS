@@ -1407,8 +1407,10 @@
     <string name="omnipod_read_pulse_log_short">Pulse Log</string>
     <string name="comapareprofile">Porovnat profily</string>
     <string name="nav_profilehelper">Pomocník s profilem</string>
+    <string name="motoldefaultprofile">Výchozí profil</string>
     <string name="currentprofile">Aktuální profil</string>
     <string name="availableprofile">Dostupný profil</string>
     <string name="profiletype">Typ profilu</string>
     <string name="formatwithtdd">Věk: %1$.0f CDD: %2$.0f U</string>
+    <string name="formatwithweight">Věk: %1$.0f Hmotnost: %2$.0f kg</string>
 </resources>
