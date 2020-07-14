@@ -1223,7 +1223,6 @@
     <string name="clone_label">Clona</string>
     <string name="saveorresetchangesfirst">Salva o reimposta prima le modifiche correnti</string>
     <string name="deletecurrentprofile">Rimuovere il profilo corrente?</string>
-    <string name="copytolocalprofile">Creare nuovo profilo locale da questo cambio profilo?</string>
     <string name="profilenamecontainsdot">Il nome profilo contiene dei punti.\nQuesto non è supportato da NS.\nIl profilo non viene caricato in NS.</string>
     <string name="low_mark_comment">Valore più basso per l\'intervallo di visualizzazione dell\'area \"in range\"</string>
     <string name="high_mark_comment">Valore più alto per l\'intervallo di visualizzazione dell\'area \"in range\"</string>
@@ -1405,6 +1404,5 @@
     <string name="omnipod_bolus_failed_uncertain">Impossibile verificare che il bolo sia riuscito. Verifica che il tuo pod stia erogando il bolo oppure cancellalo.</string>
     <string name="omnipod_rl_stats">Statistiche RL</string>
     <string name="omnipod_read_pulse_log_short">Log impulsi</string>
-    <string name="comapareprofile">Compara col profilo corrente</string>
     <string name="nav_profilehelper">Assistente profilo</string>
 </resources>
