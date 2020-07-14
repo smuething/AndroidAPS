@@ -1187,7 +1187,6 @@
     <string name="clone_label">Sklonuj</string>
     <string name="saveorresetchangesfirst">Najpierw zapisz lub wycofaj bieżące zmiany</string>
     <string name="deletecurrentprofile">Skasować bieżący profil?</string>
-    <string name="copytolocalprofile">Utworzyć nowy profil lokalny na bazie wybranego profilu?</string>
     <string name="profilenamecontainsdot">Nazwa profilu zawiera kropki.\nTo nie jest obsługiwane przez NS.\nProfil nie zostanie przesyłany do NS.</string>
     <string name="low_mark_comment">Dolna wartość zakresu docelowego (tylko do wyświetlania)</string>
     <string name="high_mark_comment">Górna wartość zakresu docelowego (tylko do wyświetlania)</string>
