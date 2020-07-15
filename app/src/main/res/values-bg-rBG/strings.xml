@@ -1407,6 +1407,7 @@
     <string name="omnipod_read_pulse_log_short">Pulse лог</string>
     <string name="comapareprofile">Сравняване на профили</string>
     <string name="nav_profilehelper">Профил съветник</string>
+    <string name="motoldefaultprofile">Профил по подразбиране</string>
     <string name="currentprofile">Текущ профил</string>
     <string name="availableprofile">Наличен профил</string>
     <string name="profiletype">Профил тип</string>
