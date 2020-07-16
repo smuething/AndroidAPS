@@ -1237,6 +1237,7 @@
     <string name="nav_survey">Sondaggio</string>
     <string name="invalidage">Inserimento età non valido</string>
     <string name="invalidweight">Inserimento peso non valido</string>
+    <string name="invalidpct">Inserimento % non valido</string>
     <string name="tirformat"><![CDATA[<b>%1$s:</b> Basso: <b>%2$02d%%</b> In: <b>%3$02d%%</b> Alto: <b>%4$02d%%</b>]]></string>
     <string name="average">Media</string>
     <string name="tir">TIR</string>
