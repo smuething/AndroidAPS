@@ -1412,5 +1412,8 @@
     <string name="availableprofile">Profilo disponibile</string>
     <string name="profiletype">Tipo profilo</string>
     <string name="formatwithtdd">Età: %1$.0f TDD: %2$.0f U</string>
+    <string name="formatwittddandpct">Età: %1$.0f TDD: %2$.0f U %3$d%%</string>
     <string name="formatwithweight">Età: %1$.0f Peso: %2$.0f kg</string>
+    <string name="basalpctfromtdd_label">% di basale</string>
+    <string name="dpvdefaultprofile">Profilo DPV predefinito</string>
 </resources>
