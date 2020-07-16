@@ -1238,6 +1238,7 @@ Unerwartetes Verhalten.</string>
     <string name="nav_survey">Umfrage</string>
     <string name="invalidage">Ungültige Altersangabe</string>
     <string name="invalidweight">Ungültige Gewichtsangabe</string>
+    <string name="invalidpct">Ungültige % Eingabe</string>
     <string name="tirformat"><![CDATA[<b>%1$s:</b> Low: <b>%2$02d%%</b> In: <b>%3$02d%%</b> High: <b>%4$02d%%</b>]]></string>
     <string name="average">Durchschnitt</string>
     <string name="tir">TIR</string>
@@ -1414,5 +1415,8 @@ Mache das nur, wenn AAPS nicht mehr mit dem Pod kommunizieren kann. Wenn dies no
     <string name="availableprofile">Verfügbares Profil</string>
     <string name="profiletype">Profil-Typ</string>
     <string name="formatwithtdd">Alter: %1$.0f TDD: %2$.0f U</string>
+    <string name="formatwittddandpct">Alter: %1$.0f TDD: %2$.0f IE %3$d%%</string>
     <string name="formatwithweight">Alter: %1$.0f Gewicht: %2$.0f kg</string>
+    <string name="basalpctfromtdd_label">% der Basalrate</string>
+    <string name="dpvdefaultprofile">DPV-Standard-Profil</string>
 </resources>
