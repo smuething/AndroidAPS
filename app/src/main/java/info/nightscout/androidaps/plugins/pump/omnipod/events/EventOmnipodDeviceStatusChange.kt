@@ -12,8 +12,9 @@ import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManage
 /**
  * Created by andy on 4.8.2019
  */
-// FIXME can be removed, we should just use EventOmnipodPumpValuesChanged
-class EventOmnipodDeviceStatusChange : EventRileyLinkDeviceStatusChange {
+// FIXME Rename this class to EventRileyLinkStatusChanged and use EventOmnipodPumpValuesChanged
+//  for changes in Pod status
+class EventOmnipodDeviceStatusChange : Event {
 
     var podStateManager: PodStateManager? = null
     var podDeviceState: PodDeviceState? = null

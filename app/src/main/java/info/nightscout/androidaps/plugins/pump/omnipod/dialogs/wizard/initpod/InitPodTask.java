@@ -24,7 +24,9 @@ public class InitPodTask extends AsyncTask<Void, Void, String> {
         this.initActionFragment = initActionFragment;
     }
 
+    @Override
     protected void onPreExecute() {
+        super.onPreExecute();
         initActionFragment.progressBar.setVisibility(View.VISIBLE);
         initActionFragment.errorView.setVisibility(View.GONE);
         initActionFragment.retryButton.setVisibility(View.GONE);
@@ -32,21 +34,20 @@ public class InitPodTask extends AsyncTask<Void, Void, String> {
 
     @Override
     protected String doInBackground(Void... params) {
-
         if (initActionFragment.podInitActionType == PodInitActionType.PairAndPrimeWizardStep) {
             initActionFragment.callResult = aapsOmnipodManager.initPod(
                     initActionFragment.podInitActionType,
-                    initActionFragment.instance,
+                    initActionFragment,
                     null
             );
         } else if (initActionFragment.podInitActionType == PodInitActionType.FillCannulaSetBasalProfileWizardStep) {
             initActionFragment.callResult = aapsOmnipodManager.initPod(
                     initActionFragment.podInitActionType,
-                    initActionFragment.instance,
+                    initActionFragment,
                     profileFunction.getProfile()
             );
         } else if (initActionFragment.podInitActionType == PodInitActionType.DeactivatePodWizardStep) {
-            initActionFragment.callResult = aapsOmnipodManager.deactivatePod(initActionFragment.instance);
+            initActionFragment.callResult = aapsOmnipodManager.deactivatePod(initActionFragment);
         }
 
         return "OK";
@@ -58,6 +59,5 @@ public class InitPodTask extends AsyncTask<Void, Void, String> {
 
         initActionFragment.actionOnReceiveResponse(result);
     }
-
 
 }
