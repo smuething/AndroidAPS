@@ -36,7 +36,8 @@ import javax.inject.Singleton
         CoreModule::class,
         DanaModule::class,
         DanaRModule::class,
-        DanaRSModule::class
+        DanaRSModule::class,
+        OmnipodModule::class
     ]
 )
 interface AppComponent : AndroidInjector<MainApp> {
