@@ -25,8 +25,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import dagger.android.HasAndroidInjector;
-import info.nightscout.androidaps.BuildConfig;
-import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
 import info.nightscout.androidaps.activities.ErrorHelperActivity;
 import info.nightscout.androidaps.data.DetailedBolusInfo;
@@ -75,6 +73,7 @@ import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodRefres
 import info.nightscout.androidaps.plugins.pump.omnipod.service.RileyLinkOmnipodService;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodConst;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodUtil;
+import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.FabricPrivacy;
 import info.nightscout.androidaps.utils.Round;
 import info.nightscout.androidaps.utils.TimeChangeType;
@@ -140,7 +139,9 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
             CommandQueueProvider commandQueue,
             FabricPrivacy fabricPrivacy,
             RileyLinkServiceData rileyLinkServiceData,
-            ServiceTaskExecutor serviceTaskExecutor) {
+            ServiceTaskExecutor serviceTaskExecutor,
+            DateUtil dateUtil
+    ) {
 
         super(new PluginDescription() //
                         .mainType(PluginType.PUMP) //
@@ -150,14 +151,13 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
                         .preferencesId(R.xml.pref_omnipod) //
                         .description(R.string.description_pump_omnipod), //
                 PumpType.Insulet_Omnipod,
-                injector, resourceHelper, aapsLogger, commandQueue, rxBus, activePlugin, sp, context, fabricPrivacy
+                injector, resourceHelper, aapsLogger, commandQueue, rxBus, activePlugin, sp, context, fabricPrivacy, dateUtil
         );
         this.podStateManager = podStateManager;
         this.rileyLinkServiceData = rileyLinkServiceData;
         this.serviceTaskExecutor = serviceTaskExecutor;
 
         displayConnectionMessages = false;
-        OmnipodPumpPlugin.plugin = this;
         this.omnipodUtil = omnipodUtil;
         this.omnipodPumpStatus = omnipodPumpStatus;
 
@@ -173,8 +173,10 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
                                 ActivePluginProvider activePlugin,
                                 info.nightscout.androidaps.utils.sharedPreferences.SP sp,
                                 CommandQueueProvider commandQueue,
-                                FabricPrivacy fabricPrivacy) {
-        super(pluginDescription, pumpType, injector, resourceHelper, aapsLogger, commandQueue, rxBus, activePlugin, sp, context, fabricPrivacy);
+                                FabricPrivacy fabricPrivacy,
+                                DateUtil dateUtil
+    ) {
+        super(pluginDescription, pumpType, injector, resourceHelper, aapsLogger, commandQueue, rxBus, activePlugin, sp, context, fabricPrivacy, dateUtil);
     }
 
     @Deprecated
@@ -263,27 +265,6 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
                 }
             };
         }
-
-
-        disposable.add(rxBus
-                .toObservable(EventPreferenceChange.class)
-                .observeOn(Schedulers.io())
-                .subscribe(event -> {
-                    if ((event.isChanged(getResourceHelper(), R.string.key_omnipod_beep_basal_enabled)) ||
-                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_beep_bolus_enabled)) ||
-                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_beep_tbr_enabled)) ||
-                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_pod_debugging_options_enabled)) ||
-                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_beep_smb_enabled)) ||
-                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_timechange_enabled)))
-                        rileyLinkOmnipodService.verifyConfiguration();
-                }, fabricPrivacy::logException)
-        );
-
-        super.onStart();
-
-
-        //rileyLinkOmnipodService.verifyConfiguration();
-        //initPumpStatusData();
     }
 
 //    @Override
@@ -439,6 +420,11 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
         //rileyLinkOmnipodService.doTuneUpDevice();
     }
 
+    @Override
+    public void triggerPumpConfigurationChangedEvent() {
+        rxBus.send(new EventOmnipodPumpValuesChanged());
+    }
+
 
     @Override
     public RileyLinkOmnipodService getRileyLinkService() {
@@ -521,13 +507,13 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
                     } else {
                         aapsLogger.warn(LTag.PUMP, "Result was NOT null.");
 
-                        Intent i = new Intent(MainApp.instance(), ErrorHelperActivity.class);
+                        Intent i = new Intent(context, ErrorHelperActivity.class);
                         i.putExtra("soundid", 0);
                         i.putExtra("status", "Pulse Log (copied to clipboard):\n" + result.toString());
                         i.putExtra("title", resourceHelper.gs(R.string.combo_warning));
                         i.putExtra("clipboardContent", result.toString());
                         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        MainApp.instance().startActivity(i);
+                        context.startActivity(i);
 
 //                        OKDialog.show(MainApp.instance().getApplicationContext(), MainApp.gs(R.string.action),
 //                                "Pulse Log:\n" + result.toString(), null);

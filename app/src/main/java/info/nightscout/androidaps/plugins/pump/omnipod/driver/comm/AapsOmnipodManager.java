@@ -1,5 +1,6 @@
 package info.nightscout.androidaps.plugins.pump.omnipod.driver.comm;
 
+import android.content.Context;
 import android.content.Intent;
 
 import org.joda.time.DateTime;
@@ -76,16 +77,18 @@ import io.reactivex.disposables.Disposable;
 public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface {
 
     private final PodStateManager podStateManager;
-    private OmnipodUtil omnipodUtil;
-    private AAPSLogger aapsLogger;
-    private RxBusWrapper rxBus;
-    private ResourceHelper resourceHelper;
-    private HasAndroidInjector injector;
-    private ActivePluginProvider activePlugin;
-    private OmnipodPumpStatus pumpStatus;
+    private final OmnipodUtil omnipodUtil;
+    private final AAPSLogger aapsLogger;
+    private final RxBusWrapper rxBus;
+    private final ResourceHelper resourceHelper;
+    private final HasAndroidInjector injector;
+    private final ActivePluginProvider activePlugin;
+    private final OmnipodPumpStatus pumpStatus;
+    private final Context context;
 
     private final OmnipodManager delegate;
 
+    //TODO: remove and use injection
     private static AapsOmnipodManager instance;
 
     public static AapsOmnipodManager getInstance() {
@@ -94,14 +97,15 @@ public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface 
 
     public AapsOmnipodManager(OmnipodCommunicationManager communicationService,
                               PodStateManager podStateManager,
-                              OmnipodPumpStatus _pumpStatus,
+                              OmnipodPumpStatus pumpStatus,
                               OmnipodUtil omnipodUtil,
                               AAPSLogger aapsLogger,
                               RxBusWrapper rxBus,
                               SP sp,
                               ResourceHelper resourceHelper,
                               HasAndroidInjector injector,
-                              ActivePluginProvider activePlugin) {
+                              ActivePluginProvider activePlugin,
+                              Context context) {
         if (podStateManager == null) {
             throw new IllegalArgumentException("Pod state manager can not be null");
         }
@@ -112,7 +116,8 @@ public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface 
         this.resourceHelper = resourceHelper;
         this.injector = injector;
         this.activePlugin = activePlugin;
-        this.pumpStatus = _pumpStatus;
+        this.pumpStatus = pumpStatus;
+        this.context = context;
 
         delegate = new OmnipodManager(aapsLogger, sp, communicationService, podStateManager);
         instance = this;
@@ -334,7 +339,7 @@ public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface 
         pumpStatus.tempBasalEnd = DateTimeUtil.getTimeInFutureFromMinutes(time, tempBasalPair.getDurationMinutes());
         pumpStatus.tempBasalPumpId = pumpId;
 
-        TemporaryBasal tempStart = new TemporaryBasal() //
+        TemporaryBasal tempStart = new TemporaryBasal(injector) //
                 .date(time) //
                 .duration(tempBasalPair.getDurationMinutes()) //
                 .absolute(tempBasalPair.getInsulinRate()) //
@@ -466,7 +471,7 @@ public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface 
 
             addSuccessToHistory(time, PodHistoryEntryType.CancelTemporaryBasal, null);
 
-            TemporaryBasal temporaryBasal = new TemporaryBasal() //
+            TemporaryBasal temporaryBasal = new TemporaryBasal(injector) //
                     .date(time) //
                     .duration(0) //
                     .pumpId(pumpStatus.tempBasalPumpId)
@@ -597,12 +602,12 @@ public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface 
     }
 
     private void showErrorDialog(String message, Integer sound) {
-        Intent intent = new Intent(MainApp.instance(), ErrorHelperActivity.class);
+        Intent intent = new Intent(context, ErrorHelperActivity.class);
         intent.putExtra("soundid", sound == null ? 0 : sound);
         intent.putExtra("status", message);
-        intent.putExtra("title", MainApp.gs(R.string.treatmentdeliveryerror));
+        intent.putExtra("title", resourceHelper.gs(R.string.treatmentdeliveryerror));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        MainApp.instance().startActivity(intent);
+        context.startActivity(intent);
     }
 
     private void showNotification(String message, int urgency, Integer sound) {

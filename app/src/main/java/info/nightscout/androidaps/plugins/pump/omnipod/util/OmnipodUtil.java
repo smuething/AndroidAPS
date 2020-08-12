@@ -20,6 +20,7 @@ import javax.inject.Singleton;
 
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
+import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.interfaces.ActivePluginProvider;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper;
@@ -29,8 +30,11 @@ import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.data.RLHistor
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.AlertSet;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.AlertSlot;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.AlertType;
+import info.nightscout.androidaps.plugins.pump.omnipod.comm.OmnipodManager;
+import info.nightscout.androidaps.plugins.pump.omnipod.data.RLHistoryItemOmnipod;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.OmnipodCommandType;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.OmnipodPodType;
+
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodDeviceState;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.OmnipodDriverState;
@@ -53,6 +57,7 @@ public class OmnipodUtil {
     private final ResourceHelper resourceHelper;
     private final ActivePluginProvider activePlugins;
     private final SP sp;
+    private final HasAndroidInjector injector;
 
     private boolean lowLevelDebug = true;
     private OmnipodCommandType currentCommand;
@@ -68,7 +73,8 @@ public class OmnipodUtil {
             OmnipodPumpStatus omnipodPumpStatus,
             SP sp,
             ResourceHelper resourceHelper,
-            ActivePluginProvider activePlugins
+            ActivePluginProvider activePlugins,
+            HasAndroidInjector injector
     ) {
         this.aapsLogger = aapsLogger;
         this.rxBus = rxBus;
@@ -77,6 +83,7 @@ public class OmnipodUtil {
         this.sp = sp;
         this.resourceHelper = resourceHelper;
         this.activePlugins = activePlugins;
+        this.injector = injector;
     }
 
     public boolean isLowLevelDebug() {
@@ -95,14 +102,14 @@ public class OmnipodUtil {
         this.currentCommand = currentCommand;
 
         if (currentCommand != null)
-            rileyLinkUtil.getRileyLinkHistory().add(new RLHistoryItem(currentCommand));
+            rileyLinkUtil.getRileyLinkHistory().add(new RLHistoryItemOmnipod(currentCommand));
 
         rxBus.send(new EventOmnipodDeviceStatusChange((OmnipodCommandType) null));
     }
 
-    public static void displayNotConfiguredDialog(Context context) {
-        OKDialog.showConfirmation(context, MainApp.gs(R.string.combo_warning),
-                MainApp.gs(R.string.omnipod_error_operation_not_possible_no_configuration), (Runnable) null);
+    public void displayNotConfiguredDialog(Context context) {
+        OKDialog.showConfirmation(context, resourceHelper.gs(R.string.combo_warning),
+                resourceHelper.gs(R.string.omnipod_error_operation_not_possible_no_configuration), (Runnable) null);
     }
 
     public OmnipodDriverState getDriverState() {

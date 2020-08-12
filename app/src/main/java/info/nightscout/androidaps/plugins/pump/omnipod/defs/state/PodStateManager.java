@@ -37,10 +37,12 @@ public abstract class PodStateManager {
     private final AAPSLogger aapsLogger;
     private final Gson gsonInstance;
     private PodState podState;
+    private DateUtil dateUtil;
 
-    public PodStateManager(AAPSLogger aapsLogger) {
+    public PodStateManager(AAPSLogger aapsLogger, DateUtil dateUtil) {
         this.aapsLogger = aapsLogger;
         this.gsonInstance = createGson();
+        this.dateUtil = dateUtil;
     }
 
     public final boolean hasState() {
@@ -257,7 +259,7 @@ public abstract class PodStateManager {
     // TODO doesn't belong here
     public final String getExpiryDateAsString() {
         DateTime expiresAt = getExpiresAt();
-        return expiresAt == null ? "???" : DateUtil.dateAndTimeString(expiresAt.toDate());
+        return expiresAt == null ? "???" : dateUtil.dateAndTimeString(expiresAt.toDate());
     }
 
     public final SetupProgress getSetupProgress() {
