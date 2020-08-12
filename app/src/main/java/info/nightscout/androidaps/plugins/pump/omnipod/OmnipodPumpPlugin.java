@@ -266,6 +266,23 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
                 }
             };
         }
+
+        disposable.add(rxBus
+                .toObservable(EventPreferenceChange.class)
+                .observeOn(Schedulers.io())
+                .subscribe(event -> {
+                    if ((event.isChanged(getResourceHelper(), R.string.key_omnipod_beep_basal_enabled)) ||
+                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_beep_bolus_enabled)) ||
+                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_beep_tbr_enabled)) ||
+                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_pod_debugging_options_enabled)) ||
+                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_beep_smb_enabled)) ||
+                            (event.isChanged(getResourceHelper(), R.string.key_omnipod_timechange_enabled)))
+                        rileyLinkOmnipodService.verifyConfiguration();
+                }, fabricPrivacy::logException)
+        );
+
+        super.onStart();
+
     }
 
 //    @Override
