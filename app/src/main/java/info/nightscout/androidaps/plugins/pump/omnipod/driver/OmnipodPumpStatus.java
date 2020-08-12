@@ -17,6 +17,7 @@ import info.nightscout.androidaps.plugins.pump.common.defs.PumpDeviceState;
 import info.nightscout.androidaps.plugins.pump.common.events.EventRileyLinkDeviceStatusChange;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodDeviceState;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager;
+import info.nightscout.androidaps.plugins.pump.omnipod.driver.comm.AapsPodStateManager;
 import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodDeviceStatusChange;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodConst;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
@@ -34,7 +35,7 @@ public class OmnipodPumpStatus extends PumpStatus {
     private final SP sp;
     private final RileyLinkUtil rileyLinkUtil;
     private final RxBusWrapper rxBus;
-    private final PodStateManager podStateManager;
+    //private final PodStateManager podStateManager;
 
     public String rileyLinkErrorDescription = null;
     public String rileyLinkAddress = null;
@@ -72,14 +73,14 @@ public class OmnipodPumpStatus extends PumpStatus {
     public OmnipodPumpStatus(ResourceHelper resourceHelper,
                              info.nightscout.androidaps.utils.sharedPreferences.SP sp,
                              RxBusWrapper rxBus,
-                             RileyLinkUtil rileyLinkUtil,
-                             PodStateManager podStateManager) {
+                             RileyLinkUtil rileyLinkUtil) {
+                             //AapsPodStateManager podStateManager) {
         super(PumpType.Insulet_Omnipod);
         this.resourceHelper = resourceHelper;
         this.sp = sp;
         this.rxBus = rxBus;
         this.rileyLinkUtil = rileyLinkUtil;
-        this.podStateManager = podStateManager;
+        //this.podStateManager = podStateManager;
         initSettings();
     }
 
@@ -102,10 +103,10 @@ public class OmnipodPumpStatus extends PumpStatus {
     public <E> E getCustomData(String key, Class<E> clazz) {
         switch(key) {
             case "POD_LOT_NUMBER":
-                return (E) ("" + podStateManager.getLot());
+                return (E) "";//("" + podStateManager.getLot());
 
             case "POD_AVAILABLE":
-                return (E) Boolean.valueOf(podStateManager.hasState());
+                return (E) Boolean.TRUE;//Boolean.valueOf(podStateManager.hasState());
 
             default:
                 return null;

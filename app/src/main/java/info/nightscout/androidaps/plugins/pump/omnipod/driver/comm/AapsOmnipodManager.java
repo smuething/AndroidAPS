@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
@@ -74,6 +77,7 @@ import info.nightscout.androidaps.utils.sharedPreferences.SP;
 import io.reactivex.disposables.Disposable;
 
 // TODO make singleton
+@Singleton
 public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface {
 
     private final PodStateManager podStateManager;
@@ -88,15 +92,9 @@ public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface 
 
     private final OmnipodManager delegate;
 
-    //TODO: remove and use injection
-    private static AapsOmnipodManager instance;
-
-    public static AapsOmnipodManager getInstance() {
-        return instance;
-    }
-
+    @Inject
     public AapsOmnipodManager(OmnipodCommunicationManager communicationService,
-                              PodStateManager podStateManager,
+                              AapsPodStateManager podStateManager,
                               OmnipodPumpStatus pumpStatus,
                               OmnipodUtil omnipodUtil,
                               AAPSLogger aapsLogger,
@@ -120,7 +118,6 @@ public class AapsOmnipodManager implements OmnipodCommunicationManagerInterface 
         this.context = context;
 
         delegate = new OmnipodManager(aapsLogger, sp, communicationService, podStateManager);
-        instance = this;
     }
 
     public PodStateManager getPodStateManager() {

@@ -26,6 +26,7 @@ import info.nightscout.androidaps.plugins.pump.omnipod.comm.OmnipodCommunication
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.OmnipodPumpStatus;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.comm.AapsOmnipodManager;
+import info.nightscout.androidaps.plugins.pump.omnipod.driver.comm.AapsPodStateManager;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.ui.OmnipodUIComm;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.ui.OmnipodUIPostprocessor;
 import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodDeviceStatusChange;
@@ -43,12 +44,12 @@ public class RileyLinkOmnipodService extends RileyLinkService {
     @Inject OmnipodPumpStatus omnipodPumpStatus;
     @Inject OmnipodUtil omnipodUtil;
     @Inject OmnipodUIPostprocessor omnipodUIPostprocessor;
-    @Inject PodStateManager podStateManager;
+    @Inject AapsPodStateManager podStateManager;
+    @Inject AapsOmnipodManager aapsOmnipodManager;
 
     private static RileyLinkOmnipodService instance;
 
-    private OmnipodCommunicationManager omnipodCommunicationManager;
-    private AapsOmnipodManager aapsOmnipodManager;
+    @Inject OmnipodCommunicationManager omnipodCommunicationManager;
 
     private IBinder mBinder = new LocalBinder();
     private boolean rileyLinkAddressChanged = false;
@@ -106,18 +107,8 @@ public class RileyLinkOmnipodService extends RileyLinkService {
     }
 
     private void initializeErosOmnipodManager() {
-        AapsOmnipodManager instance = AapsOmnipodManager.getInstance();
-        if (instance == null) {
-            OmnipodCommunicationManager omnipodCommunicationService = new OmnipodCommunicationManager(injector, rfspy);
-            this.omnipodCommunicationManager = omnipodCommunicationService;
-
-            aapsOmnipodManager = new AapsOmnipodManager(omnipodCommunicationService, podStateManager, omnipodPumpStatus,
-                    omnipodUtil, aapsLogger, rxBus, sp, resourceHelper, injector, activePlugin);
-
+        if (omnipodUIComm == null) {
             omnipodUIComm = new OmnipodUIComm(injector, aapsLogger, omnipodUtil, omnipodUIPostprocessor, aapsOmnipodManager);
-
-        } else {
-            aapsOmnipodManager = instance;
         }
         rxBus.send(new EventOmnipodDeviceStatusChange(podStateManager));
     }

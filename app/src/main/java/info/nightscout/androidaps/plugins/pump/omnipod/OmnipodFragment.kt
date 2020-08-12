@@ -25,6 +25,7 @@ import info.nightscout.androidaps.plugins.pump.omnipod.defs.OmnipodStatusRequest
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager
 import info.nightscout.androidaps.plugins.pump.omnipod.dialogs.PodManagementActivity
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.OmnipodPumpStatus
+import info.nightscout.androidaps.plugins.pump.omnipod.driver.comm.AapsPodStateManager
 import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodAcknowledgeAlertsChanged
 import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodDeviceStatusChange
 import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodPumpValuesChanged
@@ -61,7 +62,7 @@ class OmnipodFragment : DaggerFragment() {
     @Inject lateinit var omnipodPumpPlugin: OmnipodPumpPlugin
     @Inject lateinit var warnColors: WarnColors
     @Inject lateinit var omnipodPumpStatus: OmnipodPumpStatus
-    @Inject lateinit var podStateManager: PodStateManager
+    @Inject lateinit var podStateManager: AapsPodStateManager
     @Inject lateinit var sp: SP
     @Inject lateinit var omnipodUtil: OmnipodUtil
     @Inject lateinit var rileyLinkServiceData: RileyLinkServiceData

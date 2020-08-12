@@ -4,7 +4,7 @@ import info.nightscout.androidaps.events.Event
 import info.nightscout.androidaps.plugins.pump.common.events.EventRileyLinkDeviceStatusChange
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.defs.RileyLinkError
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.defs.RileyLinkServiceState
-import info.nightscout.androidaps.plugins.pump.medtronic.defs.PumpDeviceState
+import info.nightscout.androidaps.plugins.pump.common.defs.PumpDeviceState
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.OmnipodCommandType
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodDeviceState
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager
@@ -15,13 +15,8 @@ import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManage
 // FIXME can be removed, we should just use EventOmnipodPumpValuesChanged
 class EventOmnipodDeviceStatusChange : EventRileyLinkDeviceStatusChange {
 
-    var rileyLinkServiceState: RileyLinkServiceState? = null
-    var rileyLinkError: RileyLinkError? = null
     var podStateManager: PodStateManager? = null
-    var errorDescription: String? = null
     var podDeviceState: PodDeviceState? = null
-    var pumpDeviceState: PumpDeviceState? = null
-
 
     @JvmOverloads
     constructor(rileyLinkServiceState: RileyLinkServiceState?, rileyLinkError: RileyLinkError? = null) : super(rileyLinkServiceState, rileyLinkError) {

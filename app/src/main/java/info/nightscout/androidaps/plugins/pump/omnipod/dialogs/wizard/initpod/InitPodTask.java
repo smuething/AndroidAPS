@@ -16,6 +16,7 @@ import info.nightscout.androidaps.plugins.pump.omnipod.driver.comm.AapsOmnipodMa
 public class InitPodTask extends AsyncTask<Void, Void, String> {
 
     @Inject ProfileFunction profileFunction;
+    @Inject AapsOmnipodManager aapsOmnipodManager;
     private InitActionFragment initActionFragment;
 
     public InitPodTask(HasAndroidInjector injector, InitActionFragment initActionFragment) {
@@ -33,19 +34,19 @@ public class InitPodTask extends AsyncTask<Void, Void, String> {
     protected String doInBackground(Void... params) {
 
         if (initActionFragment.podInitActionType == PodInitActionType.PairAndPrimeWizardStep) {
-            initActionFragment.callResult = AapsOmnipodManager.getInstance().initPod(
+            initActionFragment.callResult = aapsOmnipodManager.initPod(
                     initActionFragment.podInitActionType,
                     initActionFragment.instance,
                     null
             );
         } else if (initActionFragment.podInitActionType == PodInitActionType.FillCannulaSetBasalProfileWizardStep) {
-            initActionFragment.callResult = AapsOmnipodManager.getInstance().initPod(
+            initActionFragment.callResult = aapsOmnipodManager.initPod(
                     initActionFragment.podInitActionType,
                     initActionFragment.instance,
                     profileFunction.getProfile()
             );
         } else if (initActionFragment.podInitActionType == PodInitActionType.DeactivatePodWizardStep) {
-            initActionFragment.callResult = AapsOmnipodManager.getInstance().deactivatePod(initActionFragment.instance);
+            initActionFragment.callResult = aapsOmnipodManager.deactivatePod(initActionFragment.instance);
         }
 
         return "OK";

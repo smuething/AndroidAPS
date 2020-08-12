@@ -58,7 +58,7 @@ public class RileyLinkBLE {
     private Runnable radioResponseCountNotified;
     private boolean mIsConnected = false;
 
-
+    @Inject
     public RileyLinkBLE(HasAndroidInjector injector, final Context context) {
         injector.androidInjector().inject(this);
         this.context = context;

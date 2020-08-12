@@ -66,6 +66,7 @@ import info.nightscout.androidaps.plugins.pump.omnipod.defs.OmnipodStatusRequest
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.OmnipodDriverState;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.OmnipodPumpStatus;
+import info.nightscout.androidaps.plugins.pump.omnipod.driver.comm.AapsPodStateManager;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.ui.OmnipodUIComm;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.ui.OmnipodUITask;
 import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodPumpValuesChanged;
@@ -135,7 +136,7 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
             SP sp,
             OmnipodUtil omnipodUtil,
             OmnipodPumpStatus omnipodPumpStatus,
-            PodStateManager podStateManager,
+            AapsPodStateManager podStateManager,
             CommandQueueProvider commandQueue,
             FabricPrivacy fabricPrivacy,
             RileyLinkServiceData rileyLinkServiceData,
@@ -626,7 +627,7 @@ public class OmnipodPumpPlugin extends PumpPluginAbstract implements OmnipodPump
 
         if (!sentIdToFirebase) {
             Bundle params = new Bundle();
-            params.putString("version", BuildConfig.VERSION);
+            //params.putString("version", BuildConfig.VERSION);
 
             getFabricPrivacy().getFirebaseAnalytics().logEvent("OmnipodPumpInit", params);
 
