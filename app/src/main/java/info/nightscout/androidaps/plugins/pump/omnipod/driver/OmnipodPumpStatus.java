@@ -13,12 +13,8 @@ import info.nightscout.androidaps.plugins.pump.common.defs.PumpType;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.RileyLinkUtil;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.data.RLHistoryItem;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.defs.RileyLinkTargetDevice;
-import info.nightscout.androidaps.plugins.pump.common.defs.PumpDeviceState;
 import info.nightscout.androidaps.plugins.pump.common.events.EventRileyLinkDeviceStatusChange;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodDeviceState;
-import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager;
-import info.nightscout.androidaps.plugins.pump.omnipod.driver.comm.AapsPodStateManager;
-import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodDeviceStatusChange;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodConst;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
@@ -74,13 +70,11 @@ public class OmnipodPumpStatus extends PumpStatus {
                              info.nightscout.androidaps.utils.sharedPreferences.SP sp,
                              RxBusWrapper rxBus,
                              RileyLinkUtil rileyLinkUtil) {
-                             //AapsPodStateManager podStateManager) {
         super(PumpType.Insulet_Omnipod);
         this.resourceHelper = resourceHelper;
         this.sp = sp;
         this.rxBus = rxBus;
         this.rileyLinkUtil = rileyLinkUtil;
-        //this.podStateManager = podStateManager;
         initSettings();
     }
 
