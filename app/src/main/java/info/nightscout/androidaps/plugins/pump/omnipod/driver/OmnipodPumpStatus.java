@@ -8,11 +8,13 @@ import javax.inject.Singleton;
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper;
 import info.nightscout.androidaps.plugins.pump.common.data.PumpStatus;
 import info.nightscout.androidaps.plugins.pump.common.data.TempBasalPair;
+import info.nightscout.androidaps.plugins.pump.common.defs.PumpDeviceState;
 import info.nightscout.androidaps.plugins.pump.common.defs.PumpType;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.RileyLinkUtil;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.data.RLHistoryItem;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.defs.RileyLinkTargetDevice;
 import info.nightscout.androidaps.plugins.pump.medtronic.defs.PumpDeviceState;
+import info.nightscout.androidaps.plugins.pump.common.events.EventRileyLinkDeviceStatusChange;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodDeviceState;
 import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodDeviceStatusChange;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodConst;
@@ -48,6 +50,9 @@ public class OmnipodPumpStatus extends PumpStatus {
     public String regexMac = "([\\da-fA-F]{1,2}(?:\\:|$)){6}";
 
     public PodDeviceState podDeviceState = PodDeviceState.NeverContacted;
+    // TODO: needed?
+    //public Boolean podAvailable = false;
+    //public boolean podAvailibityChecked = false;
     public boolean ackAlertsAvailable = false;
     public String ackAlertsText = null;
 
@@ -87,6 +92,21 @@ public class OmnipodPumpStatus extends PumpStatus {
     @Override
     public String getErrorInfo() {
         return this.rileyLinkErrorDescription;
+    }
+
+    @Override
+    public <E> E getCustomData(String key, Class<E> clazz) {
+        switch(key) {
+            case "POD_LOT_NUMBER":
+                return (E)podLotNumber;
+
+            case "POD_AVAILABLE":
+                return (E)podAvailable;
+
+            default:
+                return null;
+        }
+
     }
 
 
@@ -168,7 +188,7 @@ public class OmnipodPumpStatus extends PumpStatus {
 
         rileyLinkUtil.getRileyLinkHistory().add(new RLHistoryItem(pumpDeviceState, RileyLinkTargetDevice.Omnipod));
 
-        rxBus.send(new EventOmnipodDeviceStatusChange(pumpDeviceState));
+        rxBus.send(new EventRileyLinkDeviceStatusChange(pumpDeviceState));
     }
 
 }

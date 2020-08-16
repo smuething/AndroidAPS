@@ -1,7 +1,5 @@
 package info.nightscout.androidaps.plugins.pump.omnipod.util;
 
-import android.content.Context;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
@@ -20,6 +18,7 @@ import javax.inject.Singleton;
 
 import info.nightscout.androidaps.MainApp;
 import info.nightscout.androidaps.R;
+import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.interfaces.ActivePluginProvider;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper;
@@ -29,8 +28,11 @@ import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.data.RLHistor
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.AlertSet;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.AlertSlot;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.AlertType;
+import info.nightscout.androidaps.plugins.pump.omnipod.comm.OmnipodManager;
+import info.nightscout.androidaps.plugins.pump.omnipod.data.RLHistoryItemOmnipod;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.OmnipodCommandType;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.OmnipodPodType;
+
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodDeviceState;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager;
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.OmnipodDriverState;
@@ -53,6 +55,8 @@ public class OmnipodUtil {
     private final ResourceHelper resourceHelper;
     private final ActivePluginProvider activePlugins;
     private final SP sp;
+    private final ResourceHelper resourceHelper;
+    private final HasAndroidInjector injector;
 
     private boolean lowLevelDebug = true;
     private OmnipodCommandType currentCommand;
@@ -68,7 +72,8 @@ public class OmnipodUtil {
             OmnipodPumpStatus omnipodPumpStatus,
             SP sp,
             ResourceHelper resourceHelper,
-            ActivePluginProvider activePlugins
+            ActivePluginProvider activePlugins,
+            HasAndroidInjector injector
     ) {
         this.aapsLogger = aapsLogger;
         this.rxBus = rxBus;
