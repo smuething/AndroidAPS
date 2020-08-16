@@ -15,6 +15,7 @@ import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManage
 import info.nightscout.androidaps.plugins.pump.omnipod.driver.OmnipodPumpStatus;
 import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodPumpValuesChanged;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodConst;
+import info.nightscout.androidaps.utils.DateUtil;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
 
@@ -28,8 +29,8 @@ public class AapsPodStateManager extends PodStateManager {
 
     @Inject
     public AapsPodStateManager(AAPSLogger aapsLogger, SP sp, OmnipodPumpStatus omnipodPumpStatus,
-                               RxBusWrapper rxBus, ResourceHelper resourceHelper) {
-        super(aapsLogger);
+                               RxBusWrapper rxBus, ResourceHelper resourceHelper, DateUtil dateUtil) {
+        super(aapsLogger, dateUtil);
 
         if (aapsLogger == null) {
             throw new IllegalArgumentException("aapsLogger can not be null");
@@ -66,10 +67,12 @@ public class AapsPodStateManager extends PodStateManager {
 
     @Override
     protected void notifyPodStateChanged() {
-        if (!hasState()) {
+        if (!hasPodState()) {
             omnipodPumpStatus.lastBolusTime = null;
             omnipodPumpStatus.lastBolusAmount = null;
             omnipodPumpStatus.reservoirRemainingUnits = 0.0;
+            // TODO this does not seem to set the pump status to suspended anymore
+            //  Also, verify that AAPS is aware that no insulin is delivered anymore at this point
             omnipodPumpStatus.pumpStatusType = PumpStatusType.Suspended;
             sendEvent(new EventRefreshOverview("Omnipod Pump", false));
         } else {
@@ -77,7 +80,7 @@ public class AapsPodStateManager extends PodStateManager {
             Double lastBolusAmount = getLastBolusAmount();
 
             // Update other info: last bolus, units remaining, suspended
-            boolean suspended = isSuspended() || !isSetupCompleted() || hasFaultEvent();
+            boolean suspended = isSuspended() || !isPodRunning();
             if (Objects.equals(lastBolusStartTime, omnipodPumpStatus.lastBolusTime) //
                     || !Objects.equals(lastBolusAmount, omnipodPumpStatus.lastBolusAmount) //
                     || !isReservoirStatusUpToDate(omnipodPumpStatus, getReservoirLevel())
@@ -85,7 +88,10 @@ public class AapsPodStateManager extends PodStateManager {
                 omnipodPumpStatus.lastBolusTime = lastBolusStartTime;
                 omnipodPumpStatus.lastBolusAmount = lastBolusAmount;
                 omnipodPumpStatus.reservoirRemainingUnits = getReservoirLevel() == null ? 75.0 : getReservoirLevel();
+
                 boolean sendRefreshOverviewEvent = suspended != PumpStatusType.Suspended.equals(omnipodPumpStatus.pumpStatusType);
+                // TODO this does not seem to set the pump status to suspended anymore
+                //  Also, verify that AAPS is aware that no insulin is delivered anymore at this point
                 omnipodPumpStatus.pumpStatusType = suspended ? PumpStatusType.Suspended : PumpStatusType.Running;
 
                 if (sendRefreshOverviewEvent) {

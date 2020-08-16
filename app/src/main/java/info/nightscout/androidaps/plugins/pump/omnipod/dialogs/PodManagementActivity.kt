@@ -2,6 +2,7 @@ package info.nightscout.androidaps.plugins.pump.omnipod.dialogs
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.fragment.app.FragmentStatePagerAdapter
 import com.atech.android.library.wizardpager.WizardPagerActivity
 import com.atech.android.library.wizardpager.WizardPagerContext
 import com.atech.android.library.wizardpager.data.WizardPagerSettings
@@ -11,11 +12,11 @@ import info.nightscout.androidaps.R
 import info.nightscout.androidaps.activities.NoSplashAppCompatActivity
 import info.nightscout.androidaps.events.EventRefreshOverview
 import info.nightscout.androidaps.interfaces.CommandQueueProvider
+import info.nightscout.androidaps.interfaces.ProfileFunction
 import info.nightscout.androidaps.logging.AAPSLogger
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper
-import info.nightscout.androidaps.plugins.configBuilder.ProfileFunction
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.service.RileyLinkServiceData
-import info.nightscout.androidaps.plugins.pump.omnipod.defs.SetupProgress
+import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodProgressStatus
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.state.PodStateManager
 import info.nightscout.androidaps.plugins.pump.omnipod.dialogs.wizard.defs.PodActionType
 import info.nightscout.androidaps.plugins.pump.omnipod.dialogs.wizard.model.FullInitPodWizardModel
@@ -97,12 +98,13 @@ class PodManagementActivity : NoSplashAppCompatActivity() {
         pagerSettings.setBackStringResourceId(R.string.cancel)
         pagerSettings.cancelAction = refreshAction
         pagerSettings.finishAction = refreshAction
+        pagerSettings.pagerAdapterBehavior = FragmentStatePagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
 
         val wizardPagerContext = WizardPagerContext.getInstance()
 
         wizardPagerContext.clearContext()
         wizardPagerContext.pagerSettings = pagerSettings
-        val isFullInit = !podStateManager.isPaired || podStateManager.setupProgress.isBefore(SetupProgress.PRIMING_FINISHED)
+        val isFullInit = !podStateManager.isPodInitialized || podStateManager.podProgressStatus.isBefore(PodProgressStatus.PRIMING_COMPLETED)
         if (isFullInit) {
             wizardPagerContext.wizardModel = FullInitPodWizardModel(applicationContext)
         } else {
@@ -124,6 +126,7 @@ class PodManagementActivity : NoSplashAppCompatActivity() {
         pagerSettings.setBackStringResourceId(R.string.cancel)
         pagerSettings.cancelAction = refreshAction
         pagerSettings.finishAction = refreshAction
+        pagerSettings.pagerAdapterBehavior = FragmentStatePagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
 
         val wizardPagerContext = WizardPagerContext.getInstance();
 
@@ -153,16 +156,16 @@ class PodManagementActivity : NoSplashAppCompatActivity() {
     }
 
     fun refreshButtons() {
-        initpod_init_pod.isEnabled = !podStateManager.isPaired() ||
-            podStateManager.setupProgress.isBefore(SetupProgress.COMPLETED)
+        initpod_init_pod.isEnabled = !podStateManager.isPodRunning()
 
-        initpod_remove_pod.isEnabled = podStateManager.hasState() && podStateManager.isPaired
-        initpod_reset_pod.isEnabled = podStateManager.hasState()
+        initpod_remove_pod.isEnabled = podStateManager.isPodInitialized
+        initpod_reset_pod.isEnabled = podStateManager.hasPodState()
 
         if (!rileyLinkServiceData.rileyLinkServiceState.isReady) {
             // if rileylink is not running we disable all operations that require a RL connection
             initpod_init_pod.isEnabled = false
             initpod_remove_pod.isEnabled = false
+            initpod_reset_pod.isEnabled = false
         }
     }
 

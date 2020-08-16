@@ -15,6 +15,7 @@ import org.joda.time.format.ISODateTimeFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.LTag;
@@ -26,7 +27,6 @@ import info.nightscout.androidaps.plugins.pump.omnipod.defs.AlertType;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.DeliveryStatus;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.FirmwareVersion;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodProgressStatus;
-import info.nightscout.androidaps.plugins.pump.omnipod.defs.SetupProgress;
 import info.nightscout.androidaps.plugins.pump.omnipod.defs.schedule.BasalSchedule;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmniCRC;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodConst;
@@ -35,16 +35,14 @@ import info.nightscout.androidaps.utils.DateUtil;
 public abstract class PodStateManager {
 
     private final AAPSLogger aapsLogger;
+    private DateUtil dateUtil;
     private final Gson gsonInstance;
     private PodState podState;
 
-    public PodStateManager(AAPSLogger aapsLogger) {
+    public PodStateManager(AAPSLogger aapsLogger, DateUtil dateUtil) {
         this.aapsLogger = aapsLogger;
+        this.dateUtil = dateUtil;
         this.gsonInstance = createGson();
-    }
-
-    public final boolean hasState() {
-        return podState != null;
     }
 
     public final void removeState() {
@@ -54,7 +52,7 @@ public abstract class PodStateManager {
     }
 
     public final void initState(int address) {
-        if (hasState()) {
+        if (hasPodState()) {
             throw new IllegalStateException("Can not init a new pod state: podState <> null");
         }
         podState = new PodState(address);
@@ -62,23 +60,43 @@ public abstract class PodStateManager {
         notifyPodStateChanged();
     }
 
-    public final boolean isPaired() {
-        return hasState() //
+    /**
+     * @return true if we have a Pod state (which at least contains an ddress), indicating it is legal to call getters on PodStateManager
+     */
+    public final boolean hasPodState() {
+        return podState != null;
+    }
+
+    /**
+     * @return true if we have a Pod state and the Pod has been initialized, meaning it has an address assigned.
+     */
+    public final boolean isPodInitialized() {
+        return hasPodState() //
                 && podState.getLot() != null && podState.getTid() != null //
                 && podState.getPiVersion() != null && podState.getPmVersion() != null //
                 && podState.getTimeZone() != null //
-                && podState.getSetupProgress() != null;
+                && podState.getPodProgressStatus() != null;
     }
 
-    public final boolean isSetupCompleted() {
-        return isPaired() && SetupProgress.COMPLETED.equals(podState.getSetupProgress());
+    /**
+     * @return true if we have a Pod state and the Pod is running, meaning the activation process has completed and the Pod is not deactivated or in a fault state
+     */
+    public final boolean isPodRunning() {
+        return isPodInitialized() && getPodProgressStatus().isRunning();
     }
 
-    public final void setPairingParameters(int lot, int tid, FirmwareVersion piVersion, FirmwareVersion pmVersion, DateTimeZone timeZone) {
-        if (!hasState()) {
+    /**
+     * @return true if we have a Pod state and the Pod is dead, meaning it is either in a fault state or activation time has been exceeded or it is deactivated
+     */
+    public boolean isPodDead() {
+        return isPodInitialized() && getPodProgressStatus().isDead();
+    }
+
+    public final void setInitializationParameters(int lot, int tid, FirmwareVersion piVersion, FirmwareVersion pmVersion, DateTimeZone timeZone, PodProgressStatus podProgressStatus) {
+        if (!hasPodState()) {
             throw new IllegalStateException("Cannot set pairing parameters: podState is null");
         }
-        if (isPaired() && getSetupProgress().isAfter(SetupProgress.ADDRESS_ASSIGNED)) {
+        if (isPodInitialized() && getPodProgressStatus().isAfter(PodProgressStatus.REMINDER_INITIALIZED)) {
             throw new IllegalStateException("Cannot set pairing parameters: pairing parameters have already been set");
         }
         if (piVersion == null) {
@@ -90,6 +108,9 @@ public abstract class PodStateManager {
         if (timeZone == null) {
             throw new IllegalArgumentException("Cannot set pairing parameters: timeZone can not be null");
         }
+        if (podProgressStatus == null) {
+            throw new IllegalArgumentException("Cannot set pairing parameters: podProgressStatus can not be null");
+        }
 
         setAndStore(() -> {
             podState.setLot(lot);
@@ -98,7 +119,7 @@ public abstract class PodStateManager {
             podState.setPmVersion(pmVersion);
             podState.setTimeZone(timeZone);
             podState.setNonceState(new NonceState(lot, tid));
-            podState.setSetupProgress(SetupProgress.ADDRESS_ASSIGNED);
+            podState.setPodProgressStatus(podProgressStatus);
             podState.getConfiguredAlerts().put(AlertSlot.SLOT7, AlertType.FINISH_SETUP_REMINDER);
         });
     }
@@ -132,7 +153,7 @@ public abstract class PodStateManager {
     }
 
     public final synchronized void resyncNonce(int syncWord, int sentNonce, int sequenceNumber) {
-        if (!isPaired()) {
+        if (!isPodInitialized()) {
             throw new IllegalStateException("Cannot resync nonce: Pod is not paired yet");
         }
 
@@ -147,14 +168,14 @@ public abstract class PodStateManager {
     }
 
     public final synchronized int getCurrentNonce() {
-        if (!isPaired()) {
+        if (!isPodInitialized()) {
             throw new IllegalStateException("Cannot get current nonce: Pod is not paired yet");
         }
         return podState.getNonceState().getCurrentNonce();
     }
 
     public final synchronized void advanceToNextNonce() {
-        if (!isPaired()) {
+        if (!isPodInitialized()) {
             throw new IllegalStateException("Cannot advance to next nonce: Pod is not paired yet");
         }
         setAndStore(() -> podState.getNonceState().advanceToNextNonce(), false);
@@ -174,6 +195,10 @@ public abstract class PodStateManager {
 
     public final void setLastFailedCommunication(DateTime dateTime) {
         setAndStore(() -> podState.setLastFailedCommunication(dateTime));
+    }
+
+    public final DateTime getLastUpdatedFromStatusResponse() {
+        return getSafe(() -> podState.getLastUpdatedFromStatusResponse());
     }
 
     public final boolean hasFaultEvent() {
@@ -257,18 +282,7 @@ public abstract class PodStateManager {
     // TODO doesn't belong here
     public final String getExpiryDateAsString() {
         DateTime expiresAt = getExpiresAt();
-        return expiresAt == null ? "???" : DateUtil.dateAndTimeString(expiresAt.toDate());
-    }
-
-    public final SetupProgress getSetupProgress() {
-        return getSafe(() -> podState.getSetupProgress());
-    }
-
-    public final void setSetupProgress(SetupProgress setupProgress) {
-        if (setupProgress == null) {
-            throw new IllegalArgumentException("Setup progress can not be null");
-        }
-        setAndStore(() -> podState.setSetupProgress(setupProgress));
+        return expiresAt == null ? "???" : dateUtil.dateAndTimeString(expiresAt.toDate());
     }
 
     public final PodProgressStatus getPodProgressStatus() {
@@ -343,7 +357,7 @@ public abstract class PodStateManager {
     }
 
     public final void updateFromStatusResponse(StatusResponse statusResponse) {
-        if (!hasState()) {
+        if (!hasPodState()) {
             throw new IllegalStateException("Cannot update from status response: podState is null");
         }
         setAndStore(() -> {
@@ -357,15 +371,12 @@ public abstract class PodStateManager {
                 podState.setExpiresAt(expiresAtCalculated);
             }
 
-            boolean newSuspendedState = statusResponse.getDeliveryStatus() == DeliveryStatus.SUSPENDED;
-            if (podState.isSuspended() != newSuspendedState) {
-                aapsLogger.info(LTag.PUMPCOMM, "Updating pod suspended state in updateFromStatusResponse. newSuspendedState={}, statusResponse={}", newSuspendedState, statusResponse.toString());
-                podState.setSuspended(newSuspendedState);
-            }
+            podState.setSuspended(statusResponse.getDeliveryStatus() == DeliveryStatus.SUSPENDED);
             podState.setActiveAlerts(statusResponse.getAlerts());
             podState.setLastDeliveryStatus(statusResponse.getDeliveryStatus());
             podState.setReservoirLevel(statusResponse.getReservoirLevel());
             podState.setPodProgressStatus(statusResponse.getPodProgressStatus());
+            podState.setLastUpdatedFromStatusResponse(DateTime.now());
         });
     }
 
@@ -374,7 +385,7 @@ public abstract class PodStateManager {
     }
 
     private void setAndStore(Runnable runnable, boolean notifyPodStateChanged) {
-        if (!hasState()) {
+        if (!hasPodState()) {
             throw new IllegalStateException("Cannot mutate PodState: podState is null");
         }
         runnable.run();
@@ -418,7 +429,7 @@ public abstract class PodStateManager {
 
     // Not actually "safe" as it throws an Exception, but it prevents NPEs
     private <T> T getSafe(Supplier<T> supplier) {
-        if (!hasState()) {
+        if (!hasPodState()) {
             throw new IllegalStateException("Cannot read from PodState: podState is null");
         }
         return supplier.get();
@@ -454,6 +465,7 @@ public abstract class PodStateManager {
         private int messageNumber;
         private DateTime lastSuccessfulCommunication;
         private DateTime lastFailedCommunication;
+        private DateTime lastUpdatedFromStatusResponse;
         private DateTimeZone timeZone;
         private DateTime activatedAt;
         private DateTime expiresAt;
@@ -461,7 +473,6 @@ public abstract class PodStateManager {
         private Double reservoirLevel;
         private boolean suspended;
         private NonceState nonceState;
-        private SetupProgress setupProgress;
         private PodProgressStatus podProgressStatus;
         private DeliveryStatus lastDeliveryStatus;
         private AlertSet activeAlerts;
@@ -545,6 +556,14 @@ public abstract class PodStateManager {
             this.lastFailedCommunication = lastFailedCommunication;
         }
 
+        DateTime getLastUpdatedFromStatusResponse() {
+            return lastUpdatedFromStatusResponse;
+        }
+
+        void setLastUpdatedFromStatusResponse(DateTime lastUpdatedFromStatusResponse) {
+            this.lastUpdatedFromStatusResponse = lastUpdatedFromStatusResponse;
+        }
+
         DateTimeZone getTimeZone() {
             return timeZone;
         }
@@ -599,14 +618,6 @@ public abstract class PodStateManager {
 
         void setNonceState(NonceState nonceState) {
             this.nonceState = nonceState;
-        }
-
-        public SetupProgress getSetupProgress() {
-            return setupProgress;
-        }
-
-        void setSetupProgress(SetupProgress setupProgress) {
-            this.setupProgress = setupProgress;
         }
 
         public PodProgressStatus getPodProgressStatus() {
@@ -696,6 +707,7 @@ public abstract class PodStateManager {
                     ", messageNumber=" + messageNumber +
                     ", lastSuccessfulCommunication=" + lastSuccessfulCommunication +
                     ", lastFailedCommunication=" + lastFailedCommunication +
+                    ", lastUpdatedFromStatusResponse=" + lastUpdatedFromStatusResponse +
                     ", timeZone=" + timeZone +
                     ", activatedAt=" + activatedAt +
                     ", expiresAt=" + expiresAt +
@@ -703,7 +715,7 @@ public abstract class PodStateManager {
                     ", reservoirLevel=" + reservoirLevel +
                     ", suspended=" + suspended +
                     ", nonceState=" + nonceState +
-                    ", setupProgress=" + setupProgress +
+                    ", podProgressStatus=" + podProgressStatus +
                     ", lastDeliveryStatus=" + lastDeliveryStatus +
                     ", activeAlerts=" + activeAlerts +
                     ", basalSchedule=" + basalSchedule +
@@ -765,11 +777,5 @@ public abstract class PodStateManager {
                     ", index=" + index +
                     '}';
         }
-    }
-
-    // TODO replace with java.util.function.Supplier<T> when min API level >= 24
-    @FunctionalInterface
-    private interface Supplier<T> {
-        T get();
     }
 }

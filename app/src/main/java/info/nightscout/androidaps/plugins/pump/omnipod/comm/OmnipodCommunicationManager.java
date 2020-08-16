@@ -11,6 +11,7 @@ import dagger.android.HasAndroidInjector;
 import info.nightscout.androidaps.logging.AAPSLogger;
 import info.nightscout.androidaps.logging.LTag;
 import info.nightscout.androidaps.plugins.pump.common.data.PumpStatus;
+import info.nightscout.androidaps.plugins.pump.common.defs.PumpDeviceState;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.RileyLinkCommunicationManager;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.RileyLinkConst;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.ble.RFSpy;
@@ -19,7 +20,6 @@ import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.ble.data.RLMe
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.ble.defs.RLMessageType;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.ble.defs.RileyLinkBLEError;
 import info.nightscout.androidaps.plugins.pump.common.utils.ByteUtil;
-import info.nightscout.androidaps.plugins.pump.medtronic.defs.PumpDeviceState;
 import info.nightscout.androidaps.plugins.pump.omnipod.comm.action.OmnipodAction;
 import info.nightscout.androidaps.plugins.pump.omnipod.comm.exception.CommunicationException;
 import info.nightscout.androidaps.plugins.pump.omnipod.comm.exception.IllegalMessageAddressException;
@@ -50,7 +50,7 @@ import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodConst;
 /**
  * Created by andy on 6/29/18.
  */
-// TODO make singleton
+// TODO make singleton and rename to OmnipodRileyLinkCommunicationManager
 public class OmnipodCommunicationManager extends RileyLinkCommunicationManager {
 
     @Inject public AAPSLogger aapsLogger;
@@ -95,8 +95,8 @@ public class OmnipodCommunicationManager extends RileyLinkCommunicationManager {
     }
 
     @Override
-    public <E extends RLMessage> E createResponseMessage(byte[] payload, Class<E> clazz) {
-        return (E) new OmnipodPacket(payload);
+    public RLMessage createResponseMessage(byte[] payload) {
+        return new OmnipodPacket(payload);
     }
 
     @Override
@@ -137,7 +137,7 @@ public class OmnipodCommunicationManager extends RileyLinkCommunicationManager {
 
         for (int i = 0; 2 > i; i++) {
 
-            if (podStateManager.isPaired() && message.isNonceResyncable()) {
+            if (podStateManager.isPodInitialized() && message.isNonceResyncable()) {
                 podStateManager.advanceToNextNonce();
             }
 
@@ -321,7 +321,7 @@ public class OmnipodCommunicationManager extends RileyLinkCommunicationManager {
         OmnipodPacket ack = createAckPacket(podStateManager, packetAddress, messageAddress);
         boolean quiet = false;
         while (!quiet) try {
-            sendAndListen(ack, 300, 1, 0, 40, OmnipodPacket.class);
+            sendAndListen(ack, 300, 1, 0, 40);
         } catch (RileyLinkCommunicationException ex) {
             if (RileyLinkBLEError.Timeout.equals(ex.getErrorCode())) {
                 quiet = true;
@@ -353,7 +353,7 @@ public class OmnipodCommunicationManager extends RileyLinkCommunicationManager {
         while (System.currentTimeMillis() < timeoutTime) {
             OmnipodPacket response = null;
             try {
-                response = sendAndListen(packet, responseTimeoutMilliseconds, repeatCount, 9, preambleExtensionMilliseconds, OmnipodPacket.class);
+                response = (OmnipodPacket) sendAndListen(packet, responseTimeoutMilliseconds, repeatCount, 9, preambleExtensionMilliseconds);
             } catch (RileyLinkCommunicationException | OmnipodException ex) {
                 aapsLogger.debug(LTag.PUMPBTCOMM, "Ignoring exception in exchangePackets: " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
                 continue;

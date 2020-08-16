@@ -8,13 +8,12 @@ import javax.inject.Singleton;
 import info.nightscout.androidaps.plugins.bus.RxBusWrapper;
 import info.nightscout.androidaps.plugins.pump.common.data.PumpStatus;
 import info.nightscout.androidaps.plugins.pump.common.data.TempBasalPair;
+import info.nightscout.androidaps.plugins.pump.common.defs.PumpDeviceState;
 import info.nightscout.androidaps.plugins.pump.common.defs.PumpType;
+import info.nightscout.androidaps.plugins.pump.common.events.EventRileyLinkDeviceStatusChange;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.RileyLinkUtil;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.data.RLHistoryItem;
 import info.nightscout.androidaps.plugins.pump.common.hw.rileylink.defs.RileyLinkTargetDevice;
-import info.nightscout.androidaps.plugins.pump.medtronic.defs.PumpDeviceState;
-import info.nightscout.androidaps.plugins.pump.omnipod.defs.PodDeviceState;
-import info.nightscout.androidaps.plugins.pump.omnipod.events.EventOmnipodDeviceStatusChange;
 import info.nightscout.androidaps.plugins.pump.omnipod.util.OmnipodConst;
 import info.nightscout.androidaps.utils.resources.ResourceHelper;
 import info.nightscout.androidaps.utils.sharedPreferences.SP;
@@ -23,6 +22,7 @@ import info.nightscout.androidaps.utils.sharedPreferences.SP;
  * Created by andy on 4.8.2019
  */
 @Singleton
+@Deprecated
 public class OmnipodPumpStatus extends PumpStatus {
     // TODO remove all fields that can also be obtained via PodStateManager
     //  We can probably get rid of this class altogether
@@ -47,7 +47,6 @@ public class OmnipodPumpStatus extends PumpStatus {
 
     public String regexMac = "([\\da-fA-F]{1,2}(?:\\:|$)){6}";
 
-    public PodDeviceState podDeviceState = PodDeviceState.NeverContacted;
     public boolean ackAlertsAvailable = false;
     public String ackAlertsText = null;
 
@@ -89,6 +88,24 @@ public class OmnipodPumpStatus extends PumpStatus {
         return this.rileyLinkErrorDescription;
     }
 
+    @Override
+    public <E> E getCustomData(String key, Class<E> clazz) {
+        switch (key) {
+            // TODO
+            /*
+            case "POD_LOT_NUMBER":
+                return (E) podLotNumber;
+
+            case "POD_AVAILABLE":
+                return (E) podAvailable;
+             */
+
+            default:
+                return null;
+        }
+
+    }
+
 
 //    public boolean setNotInPreInit() {
 //        this.inPreInit = false;
@@ -128,7 +145,6 @@ public class OmnipodPumpStatus extends PumpStatus {
                 ", tempBasalAmount=" + tempBasalAmount +
                 ", tempBasalLength=" + tempBasalLength +
                 ", regexMac='" + regexMac + '\'' +
-                ", podDeviceState=" + podDeviceState +
                 ", lastDataTime=" + lastDataTime +
                 ", lastConnection=" + lastConnection +
                 ", previousConnection=" + previousConnection +
@@ -168,7 +184,7 @@ public class OmnipodPumpStatus extends PumpStatus {
 
         rileyLinkUtil.getRileyLinkHistory().add(new RLHistoryItem(pumpDeviceState, RileyLinkTargetDevice.Omnipod));
 
-        rxBus.send(new EventOmnipodDeviceStatusChange(pumpDeviceState));
+        rxBus.send(new EventRileyLinkDeviceStatusChange(pumpDeviceState));
     }
 
 }
